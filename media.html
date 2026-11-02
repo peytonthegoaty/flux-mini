@@ -1,14 +1,200 @@
 <!doctype html>
-<!-- Flux TV: movies, shows and anime from TMDB, played with 2Embed. Opened by the TV section
-     in index.html through Ultraviolet, so every request here goes through the proxy. -->
+<!-- Flux Anime: the Yomi anime library, laid out exactly like Flux TV. Same look,
+     but the catalogue is library.json sitting next to this page and playback runs
+     through the provider embeds yomi.to computes client-side (no TMDB, no 2Embed).
+     Works two ways: dropped into the Flux folder and opened by the shell like
+     media.html, or served standalone from this folder with python -m http.server. -->
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<title>Flux TV</title>
-		<link rel="stylesheet" href="css/style.css" />
+		<title>Flux Anime</title>
 		<style>
-			/* The page sits inside the Flux shell, so let the shell show through. */
+			/* Fonts: same self-hosted files Flux ships (fonts/ next to this page). */
+			@font-face {
+				font-family: "Geist";
+				font-weight: 100 900;
+				font-display: swap;
+				src: url(fonts/geist.woff2) format("woff2");
+			}
+			@font-face {
+				font-family: "Manrope";
+				font-weight: 200 800;
+				font-display: swap;
+				src: url(fonts/manrope.woff2) format("woff2");
+			}
+
+			/* ── Flux tokens (css/style.css) ─────────────────────────────── */
+			html {
+				--bg: #000;
+				--bg2: #16161b;
+				--fg: #f5f6f8;
+				--fg-m: #9a9aa2;
+				--fg-d: #6b6b73;
+				--a: 255, 255, 255;
+				--on-accent: #000;
+				--m1: 96, 40, 200;
+				--m2: 30, 60, 160;
+				--accent: rgb(var(--a));
+				--surface: color-mix(in srgb, var(--bg2) 80%, transparent);
+				--surface-2: color-mix(in srgb, color-mix(in srgb, var(--bg2), var(--fg) 5%) 80%, transparent);
+				--surface-3: color-mix(in srgb, color-mix(in srgb, var(--bg2), var(--fg) 10%) 80%, transparent);
+				--field: #1e1e24;
+				--field-hover: #24242b;
+				--border: color-mix(in srgb, var(--accent) 12%, color-mix(in srgb, color-mix(in srgb, var(--bg2), var(--fg) 9%) 85%, transparent));
+				--border-2: color-mix(in srgb, var(--accent) 18%, color-mix(in srgb, color-mix(in srgb, var(--bg2), var(--fg) 16%) 85%, transparent));
+				--shade: rgba(0, 0, 0, 0.55);
+				--r-xs: 2px;
+				--r-sm: 4px;
+				--r: 6px;
+				--ease: cubic-bezier(0.16, 1, 0.3, 1);
+				--t-hover: 0.3s ease;
+				color-scheme: dark;
+			}
+			/* Text boxes ease in slowly on hover/focus so they feel smooth, not snappy. */
+			html {
+				--t-field: border-color 0.35s var(--ease), background-color 0.35s var(--ease), box-shadow 0.45s var(--ease), color 0.35s var(--ease);
+				--ring: none; /* focus is a plain border (--focus), no glow */
+				--focus: color-mix(in srgb, var(--fg) 38%, transparent);
+			}
+
+			/* ── Flux base + shared controls (css/style.css) ─────────────── */
+			* {
+				box-sizing: border-box;
+			}
+			html,
+			body {
+				margin: 0;
+				height: 100%;
+			}
+			html {
+				isolation: isolate;
+				background: transparent;
+				color: var(--fg);
+				font: 14px/1.5 "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+				-webkit-font-smoothing: antialiased;
+			}
+			[hidden] {
+				display: none !important;
+			}
+			button,
+			input,
+			select {
+				font: inherit;
+				color: inherit;
+			}
+			button {
+				cursor: pointer;
+			}
+			:focus-visible {
+				outline: 1px solid var(--accent);
+				outline-offset: 1px;
+			}
+			.i {
+				width: 16px;
+				height: 16px;
+				flex: none;
+				fill: none;
+				stroke: currentColor;
+				stroke-width: 1.75;
+				stroke-linecap: round;
+				stroke-linejoin: round;
+			}
+			@keyframes rise {
+				from { opacity: 0; transform: translate3d(0, 10px, 0); }
+			}
+			.field {
+				display: flex;
+				align-items: center;
+				gap: 0.6rem;
+				height: 36px;
+				padding: 0 0.8rem;
+				border: 1px solid var(--border);
+				border-radius: var(--r-sm);
+				background: var(--surface);
+				color: var(--fg-m);
+				transition: var(--t-field);
+			}
+			.field:hover {
+				border-color: var(--border-2);
+			}
+			.field:focus-within {
+				border-color: var(--focus);
+				background-color: var(--field-hover);
+				box-shadow: var(--ring);
+				color: var(--fg);
+			}
+			.field .i {
+				transition: transform 0.45s var(--ease);
+			}
+			.field:focus-within .i {
+				transform: scale(1.1);
+			}
+			input::placeholder {
+				transition: opacity 0.35s var(--ease);
+			}
+			input:focus::placeholder {
+				opacity: 0.45;
+			}
+			.field input {
+				flex: 1;
+				min-width: 0;
+				height: 100%;
+				border: 0;
+				outline: 0;
+				background: transparent;
+				color: var(--fg);
+			}
+			.field input::placeholder {
+				color: var(--fg-d);
+			}
+			.btn {
+				display: inline-flex;
+				align-items: center;
+				justify-content: center;
+				gap: 0.5rem;
+				height: 34px;
+				padding: 0 0.95rem;
+				border: 1px solid var(--border);
+				border-radius: var(--r-sm);
+				background: var(--surface);
+				color: var(--fg-m);
+				font-size: 13px;
+				font-weight: 500;
+				white-space: nowrap;
+				transition: background-color var(--t-hover), border-color var(--t-hover), color var(--t-hover), transform 0.15s var(--ease);
+			}
+			.btn:hover {
+				border-color: var(--border-2);
+				background: var(--surface-2);
+				color: var(--fg);
+			}
+			.btn:active {
+				transform: scale(0.96);
+			}
+			.btn[aria-pressed="true"],
+			.btn.primary {
+				border-color: var(--accent);
+				background: var(--accent);
+				color: var(--on-accent, #fff);
+			}
+			.btn.primary:hover,
+			.btn[aria-pressed="true"]:hover {
+				filter: brightness(0.92);
+			}
+			.btn[aria-pressed="true"] .i {
+				fill: currentColor;
+			}
+			.page-title {
+				margin: 0 0 14px;
+				font-family: "Manrope", "Geist", sans-serif;
+				font-size: 22px;
+				font-weight: 600;
+			}
+
+			/* ── Flux TV page styles (media.html) ────────────────────────── */
+			/* The page draws no background of its own: it stays fully transparent so
+			   whatever sits behind it — the Flux shell's backdrop — shows through. */
 			html,
 			body {
 				height: auto;
@@ -18,10 +204,6 @@
 				display: block;
 				padding: 0;
 				overflow: auto;
-			}
-			body::before,
-			body::after {
-				display: none;
 			}
 			main {
 				max-width: 1280px;
@@ -116,7 +298,7 @@
 				font-size: 16px;
 				font-weight: 600;
 			}
-			/* Hero: the top trending title. */
+			/* Hero: the top-rated title. */
 			.tv-hero {
 				position: relative;
 				display: flex;
@@ -377,13 +559,13 @@
 		<header class="tv-bar">
 			<nav class="tv-tabs" id="tabs">
 				<button class="tv-tab" type="button" data-section="home" aria-current="true">Home</button>
+				<button class="tv-tab" type="button" data-section="tv">TV</button>
 				<button class="tv-tab" type="button" data-section="movie">Movies</button>
-				<button class="tv-tab" type="button" data-section="tv">TV Shows</button>
-				<button class="tv-tab" type="button" data-section="anime">Anime</button>
+				<button class="tv-tab" type="button" data-section="all">Browse</button>
 			</nav>
 			<label class="field tv-search">
 				<svg class="i"><use href="#i-search" /></svg>
-				<input id="search" type="search" placeholder="Search movies, shows and anime" aria-label="Search" autocomplete="off" spellcheck="false" />
+				<input id="search" type="search" placeholder="Search your anime" aria-label="Search" autocomplete="off" spellcheck="false" />
 				<div class="tv-results" id="results" hidden></div>
 			</label>
 		</header>
@@ -391,16 +573,17 @@
 		<main>
 			<section class="tv-page" id="page-home">
 				<div class="tv-hero" id="hero"><div class="tv-hero-body"><p class="tv-loading">Loading…</p></div></div>
-				<h2 class="tv-row-title">Trending movies</h2>
-				<div class="tv-grid" id="home-movie"></div>
-				<h2 class="tv-row-title">Trending shows</h2>
-				<div class="tv-grid" id="home-tv"></div>
-				<h2 class="tv-row-title">Popular anime</h2>
-				<div class="tv-grid" id="home-anime"></div>
+				<h2 class="tv-row-title">Currently airing</h2>
+				<div class="tv-grid" id="home-airing"></div>
+				<h2 class="tv-row-title">Highest rated</h2>
+				<div class="tv-grid" id="home-top"></div>
+				<h2 class="tv-row-title">Longest runs</h2>
+				<div class="tv-grid" id="home-long"></div>
 			</section>
 
 			<section class="tv-page" id="page-browse" hidden>
 				<h1 class="page-title" id="browse-title"></h1>
+				<div class="tv-chips" id="format-chips" hidden></div>
 				<div class="tv-chips" id="chips"></div>
 				<div class="tv-grid" id="browse-grid"></div>
 				<div class="tv-more" id="more"></div>
@@ -410,7 +593,7 @@
 				<div class="tv-watch-bar"><button class="btn" type="button" data-back><svg class="i"><use href="#i-back" /></svg>Back</button></div>
 				<div class="tv-info-head" id="info-head"></div>
 				<div class="tv-facts" id="info-facts"></div>
-				<div id="info-seasons"></div>
+				<div id="info-eps"></div>
 			</section>
 
 			<section class="tv-page" id="page-watch" hidden>
@@ -421,63 +604,163 @@
 						<small id="watch-ep"></small>
 					</div>
 				</div>
-				<!-- Not sandboxed: 2Embed refuses to play in a sandbox. Its history.back() calls are
-				     caught by index.html (guardHistory in js/ui.js). -->
-				<div class="tv-player"><iframe id="player" title="Player" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
-				<div id="watch-seasons"></div>
+				<!-- Not sandboxed: the provider embeds refuse to play in a sandbox.
+				     referrerpolicy like the yomi player: embeds ask for no foreign referer. -->
+				<div class="tv-player"><iframe id="player" title="Player" referrerpolicy="no-referrer" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
+				<div id="watch-servers"></div>
+				<div id="watch-eps"></div>
 			</section>
 		</main>
 
-		<dialog class="modal ask" id="age-gate">
-			<form method="dialog">
-				<h2>Mature content</h2>
-				<p id="age-text"></p>
-				<div class="ask-actions">
-					<button class="btn" type="submit" value="">Go back</button>
-					<button class="btn primary" type="submit" value="ok">I'm 18+, continue</button>
-				</div>
-			</form>
-		</dialog>
-
 		<script>
-			const TMDB_KEY = "3a73619bbb8fc6d47742d1b5b2b707b5";
-			const POSTER = "https://image.tmdb.org/t/p/w342";
-			const BACKDROP = "https://image.tmdb.org/t/p/w1280";
-			const BLOCKED = new Set([95897]);
-			const ADULT = new Set(["R", "NC-17", "TV-MA", "18", "18+", "X", "MA15+", "R18+", "Rx", "C18", "18A", "18TC"]);
-			const BROWSE = {
-				movie: { title: "Movies", type: "movie", list: "/discover/movie?sort_by=popularity.desc", genres: "/genre/movie/list" },
-				tv: { title: "TV Shows", type: "tv", list: "/discover/tv?sort_by=popularity.desc", genres: "/genre/tv/list" },
-				anime: { title: "Anime", type: "tv", list: "/discover/tv?sort_by=popularity.desc&with_origin_country=JP", genres: "/genre/tv/list", only: [16, 10759, 10765, 9648, 35, 18], base: 16 },
-			};
-
 			const $ = (id) => document.getElementById(id);
 			const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-			const nameOf = (it) => it.title || it.name || "Untitled";
-			const yearOf = (it) => (it.release_date || it.first_air_date || "").slice(0, 4);
-			const typeOf = (it, fallback) => (it.media_type === "tv" || it.media_type === "movie" ? it.media_type : fallback);
 			const icon = (n) => `<svg class="i"><use href="#i-${n}"/></svg>`;
 
-			// Every request goes through the proxy, so keep answers for the session: reopening a
-			// title, season or list is then instant. Failed requests are dropped so they can retry.
-			const cache = new Map();
-			function tmdb(path) {
-				if (!cache.has(path)) {
-					const url = `https://api.themoviedb.org/3${path}${path.includes("?") ? "&" : "?"}api_key=${TMDB_KEY}&language=en-US`;
-					const req = fetch(url).then((res) => {
-						if (!res.ok) throw new Error(`TMDB ${res.status}`);
-						return res.json();
-					});
-					cache.set(path, req);
-					req.catch(() => cache.delete(path));
+			/* Provider table — transcribed from yomi.to's WatchLoader chunk (see src/config.js
+			 * for the annotated original). yomi.to hosts no video; it computes these embed
+			 * URLs client-side, and so do we: a pure function of (anilist_id, mal_id, episode).
+			 *
+			 * MegaPlay (server 1) is deliberately absent: its embed only answers requests
+			 * that carry its own referer, which this page can never send — every MegaPlay
+			 * button dead-ends in the provider's error screen regardless of language.
+			 * The five remaining providers all answer a plain page. */
+			const SERVER_LABELS = { 2: "AniLink", 3: "TryEmbed", 4: "Cinextream", 5: "Nontongo", 6: "4Animo" };
+			const SERVER_ORDER = [3, 2, 4, 6, 5];
+			const DUB_CAPABLE = { 2: 1, 3: 1, 4: 1, 6: 1 };
+			const YOMI = "https://yomi.to";
+
+			function slugify(title) {
+				return title
+					.normalize("NFKD")
+					.replace(/[\u0300-\u036f]/g, "")
+					.toLowerCase()
+					.replace(/[^a-z0-9]+/g, "-")
+					.replace(/^-+|-+$/g, "")
+					.slice(0, 60)
+					.replace(/-+$/g, "") || "anime";
+			}
+			function embedUrl(server, ani, mal, ep, lang) {
+				switch (Number(server)) {
+					case 1:
+						return mal ? `https://megaplay.buzz/stream/mal/${mal}/${ep}/${lang}` : `https://megaplay.buzz/stream/ani/${ani}/${ep}/${lang}`;
+					case 2:
+						return `https://anilink.cc/watch/${ani}/${ep}?variant=${lang}&autoplay=1`;
+					case 3:
+						return `https://tryembed.us.cc/embed/anime/${ani}/${ep}/${lang}`;
+					case 4:
+						return `https://cinextream.cc/api/embed/anime/${lang}/${ani}/${ep}?color=7c6ee0`;
+					case 5:
+						return `https://nontongo.win/anime/${ani}/${ep}/play`;
+					case 6:
+						return `https://cdn.4animo.xyz/embed/ani/${ani}/${ep}/${lang}`;
+					default:
+						return null;
 				}
-				return cache.get(path);
+			}
+			function buildServersFor(ani, mal, ep) {
+				const out = [];
+				for (const sid of SERVER_ORDER) {
+					const langs = DUB_CAPABLE[sid] ? ["sub", "dub"] : ["sub"];
+					for (const lang of langs) {
+						const url = embedUrl(sid, ani, mal, ep, lang);
+						if (!url) continue;
+						out.push({ name: SERVER_LABELS[sid], url, type: "iframe", language: lang, serverId: sid, requiresReferer: false, status: "unknown" });
+					}
+				}
+				return out;
+			}
+			function expandEpisodes(a) {
+				// Episode lists are omitted from library.json (it would weigh ~2 GB); rebuild
+				// this title's list on open, the same way the local server does.
+				if (a.episodes.length || !a.total_episodes || !a.anilist_id || !a.slug) return;
+				for (let n = 1; n <= a.total_episodes; n++) {
+					a.episodes.push({
+						number: String(n),
+						title: `Episode ${n}`,
+						url: `${YOMI}/watch/${a.slug}-${a.anilist_id}/${n}`,
+						servers: buildServersFor(a.anilist_id, a.mal_id, n).map((s) => ({ ...s })),
+						error: null,
+					});
+				}
 			}
 
-			// Ads in the player like to open pop-ups; drop them.
+			/* ── library ─────────────────────────────────────────────────── */
+			const str = (v) => (v == null ? "" : String(v));
+			function normServer(s, i) {
+				if (typeof s === "string") s = { url: s };
+				s = s || {};
+				const url = str(s.url || s.src || s.file || s.link || "");
+				let st = str(s.status || "");
+				if (st !== "exists" && st !== "missing") st = "unknown";
+				return {
+					name: str(s.name || s.server || `Server ${i + 1}`),
+					url,
+					type: str(s.type).toLowerCase() === "direct" || /\.(m3u8|mp4|webm)(\?|$)/i.test(url) ? "direct" : "iframe",
+					language: (str(s.language || s.quality) || "sub").toLowerCase(),
+					serverId: s.server_id || 0,
+					requiresReferer: !!s.requires_referer,
+					status: st,
+				};
+			}
+			function normEp(e, i) {
+				e = e || {};
+				let raw = e.servers || e.sources || e.links || [];
+				if (!Array.isArray(raw)) raw = [];
+				const n = str(e.number || e.episode || e.ep || i + 1);
+				return {
+					number: n,
+					title: str(e.title || `Episode ${n}`),
+					url: str(e.url || ""),
+					// MegaPlay (server 1) is dropped wherever it survived in stored scan data.
+					servers: raw.map(normServer).filter((s) => s.url && s.serverId !== 1),
+					error: str(e.error || ""),
+				};
+			}
+			function normAnime(a, i) {
+				a = a || {};
+				let raw = a.episodes || a.eps || [];
+				if (!Array.isArray(raw)) raw = [];
+				const title = str(a.title || a.name || `Untitled ${i + 1}`);
+				const anilistId = a.anilist_id || null;
+				return {
+					title,
+					image: str(a.image || a.poster || a.cover || ""),
+					banner: str(a.banner || a.bannerImage || ""),
+					synopsis: str(a.synopsis || a.description || ""),
+					genres: Array.isArray(a.genres) ? a.genres.map(str) : [],
+					status: str(a.status || ""),
+					type: str(a.type || ""),
+					year: str(a.year || ""),
+					score: a.score || null,
+					anilist_id: anilistId,
+					mal_id: a.mal_id || null,
+					total_episodes: a.total_episodes != null ? a.total_episodes : raw.length,
+					slug: anilistId ? slugify(title) : "",
+					episodes: raw.map(normEp),
+				};
+			}
+
+			let LIB = [];
+			const BY_ID = new Map(); // anilist_id -> entry
+			async function boot() {
+				try {
+					const res = await fetch("library.json", { cache: "no-store" });
+					if (!res.ok) throw new Error(`HTTP ${res.status}`);
+					const j = await res.json();
+					if (!Array.isArray(j.anime) || !j.anime.length) throw new Error("no anime array");
+					LIB = j.anime.map(normAnime);
+					for (const a of LIB) if (a.anilist_id && !BY_ID.has(a.anilist_id)) BY_ID.set(a.anilist_id, a);
+					loadHome();
+				} catch (err) {
+					$("hero").innerHTML = `<div class="tv-hero-body"><p class="tv-loading">Couldn't load the library (${esc(err.message)}). Serve this folder with python -m http.server and reload.</p></div>`;
+				}
+			}
+
+			/* Ads in the player like to open pop-ups; drop them. */
 			window.open = () => null;
 
-			// Pages ---------------------------------------------------------------
+			/* Pages --------------------------------------------------------------- */
 			let page = "home";
 			let backTo = "home";
 			let nav = 0; // bumped on every page change, so slow loads can tell they've been left
@@ -493,82 +776,119 @@
 				if (e.target.closest("[data-back]")) show(page === "watch" && current?.fromInfo ? "info" : backTo);
 			});
 
-			const card = (it, type) =>
-				`<button class="tv-card" type="button" data-id="${it.id}" data-type="${type}"><span class="tv-poster"><img src="${POSTER}${it.poster_path}" alt="" loading="lazy" decoding="async"></span>` +
-				`<span class="tv-card-title">${esc(nameOf(it))}</span><small>${type === "movie" ? "Movie" : "Series"}${yearOf(it) ? ` · ${yearOf(it)}` : ""}</small></button>`;
-			const cards = (list, type) => list.filter((it) => it.poster_path && !BLOCKED.has(it.id)).map((it) => card(it, typeOf(it, type))).join("");
+			const fmtName = (t) => ({ MOVIE: "Movie", TV: "TV", TV_SHORT: "Short", OVA: "OVA", ONA: "ONA", SPECIAL: "Special", MUSIC: "Music" }[t] || t || "Anime");
+			const statusLabel = (s) => {
+				s = (s || "").toLowerCase().replace(/_/g, " ");
+				return s ? s[0].toUpperCase() + s.slice(1) : "";
+			};
+			const card = (a) =>
+				`<button class="tv-card" type="button" data-id="${a.anilist_id}"><span class="tv-poster"><img src="${esc(a.image)}" alt="" loading="lazy" decoding="async"></span>` +
+				`<span class="tv-card-title">${esc(a.title)}</span><small>${esc(fmtName(a.type))}${a.year ? ` · ${esc(a.year)}` : ""}</small></button>`;
+			const cards = (list) => list.filter((a) => a.image && a.anilist_id).map(card).join("");
 
 			document.addEventListener("click", (e) => {
 				const c = e.target.closest(".tv-card, .tv-result");
 				if (c) {
 					$("results").hidden = true;
-					openInfo(Number(c.dataset.id), c.dataset.type);
+					openInfo(Number(c.dataset.id));
 				}
 			});
 
-			// Home ----------------------------------------------------------------
-			async function loadHome() {
-				const [trending, movies, shows, anime] = await Promise.all([
-					tmdb("/trending/all/week"),
-					tmdb("/trending/movie/week"),
-					tmdb("/trending/tv/week"),
-					tmdb("/discover/tv?sort_by=popularity.desc&with_genres=16&with_origin_country=JP"),
-				]);
-				const hero = trending.results.find((it) => it.backdrop_path && !BLOCKED.has(it.id));
+			/* Home ---------------------------------------------------------------- */
+			function loadHome() {
+				const byScore = LIB.filter((a) => a.anilist_id && a.image).slice().sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
+				// Hero = the highest-rated title with a banner (same idea as Flux's #1 trending).
+				const hero = byScore.find((a) => a.banner) || byScore[0];
 				if (hero) {
-					const type = typeOf(hero, "movie");
-					$("hero").style.backgroundImage = `url("${BACKDROP}${hero.backdrop_path}")`;
+					$("hero").style.backgroundImage = hero.banner ? `url("${esc(hero.banner)}")` : "";
+					const syn = hero.synopsis;
+					const total = hero.total_episodes || hero.episodes.length;
 					$("hero").innerHTML =
-						`<div class="tv-hero-body"><div class="tv-tags"><span class="tv-tag">#1 this week</span><span class="tv-tag">${type === "movie" ? "Movie" : "Series"}</span>` +
-						`${hero.vote_average ? `<span class="tv-tag">★ ${hero.vote_average.toFixed(1)}</span>` : ""}</div><h1>${esc(nameOf(hero))}</h1>` +
-						`<p>${esc((hero.overview || "").slice(0, 220))}${(hero.overview || "").length > 220 ? "…" : ""}</p>` +
-						`<div class="tv-actions"><button class="btn primary" type="button" data-play>${icon("play")}Watch</button>` +
-						`<button class="btn" type="button" data-info>${icon("info")}Info</button></div></div>`;
-					$("hero").querySelector("[data-play]").onclick = () => play(hero.id, type, nameOf(hero));
-					$("hero").querySelector("[data-info]").onclick = () => openInfo(hero.id, type);
+						`<div class="tv-hero-body"><div class="tv-tags"><span class="tv-tag">#1 highest rated</span><span class="tv-tag">${esc(fmtName(hero.type))}</span>` +
+						`${hero.score ? `<span class="tv-tag">★ ${esc(hero.score)}</span>` : ""}${total ? `<span class="tv-tag">${total} eps</span>` : ""}</div><h1>${esc(hero.title)}</h1>` +
+						`<p>${esc(syn.slice(0, 220))}${syn.length > 220 ? "…" : ""}</p>` +
+						`<div class="tv-actions"><button class="btn primary" type="button" id="hero-play">${icon("play")}Watch</button>` +
+						`<button class="btn" type="button" id="hero-info">${icon("info")}Info</button></div></div>`;
+					$("hero-play").onclick = () => play(hero.anilist_id);
+					$("hero-info").onclick = () => openInfo(hero.anilist_id);
 				}
-				$("home-movie").innerHTML = cards(movies.results.slice(0, 12), "movie");
-				$("home-tv").innerHTML = cards(shows.results.slice(0, 12), "tv");
-				$("home-anime").innerHTML = cards(anime.results.slice(0, 12), "tv");
+				$("home-airing").innerHTML = cards(byScore.filter((a) => /RELEASING|ONGOING/.test(a.status)).slice(0, 12));
+				$("home-top").innerHTML = cards(byScore.slice(0, 12));
+				$("home-long").innerHTML = cards(LIB.filter((a) => (a.total_episodes || 0) > 0 && a.image && a.anilist_id)
+					.slice()
+					.sort((a, b) => (b.total_episodes || 0) - (a.total_episodes || 0))
+					.slice(0, 12));
 			}
 
-			// Browse (Movies / TV Shows / Anime) with genre chips and endless scroll
+			/* Browse (TV / Movies / Browse) with genre chips and endless scroll ---- */
+			const SECTIONS = {
+				tv: { title: "TV", test: (a) => a.type === "TV" },
+				movie: { title: "Movies", test: (a) => a.type === "MOVIE" },
+				all: { title: "Browse", test: () => true },
+			};
+			const PAGE = 60;
 			let browse = null;
-			async function openBrowse(key) {
-				const conf = BROWSE[key];
-				browse = { conf, genre: 0, page: 1, done: false, busy: false };
+			function poolItems(b) {
+				return LIB.filter((a) => b.conf.test(a) && (!b.format || a.type === b.format) && (!b.genre || a.genres.includes(b.genre)) && a.image && a.anilist_id);
+			}
+			function openBrowse(key) {
+				const conf = SECTIONS[key];
+				browse = { conf, key, format: null, genre: null, cursor: 0 };
 				$("browse-title").textContent = conf.title;
 				$("browse-grid").innerHTML = "";
-				$("chips").innerHTML = "";
+				$("format-chips").hidden = key !== "all";
+				if (key === "all") {
+					const counts = {};
+					for (const a of LIB) if (a.type) counts[a.type] = (counts[a.type] || 0) + 1;
+					const formats = Object.entries(counts).sort((x, y) => y[1] - x[1]);
+					$("format-chips").innerHTML =
+						`<button class="tv-chip" type="button" data-format="" aria-pressed="true">All</button>` +
+						formats.map(([f, n]) => `<button class="tv-chip" type="button" data-format="${esc(f)}" aria-pressed="false">${esc(fmtName(f))} <small>${n}</small></button>`).join("");
+				}
+				paintChips();
 				show("browse");
-				const { genres } = await tmdb(conf.genres);
-				const list = conf.only ? genres.filter((g) => conf.only.includes(g.id)) : genres;
-				$("chips").innerHTML = [{ id: 0, name: "All" }, ...list].map((g) => `<button class="tv-chip" type="button" data-genre="${g.id}" aria-pressed="${g.id === 0}">${esc(g.name)}</button>`).join("");
 				loadMore();
 			}
-			async function loadMore() {
-				const b = browse;
-				if (!b || b.busy || b.done) return;
-				b.busy = true;
-				try {
-					const genre = b.genre || b.conf.base;
-					const d = await tmdb(`${b.conf.list}&page=${b.page}${genre ? `&with_genres=${genre}` : ""}`);
-					if (b !== browse) return; // a newer genre or tab replaced this list
-					$("browse-grid").insertAdjacentHTML("beforeend", cards(d.results, b.conf.type));
-					b.done = b.page >= d.total_pages;
-					b.page++;
-				} finally {
-					b.busy = false;
-				}
+			function paintChips() {
+				const set = new Set();
+				for (const a of poolItems(browse)) for (const g of a.genres) set.add(g);
+				$("chips").innerHTML =
+					`<button class="tv-chip" type="button" data-genre="" aria-pressed="${browse.genre == null}">All</button>` +
+					[...set].sort().map((g) => `<button class="tv-chip" type="button" data-genre="${esc(g)}" aria-pressed="${browse.genre === g}">${esc(g)}</button>`).join("");
 			}
+			function loadMore() {
+				const b = browse;
+				if (!b || page !== "browse") return;
+				const items = poolItems(b);
+				if (!items.length) {
+					$("browse-grid").innerHTML = `<p class="tv-loading">Nothing matches those filters.</p>`;
+					b.cursor = 1e9; // stop the observer
+					return;
+				}
+				const slice = items.slice(b.cursor, b.cursor + PAGE);
+				$("browse-grid").insertAdjacentHTML("beforeend", cards(slice));
+				b.cursor += slice.length;
+			}
+			$("format-chips").addEventListener("click", (e) => {
+				const chip = e.target.closest("[data-format]");
+				if (!chip) return;
+				for (const c of $("format-chips").children) c.setAttribute("aria-pressed", c === chip);
+				browse.format = chip.dataset.format || null;
+				resetBrowse();
+			});
 			$("chips").addEventListener("click", (e) => {
 				const chip = e.target.closest("[data-genre]");
 				if (!chip) return;
 				for (const c of $("chips").children) c.setAttribute("aria-pressed", c === chip);
-				browse = { ...browse, genre: Number(chip.dataset.genre), page: 1, done: false, busy: false };
-				$("browse-grid").innerHTML = "";
-				loadMore();
+				browse.genre = chip.dataset.genre || null;
+				resetBrowse();
 			});
+			function resetBrowse() {
+				browse.cursor = 0;
+				$("browse-grid").innerHTML = "";
+				paintChips();
+				loadMore();
+			}
 			new IntersectionObserver((entries) => entries[0].isIntersecting && page === "browse" && loadMore(), { rootMargin: "600px" }).observe($("more"));
 
 			$("tabs").addEventListener("click", (e) => {
@@ -579,166 +899,178 @@
 				else openBrowse(tab.dataset.section);
 			});
 
-			// Age check for titles rated for adults (once per title per session) -
-			async function rating(id, type) {
-				try {
-					if (type === "movie") {
-						const d = await tmdb(`/movie/${id}/release_dates`);
-						return d.results.find((r) => r.iso_3166_1 === "US")?.release_dates.find((r) => r.certification)?.certification || "";
-					}
-					const d = await tmdb(`/tv/${id}/content_ratings`);
-					return d.results.find((r) => r.iso_3166_1 === "US")?.rating || "";
-				} catch {
-					return "";
-				}
-			}
-			// `at` is the page change the caller started on; if they've moved on, don't ask.
-			async function ageOk(id, type, at = nav) {
-				const key = `flux:age:${id}`;
-				if (sessionStorage.getItem(key)) return true;
-				const r = await rating(id, type);
-				if (!ADULT.has(r)) return true;
-				if (at !== nav) return false;
-				$("age-text").textContent = `This title is rated ${r} and is meant for adults.`;
-				const gate = $("age-gate");
-				gate.showModal();
-				const ok = await new Promise((resolve) => {
-					gate.querySelector("form").addEventListener("submit", (e) => resolve(e.submitter?.value === "ok"), { once: true });
-					gate.addEventListener("cancel", () => resolve(false), { once: true });
-				});
-				gate.close();
-				if (ok) sessionStorage.setItem(key, "1");
-				return ok;
-			}
-
-			// Info page -----------------------------------------------------------
-			let current = null; // { id, type, name, seasons, season, ep, fromInfo }
-			async function openInfo(id, type) {
-				// Show the page at once and load the details and age rating side by side.
+			/* Info page ----------------------------------------------------------- */
+			let current = null; // { a, ep, lang, server, fromInfo }
+			function openInfo(id) {
 				$("info-head").innerHTML = `<p class="tv-loading">Loading…</p>`;
 				$("info-head").style.backgroundImage = "";
-				$("info-facts").innerHTML = $("info-seasons").innerHTML = "";
+				$("info-facts").innerHTML = "";
+				$("info-eps").innerHTML = "";
 				show("info");
-				const at = nav;
-				const [d, ok] = await Promise.all([tmdb(`/${type}/${id}`), ageOk(id, type, at)]);
-				if (at !== nav) return; // they went Back (or elsewhere) while it loaded
-				if (!ok) return show(backTo);
-				const name = nameOf(d);
+				const a = BY_ID.get(id);
+				if (!a) return show(backTo);
+				expandEpisodes(a);
 				const last = lastWatched(id);
-				current = { id, type, name, seasons: (d.seasons || []).filter((s) => s.season_number > 0), season: last.season, ep: last.ep, fromInfo: true };
-				if (d.backdrop_path) $("info-head").style.backgroundImage = `url("${BACKDROP}${d.backdrop_path}")`;
+				const eps = a.episodes.length;
+				current = { a, ep: last.ep > 1 && last.ep <= eps ? last.ep : 1, lang: last.lang, server: last.server || null, fromInfo: true };
+				if (a.banner) $("info-head").style.backgroundImage = `url("${esc(a.banner)}")`;
 				$("info-head").innerHTML =
-					`${d.poster_path ? `<img src="${POSTER}${d.poster_path}" alt="">` : ""}<div><h1>${esc(name)}</h1>` +
-					`<div class="tv-tags">${(d.genres || []).slice(0, 4).map((g) => `<span class="tv-tag">${esc(g.name)}</span>`).join("")}</div>` +
-					`<p class="tv-overview" style="margin-top: 12px">${esc(d.overview || "")}</p>` +
-					`<div class="tv-actions"><button class="btn primary" type="button" id="info-play">${icon("play")}${type === "tv" && (last.season > 1 || last.ep > 1) ? `Resume S${last.season} · E${last.ep}` : "Watch"}</button></div></div>`;
-				$("info-play").onclick = () => play(id, type, name, current.season, current.ep);
-				const runtime = d.runtime ? `${Math.floor(d.runtime / 60)}h ${d.runtime % 60}m` : d.number_of_seasons ? `${d.number_of_seasons} season${d.number_of_seasons > 1 ? "s" : ""}` : "";
+					(a.image ? `<img src="${esc(a.image)}" alt="">` : "") +
+					`<div><h1>${esc(a.title)}</h1>` +
+					`<div class="tv-tags">${a.genres.slice(0, 4).map((g) => `<span class="tv-tag">${esc(g)}</span>`).join("")}</div>` +
+					`<p class="tv-overview" style="margin-top: 12px">${esc(a.synopsis || a.episodes[0]?.error || "")}</p>` +
+					`<div class="tv-actions">${eps ? `<button class="btn primary" type="button" id="info-play">${icon("play")}${current.ep > 1 ? `Resume E${current.ep}` : "Watch"}</button>` : `<span class="tv-tag">No episodes</span>`}</div></div>`;
+				if (eps) $("info-play").onclick = () => play(current.a.anilist_id, current.ep);
 				$("info-facts").innerHTML = [
-					["Year", yearOf(d)],
-					["Rating", d.vote_average ? `★ ${d.vote_average.toFixed(1)}` : ""],
-					["Length", runtime],
-					["Studio", (d.production_companies || []).slice(0, 2).map((c) => c.name).join(", ")],
-					["Status", d.status],
+					["Year", a.year],
+					["Rating", a.score ? `★ ${a.score}` : ""],
+					["Length", eps || a.total_episodes ? `${eps || a.total_episodes} eps` : ""],
+					["Status", statusLabel(a.status)],
+					["Format", fmtName(a.type)],
 				]
 					.filter(([, v]) => v)
 					.map(([l, v]) => `<div><small>${l}</small>${esc(v)}</div>`)
 					.join("");
-				if (type === "tv") renderSeasons("info-seasons");
+				renderEps("info-eps");
 			}
 
-			// Seasons and episodes (shared by the info and watch pages)
-			async function renderSeasons(boxId) {
-				const box = $(boxId);
-				const c = current;
-				const seasons = c.seasons.length > 1
-					? `<h2 class="tv-row-title">Seasons</h2><div class="tv-chips">${c.seasons.map((s) => `<button class="tv-chip" type="button" data-season="${s.season_number}" aria-pressed="${s.season_number === c.season}">Season ${s.season_number}</button>`).join("")}</div>`
-					: "";
-				box.innerHTML = `${seasons}<h2 class="tv-row-title">Episodes</h2><div class="tv-eps"><p class="tv-loading">Loading…</p></div>`;
-				try {
-					const d = await tmdb(`/tv/${c.id}/season/${c.season}`);
-					if (c !== current) return;
-					box.querySelector(".tv-eps").innerHTML = (d.episodes || [])
-						.map((ep) => `<button class="btn" type="button" data-ep="${ep.episode_number}" title="${esc(ep.name)}" aria-pressed="${page === "watch" && ep.episode_number === c.ep}">Episode ${ep.episode_number}</button>`)
-						.join("");
-				} catch {
-					box.querySelector(".tv-eps").innerHTML = `<p class="tv-loading">Couldn't load episodes.</p>`;
-				}
+			/* Episodes (shared by the info and watch pages). A 2,847-episode show would
+			   lock the tab for seconds through one paint, so pills come in slabs. On the
+			   watch page the slab sits around the playing episode; "Show all" repaints
+			   the full list. */
+			const EPS_SLAB = 120;
+			function pill(n) {
+				return `<button class="btn" type="button" data-ep="${n}" aria-pressed="${page === "watch" && n === current?.ep}">Episode ${n}</button>`;
 			}
-			for (const id of ["info-seasons", "watch-seasons"]) {
+			const pillList = (arr) => arr.map((e) => pill(Number(e.number))).join("");
+			function paintEps(box, from, to) {
+				const eps = current.a.episodes;
+				box.querySelector(".tv-eps").innerHTML = pillList(eps.slice(from, to));
+				const more = box.querySelector("[data-more-eps]");
+				if (!more) return;
+				if (to >= eps.length) {
+					more.remove();
+					return;
+				}
+				more.onclick = () => {
+					box.querySelector(".tv-eps").innerHTML = pillList(eps);
+					more.remove();
+				};
+			}
+			function renderEps(id) {
+				const box = $(id);
+				const eps = current?.a.episodes || [];
+				if (!eps.length) {
+					box.innerHTML = `<h2 class="tv-row-title">Episodes</h2><p class="tv-loading">No episodes available.</p>`;
+					return;
+				}
+				const start =
+					id === "watch-eps" && current.ep > EPS_SLAB ? Math.max(0, Math.min(current.ep - 10, eps.length - EPS_SLAB)) : 0;
+				const to = Math.min(eps.length, start + EPS_SLAB);
+				box.innerHTML = `<h2 class="tv-row-title">Episodes</h2><div class="tv-eps">Loading…</div>` +
+					(eps.length > EPS_SLAB ? `<div class="tv-chips" style="margin-top: 10px"><button class="btn" type="button" data-more-eps>Show all ${eps.length}</button></div>` : "");
+				paintEps(box, start, to);
+			}
+			for (const id of ["info-eps", "watch-eps"]) {
 				$(id).addEventListener("click", (e) => {
-					const season = e.target.closest("[data-season]");
 					const ep = e.target.closest("[data-ep]");
-					if (season) {
-						current.season = Number(season.dataset.season);
-						current.ep = 1;
-						if (page === "watch") play(current.id, "tv", current.name, current.season, 1);
-						else renderSeasons(id);
-					} else if (ep) {
-						play(current.id, "tv", current.name, current.season, Number(ep.dataset.ep));
-					}
+					if (ep && current) play(current.a.anilist_id, Number(ep.dataset.ep));
 				});
 			}
 
-			// Player (2Embed) -----------------------------------------------------
+			/* Player (provider embeds) -------------------------------------------- */
 			function lastWatched(id) {
 				try {
-					return { season: 1, ep: 1, ...JSON.parse(localStorage.getItem(`flux:tv:${id}`) || "{}") };
+					return { ep: 1, lang: "sub", server: null, ...JSON.parse(localStorage.getItem(`flux:anime:${id}`) || "{}") };
 				} catch {
-					return { season: 1, ep: 1 };
+					return { ep: 1, lang: "sub", server: null };
 				}
 			}
-			async function play(id, type, name, season = 1, ep = 1) {
-				const at = nav;
-				const [ok, d] = await Promise.all([ageOk(id, type, at), type === "tv" && current?.id !== id ? tmdb(`/tv/${id}`) : null]);
-				if (!ok || at !== nav) return;
-				if (current?.id !== id) current = { id, type, name, seasons: (d?.seasons || []).filter((s) => s.season_number > 0), fromInfo: page === "info" };
-				Object.assign(current, { season, ep });
-				if (type === "tv") {
-					try {
-						localStorage.setItem(`flux:tv:${id}`, JSON.stringify({ season, ep }));
-					} catch {
-						// Resume won't be remembered.
-					}
+			function serversFor(prog, lang) {
+				return buildServersFor(current.a.anilist_id, current.a.mal_id, prog).filter((s) => s.language === lang);
+			}
+			function play(id, ep) {
+				const a = BY_ID.get(id);
+				if (!a) return show(backTo);
+				expandEpisodes(a);
+				if (!a.episodes.length) return openInfo(id);
+				if (current?.a !== a) {
+					const last = lastWatched(id);
+					current = { a, ep: Math.min(Math.max(1, last.ep | 0), a.episodes.length), lang: last.lang === "dub" ? "dub" : "sub", server: last.server || null, fromInfo: false };
 				}
-				$("watch-title").textContent = name;
-				$("watch-ep").textContent = type === "tv" ? `Season ${season} · Episode ${ep}` : "";
-				$("player").src = type === "movie" ? `https://www.2embed.cc/embed/${id}` : `https://www.2embed.cc/embedtv/${id}&s=${season}&e=${ep}`;
+				if (ep) current.ep = ep;
+				try {
+					localStorage.setItem(`flux:anime:${id}`, JSON.stringify({ ep: current.ep, lang: current.lang, server: current.server }));
+				} catch {
+					// Resume won't be remembered.
+				}
+				const opts = serversFor(current.ep, current.lang);
+				$("watch-title").textContent = a.title;
+				if (!opts.length) {
+					$("watch-ep").textContent = `Episode ${current.ep} of ${a.episodes.length} · no ${current.lang.toUpperCase()} source`;
+					$("player").src = "about:blank";
+					$("watch-servers").innerHTML = `<h2 class="tv-row-title">Servers</h2><p class="tv-loading">No ${esc(current.lang.toUpperCase())} source for this episode. Try the other language.</p>`;
+					$("watch-eps").innerHTML = "";
+					show("watch");
+					guardHistory();
+					return;
+				}
+				const s = opts.find((o) => o.serverId === current.server) || opts[0];
+				current.server = s.serverId;
+				$("watch-ep").textContent = `Episode ${current.ep} of ${a.episodes.length} · ${s.name} · ${current.lang.toUpperCase()}`;
+				$("player").src = s.url;
 				show("watch");
 				guardHistory();
-				if (type === "tv") renderSeasons("watch-seasons");
-				else $("watch-seasons").innerHTML = "";
+				paintServers(opts);
+				renderEps("watch-eps");
 			}
+			function paintServers(opts) {
+				$("watch-servers").innerHTML =
+					`<h2 class="tv-row-title">Servers</h2>` +
+					`<div class="tv-chips">${[["sub", "SUB"], ["dub", "DUB"]].map(([v, l]) => `<button class="tv-chip" type="button" data-lang="${v}" aria-pressed="${current.lang === v}">${l}</button>`).join("")}` +
+					`<span style="width: 6px"></span>` +
+					opts.map((o) => `<button class="tv-chip" type="button" data-server="${o.serverId}" aria-pressed="${o.serverId === current.server}">${esc(o.name)}</button>`).join("") +
+					`</div>`;
+			}
+			$("watch-servers").addEventListener("click", (e) => {
+				if (!current) return;
+				const lang = e.target.closest("[data-lang]");
+				const srv = e.target.closest("[data-server]");
+				if (lang) current.lang = lang.dataset.lang;
+				else if (srv) current.server = Number(srv.dataset.server);
+				else return;
+				play(current.a.anilist_id, current.ep);
+			});
 
-			// The player's ads call history.back() to pull people away. Keep a spare same-page
-			// history entry on top while watching, so a "back" only lands on it, then re-add it.
+			/* The player's ads call history.back() to pull people away. Keep a spare same-page
+			   history entry on top while watching, so a "back" only lands on it, then re-add it. */
 			const guardHistory = () => history.state?.fluxWatch || history.pushState({ fluxWatch: true }, "");
 			addEventListener("popstate", () => page === "watch" && guardHistory());
 
-			// Search --------------------------------------------------------------
+			/* Search -------------------------------------------------------------- */
 			let searchTimer;
 			let searchId = 0;
 			$("search").addEventListener("input", (e) => {
 				clearTimeout(searchTimer);
 				const q = e.target.value.trim();
 				if (!q) return ($("results").hidden = true);
-				searchTimer = setTimeout(async () => {
+				searchTimer = setTimeout(() => {
 					const id = ++searchId;
-					const d = await tmdb(`/search/multi?query=${encodeURIComponent(q)}&page=1`).catch(() => ({ results: [] }));
+					const ql = q.toLowerCase();
+					const hits = LIB.filter((a) => a.anilist_id && a.image && a.title.toLowerCase().includes(ql)).slice(0, 8);
 					if (id !== searchId) return;
-					const hits = d.results.filter((it) => (it.media_type === "movie" || it.media_type === "tv") && it.poster_path && !BLOCKED.has(it.id)).slice(0, 8);
 					$("results").innerHTML = hits.length
 						? hits
-								.map((it) => `<button class="tv-result" type="button" data-id="${it.id}" data-type="${it.media_type}"><img src="${POSTER}${it.poster_path}" alt=""><span><b>${esc(nameOf(it))}</b><small>${it.media_type === "movie" ? "Movie" : "Series"}${yearOf(it) ? ` · ${yearOf(it)}` : ""}</small></span></button>`)
+								.map((a) => `<button class="tv-result" type="button" data-id="${a.anilist_id}"><img src="${esc(a.image)}" alt=""><span><b>${esc(a.title)}</b><small>${esc(fmtName(a.type))}${a.year ? ` · ${esc(a.year)}` : ""}</small></span></button>`)
 								.join("")
 						: `<p class="tv-empty">No results for "${esc(q)}".</p>`;
 					$("results").hidden = false;
-				}, 300);
+				}, 250);
 			});
 			document.addEventListener("click", (e) => e.target.closest(".tv-search") || ($("results").hidden = true));
 			$("search").addEventListener("keydown", (e) => e.key === "Escape" && ($("results").hidden = true));
 
-			loadHome().catch((err) => ($("hero").innerHTML = `<div class="tv-hero-body"><p class="tv-loading">Couldn't load movies (${esc(err.message)}). Try reloading.</p></div>`));
+			boot();
 		</script>
 	</body>
 </html>
