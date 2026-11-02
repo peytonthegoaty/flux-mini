@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Calculator</title>
+		<style>
+			* { box-sizing: border-box; }
+			body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 16px; background: #eef0f3; font: 18px/1 system-ui, sans-serif; }
+			main { width: 100%; max-width: 320px; padding: 14px; border-radius: 14px; background: #fff; box-shadow: 0 4px 18px rgba(0, 0, 0, 0.1); }
+			output { display: block; padding: 18px 10px; font-size: 34px; text-align: right; overflow: hidden; text-overflow: ellipsis; }
+			#keys { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+			button { height: 58px; border: 0; border-radius: 10px; background: #f0f1f4; color: #1c1d21; font: inherit; cursor: pointer; }
+			button:hover { background: #e4e6ea; }
+			button:focus-visible { outline: 2px solid #2563eb; }
+			.op { background: #2563eb; color: #fff; }
+			.op:hover { background: #1d4fd8; }
+			.wide { grid-column: span 2; }
+		</style>
+	</head>
+	<body>
+		<main>
+			<output id="screen" aria-live="polite">0</output>
+			<div id="keys">
+				<button class="wide">C</button><button>⌫</button><button class="op">÷</button>
+				<button>7</button><button>8</button><button>9</button><button class="op">×</button>
+				<button>4</button><button>5</button><button>6</button><button class="op">−</button>
+				<button>1</button><button>2</button><button>3</button><button class="op">+</button>
+				<button class="wide">0</button><button>.</button><button class="op">=</button>
+			</div>
+		</main>
+		<script>
+			const screen = document.getElementById("screen");
+			const MATH = {
+				"+": (a, b) => a + b,
+				"−": (a, b) => a - b,
+				"×": (a, b) => a * b,
+				"÷": (a, b) => a / b,
+			};
+			const KEYS = { "/": "÷", "*": "×", "-": "−", Enter: "=", Backspace: "⌫", Escape: "C", c: "C" };
+			let stored = null;
+			let op = null;
+			let fresh = true; // the next digit starts a new number
+
+			const show = (n) => (screen.textContent = Number.isFinite(n) ? String(+n.toPrecision(12)) : "Error");
+
+			function press(key) {
+				const text = screen.textContent;
+				if (/^[0-9]$/.test(key)) {
+					screen.textContent = fresh || text === "0" || text === "Error" ? key : text + key;
+					fresh = false;
+				} else if (key === ".") {
+					if (fresh) screen.textContent = "0.";
+					else if (!text.includes(".")) screen.textContent = text + ".";
+					fresh = false;
+				} else if (key === "C") {
+					stored = op = null;
+					fresh = true;
+					screen.textContent = "0";
+				} else if (key === "⌫") {
+					if (!fresh) screen.textContent = text.slice(0, -1) || "0";
+				} else if (key === "=" || key in MATH) {
+					if (op && !fresh) {
+						stored = MATH[op](stored, +text);
+						show(stored);
+					} else if (!op) {
+						stored = +text || 0;
+					}
+					op = key === "=" ? null : key;
+					fresh = true;
+				}
+			}
+
+			document.getElementById("keys").addEventListener("click", (e) => {
+				if (e.target.matches("button")) press(e.target.textContent);
+			});
+			addEventListener("keydown", (e) => {
+				const key = KEYS[e.key] || e.key;
+				if (/^[0-9.+=]$/.test(key) || key in MATH || "C⌫".includes(key)) {
+					e.preventDefault();
+					press(key);
+				}
+			});
+		</script>
+	</body>
+</html>

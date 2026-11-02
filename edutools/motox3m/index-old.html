@@ -1,0 +1,269 @@
+<!--
+    Hit RUN to see this project in action!
+
+    This project will auto-refresh as you edit the HTML, CSS and JS. See README.md for more info (including how to disable auto-refresh and install packages).
+  -->
+
+<!DOCTYPE html>
+<html>
+
+<head>
+
+  <link rel="icon" href="../../assets/obsidians-unblocked-favicon-white.png" type="image/x-icon">
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>MotoX3M | Obsidians Ublocked</title>
+  <link href="style.css" rel="stylesheet" type="text/css" />
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+
+  <link href='https://fonts.googleapis.com/css?family=Alfa Slab One' rel='stylesheet'>
+
+  <style>
+    body {
+      background-color: #1f1f1f;
+      color: #ffffff;
+      font-family: Arial, sans-serif;
+      overflow-x: hidden;
+    }
+
+    li {
+      float: right;
+    }
+
+    .GameImg:hover {
+      filter: brightness(80%);
+    }
+
+    .OptionsButton:hover {
+      filter: brightness(80%);
+    }
+  </style>
+
+</head>
+
+<body>
+  <nav class="navbar navbar-inverse navbar-fixed-top">
+    <div class="container-fluid">
+      <div class="navbar-header">
+        <img class="navbar-brand" href="#" src="../../assets/obsidians-unblocked-high-resolution-logo-transparent.png"
+          style="background-color: black;"><img>
+      </div>
+      <ul class="nav navbar-nav" style="background-color: rgb(20, 20, 20);">
+        <li><a href="../../">Home</a></li>
+        <li><a class="active" href="/games/">Games</a></li>
+        <li><a class="active" href="../../info/index.html">Info</a></li>
+        <li><a class="active" href="../../changes/index.html">Changelog</a></li>
+        <li><a class="active" href="../../bypass/index.html">Bypass</a></li>
+      </ul>
+    </div>
+  </nav>
+
+
+  <div class="ObsidiansUnblockedHeader" id="Logo" style="margin-left: -16%;">
+    <br>
+    <center>
+      <img src="../../assets/obsidians-unblocked-high-resolution-logo-transparent.png" style="scale: 25%; "></img>
+    </center>
+  </div>
+
+  <script>
+    var isChromebook = /CrOS/.test(navigator.userAgent);
+    if (isChromebook) {
+      document.getElementById("Logo").style.marginLeft = "-24%";
+    } else {
+      document.getElementById("Logo").style.marginLeft = "-16%";
+    }
+  </script>
+
+  <div class="GameTitle" id="GameTitle" style="margin-left: 0%;">
+    <h1>
+      <strong>
+        MotoX3M
+      </strong>
+    </h1>
+  </div>
+
+  <div class="GameWindow" id="GameWindow">
+    <iframe src="motox3m.html" id="GameIframe" width="850" height="500" style="
+        border-radius: 15px;
+        border: 5px solid #ff4057;
+        padding-bottom: 40px;
+      "> </iframe>
+  </div>
+
+  <div style="max-width: 56%;">
+
+    <button style="border: none; background-color: #202020;" onclick="GameFullscreen()">
+      <img src="../../assets/fullscreen.png"
+        style="scale: 10%; background-color: #202020; position: absolute; left: 710px; top: 790px;"
+        class="OptionsButton">
+    </button>
+
+  </div>
+  <div class="GameInfo" id="GameInfo" style="font-size: 15px; max-width: 700px;">
+    <p>
+      <strong>
+        Moto X3M is an exhilarating online motocross game that challenges players to navigate through dynamic,
+        obstacle-filled tracks. Control your motorbike, perform stunts, and overcome a variety of obstacles, including
+        jumps and ramps. With its fast-paced gameplay and intuitive controls, Moto X3M offers an adrenaline-packed
+        experience for fans of motorcycle racing and stunt games.
+      </strong>
+    </p>
+  </div>
+  <br>
+  <div class="GameCredits" id="GameCredits" style="font-size: 15px; max-width: 700px; background-color: black;">
+    <p>
+      <strong>
+        Game Credits:
+      </strong>
+      <br>
+      SilverGames
+
+    </p>
+  </div>
+
+
+  <div class="OtherGames" id="OtherGames"
+    style="background-color: #202020; position: absolute; margin-left: 83%; margin-top: -56%;">
+
+    <h1>
+      <strong>
+        Other Games
+      </strong>
+    </h1>
+
+    <button type="button" class="GameButton" onclick="" style="background-color: #202020; border: none;"><img
+        class="GameImg" src="../../assets/slope.png" width="250" height="150" style="border-radius: 15px;
+      border: 5px solid #ff4057;
+      padding: 0px;
+      "></img></button>
+
+    <br>
+
+    <button type="button" class="GameButton" onclick="" style="background-color: #202020; border: none;"><img
+        class="GameImg" src="../../assets/ducklife.webp" width="250" height="150" style="border-radius: 15px;
+      border: 5px solid #ff4057;
+      padding: 0px;
+      "></img></button>
+
+    <br>
+
+    <button type="button" class="GameButton" onclick="" style="background-color: #202020; border: none;"><img
+        class="GameImg" src="../../assets/gunmayhem.avif" width="250" height="150" style="border-radius: 15px;
+      border: 5px solid #ff4057;
+      padding: 0px;
+      "></img></button>
+
+    <br>
+
+    <button type="button" class="GameButton" onclick="" style="background-color: #202020; border: none;"><img
+        class="GameImg" src="../../assets/snake.jpg" width="250" height="150" style="border-radius: 15px;
+      border: 5px solid #ff4057;
+      padding: 0px;
+      "></img></button>
+
+
+  </div>
+
+
+  <div class="Controls" id="Controls"
+    style="background-color: black; max-width: 250px; max-height: 500; position: absolute; top: 500px; left: 850px;">
+
+    <h1>
+      <strong>
+        <center>
+          Controls:
+        </center>
+      </strong>
+    </h1>
+    <br>
+    <center>
+      <p>Forward: Keybind</p><br>
+      <p>Backward: Keybind</p><br>
+      <p>Left: Keybind</p><br>
+      <p>Right: Keybind</p><br>
+      <p>Jump: Keybind</p><br>
+    </center>
+  </div>
+
+
+  <br>
+
+  <script>
+
+    document.querySelector("#Controls").style.display = 'none';
+
+    function GameFullscreen() {
+      var iframe = document.getElementById("GameIframe");
+      if (iframe.requestFullscreen) {
+        iframe.requestFullscreen();
+      } else if (iframe.webkitRequestFullscreen) {
+        iframe.webkitRequestFullscreen();
+      } else if (iframe.msRequestFullscreen) {
+        iframe.msRequestFullscreen();
+      }
+    }
+
+    function Controls() {
+      var controls = document.querySelector("#Controls");
+      if (window.getComputedStyle(controls).display === 'block') {
+        controls.style.display = 'none';
+      } else {
+        controls.style.display = 'block';
+      }
+    }
+  </script>
+
+
+
+  <!--EMULATOR JS STUFF-->
+  <script type='text/javascript'>
+    EJS_player = '#GameIframe';
+
+    // Can also be fceumm or nestopia
+    EJS_core = 'n64';
+
+    // Lightgun
+    EJS_lightgun = false; // can be true or false
+
+    // URL to BIOS file
+    EJS_biosUrl = ''; // example: https://dl.dropboxusercontent.com/s/[random-code]/bios.bin
+
+    // URL to Game rom
+    EJS_gameUrl = 'sm64.z64'; // example: https://dl.dropboxusercontent.com/s/[random-code]/mario.nes
+
+    // Path to the data directory
+    EJS_pathtodata = '../../EmulatorJS-main/data/';
+  </script>
+  <script src='data/loader.js'></script>
+
+  <!--RUFFLE STUFF-->
+  <script src="../../ruffle-nightly-2023_11_14-web-selfhosted/ruffle.js"></script>
+
+  <footer style="background-color: #181818;
+    padding: 10px;
+    text-align: center;
+    color: white;">
+
+    <a href="https://discord.gg/5YjyZnraZz"><img src="../../assets/discord-favicon-white-outline.png" alt="discord logo"
+        width="35"></img></a>
+
+    <a href="https://www.tiktok.com/@villocity.mtg"><img src="../../assets/tiktok-favicon-white-outline.png"
+        alt="tiktok logo" width="30"></img></a>
+
+    <a href="#"><img src="../../assets/gmail-favicon-white-outline.png" alt="gmail logo" width="30"></img></a>
+
+  </footer>
+
+
+
+
+</body>
+
+</html>

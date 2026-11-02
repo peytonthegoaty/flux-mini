@@ -1,0 +1,1579 @@
+/* Fonts (self-hosted so school filters can't block them). */
+@font-face {
+	font-family: "Geist";
+	font-weight: 100 900;
+	font-display: swap;
+	src: url(../fonts/geist.woff2) format("woff2");
+}
+@font-face {
+	font-family: "Manrope";
+	font-weight: 200 800;
+	font-display: swap;
+	src: url(../fonts/manrope.woff2) format("woff2");
+}
+
+/* Mono palette. --a = accent, --m1 / --m2 = background glow colors (all "r,g,b"). */
+html {
+	--bg: #000;
+	--bg2: #16161b;
+	--fg: #f5f6f8;
+	--fg-m: #9a9aa2;
+	--fg-d: #6b6b73;
+	--a: 255, 255, 255;
+	--on-accent: #000;
+	--m1: 96, 40, 200;
+	--m2: 30, 60, 160;
+	--accent: rgb(var(--a));
+	--surface: color-mix(in srgb, var(--bg2) 80%, transparent);
+	--surface-2: color-mix(in srgb, color-mix(in srgb, var(--bg2), var(--fg) 5%) 80%, transparent);
+	--surface-3: color-mix(in srgb, color-mix(in srgb, var(--bg2), var(--fg) 10%) 80%, transparent);
+	/* Inputs and dropdowns: soft gray, not black. */
+	--field: #1e1e24;
+	--field-hover: #24242b;
+	--border: color-mix(in srgb, var(--accent) 12%, color-mix(in srgb, color-mix(in srgb, var(--bg2), var(--fg) 9%) 85%, transparent));
+	--border-2: color-mix(in srgb, var(--accent) 18%, color-mix(in srgb, color-mix(in srgb, var(--bg2), var(--fg) 16%) 85%, transparent));
+	--shade: rgba(0, 0, 0, 0.55);
+	--r-xs: 2px;
+	--r-sm: 4px;
+	--r: 6px;
+	--ease: cubic-bezier(0.16, 1, 0.3, 1);
+	/* Hover highlights fade in and out at this speed. */
+	--t-hover: 0.3s ease;
+	color-scheme: dark;
+}
+
+/* Base ----------------------------------------------------------------------- */
+* {
+	box-sizing: border-box;
+}
+html,
+body {
+	margin: 0;
+	height: 100%;
+}
+html {
+	isolation: isolate; /* in extra.svg, keeps the wallpaper (z-index -2) above this background */
+	background: var(--bg);
+	color: var(--fg);
+	font: 14px/1.5 "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+	-webkit-font-smoothing: antialiased;
+}
+body {
+	display: flex;
+	padding: 12px;
+	overflow: hidden;
+}
+[hidden] {
+	display: none !important;
+}
+button,
+input,
+select {
+	font: inherit;
+	color: inherit;
+}
+button {
+	cursor: pointer;
+}
+:focus-visible {
+	outline: 1px solid var(--accent);
+	outline-offset: 1px;
+}
+.i {
+	width: 16px;
+	height: 16px;
+	flex: none;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.75;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+}
+
+/* Background: mesh glows that drift slowly (one GPU-moved layer) plus a faint grain. */
+body::before {
+	content: "";
+	position: fixed;
+	inset: -15%;
+	z-index: -2;
+	pointer-events: none;
+	background:
+		radial-gradient(circle at 18% 22%, rgba(var(--m1), 0.32) 0, transparent 42%),
+		radial-gradient(circle at 82% 16%, rgba(var(--m2), 0.24) 0, transparent 38%),
+		radial-gradient(circle at 58% 88%, rgba(var(--m1), 0.16) 0, transparent 46%);
+	animation: drift 36s ease-in-out infinite alternate;
+	will-change: transform;
+}
+body::after {
+	content: "";
+	position: fixed;
+	inset: 0;
+	z-index: -1;
+	pointer-events: none;
+	opacity: 0.06;
+	background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+@keyframes drift {
+	0% { transform: translate3d(-3%, -2%, 0) scale(1); }
+	50% { transform: translate3d(4%, 3%, 0) scale(1.07); }
+	100% { transform: translate3d(-2%, 5%, 0) scale(1.03); }
+}
+[data-page="player"] body::before,
+[data-page="browser"] body::before {
+	animation-play-state: paused;
+}
+
+/* The whole site sits in one panel styled like the settings popup: see-through dark
+   surface, thin border, small corners, floating over the background. */
+.shell {
+	display: flex;
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	border: 1px solid var(--border);
+	border-radius: var(--r);
+	/* No backdrop blur here: over the drifting background it re-blurs the whole
+	   screen every frame. A nearly solid fill looks the same and costs nothing. */
+	background: color-mix(in srgb, var(--bg2) 88%, transparent);
+	box-shadow: 0 24px 60px -10px rgba(0, 0, 0, 0.6);
+}
+.perf .shell {
+	background: var(--bg2);
+}
+/* Section card, like the cards inside settings. */
+.panel {
+	border: 1px solid var(--border);
+	border-radius: var(--r);
+	background: var(--surface);
+}
+.panel {
+	padding: 14px 16px 16px;
+}
+.panel-head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	margin-bottom: 14px;
+}
+.panel-head b {
+	font-size: 13.5px;
+	font-weight: 600;
+}
+.page-title {
+	margin: 0 0 14px;
+	font-family: "Manrope", "Geist", sans-serif;
+	font-size: 22px;
+	font-weight: 600;
+}
+.toast {
+	-webkit-backdrop-filter: blur(16px);
+	backdrop-filter: blur(16px);
+}
+
+/* Motion ----------------------------------------------------------------------- */
+@keyframes rise {
+	from { opacity: 0; transform: translate3d(0, 10px, 0); }
+}
+@keyframes fade {
+	from { opacity: 0; }
+}
+@keyframes pop {
+	from { opacity: 0; transform: scale(0.97) translate3d(0, 6px, 0); }
+}
+@keyframes float {
+	50% { transform: translate3d(0, -4px, 0); }
+}
+@keyframes slide {
+	from { transform: translate3d(-100%, 0, 0); }
+	to { transform: translate3d(300%, 0, 0); }
+}
+@keyframes grow {
+	from { transform: scaleX(0); }
+}
+@keyframes tab-in {
+	from { opacity: 0; transform: translate3d(0, 4px, 0); }
+}
+.view:not([hidden]) {
+	animation: rise 0.4s var(--ease) both;
+}
+.player:not([hidden]),
+.tv:not([hidden]),
+.browser:not([hidden]) {
+	animation: fade 0.25s ease both;
+}
+.card.enter {
+	animation: rise 0.5s var(--ease) both;
+	animation-delay: calc(var(--d) * 20ms);
+}
+
+/* Performance mode (off by default, Settings > Appearance): flat surfaces, no blur, no animation. */
+.perf *,
+.perf *::before,
+.perf *::after,
+.perf ::backdrop {
+	animation: none !important;
+	transition-duration: 0s !important;
+	-webkit-backdrop-filter: none !important;
+	backdrop-filter: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation: none !important;
+		transition-duration: 0s !important;
+	}
+}
+
+/* Controls ------------------------------------------------------------------ */
+.icon-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	flex: none;
+	padding: 0;
+	border: 0;
+	border-radius: var(--r-sm);
+	background: transparent;
+	color: var(--fg-m);
+	transition: background-color var(--t-hover), color var(--t-hover), transform 0.15s var(--ease);
+}
+.icon-btn.sm {
+	width: 28px;
+	height: 28px;
+	border-radius: var(--r-xs);
+}
+.icon-btn:hover {
+	background: var(--surface-2);
+	color: var(--fg);
+}
+.icon-btn:active,
+.btn:active,
+.nav-item:active {
+	transform: scale(0.96);
+}
+.field {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	height: 36px;
+	padding: 0 0.8rem;
+	border: 1px solid var(--border);
+	border-radius: var(--r-sm);
+	background: var(--surface);
+	color: var(--fg-m);
+	transition: var(--t-field);
+}
+/* Text boxes ease in slowly on hover/focus so they feel smooth, not snappy. */
+html {
+	--t-field: border-color 0.35s var(--ease), background-color 0.35s var(--ease), box-shadow 0.45s var(--ease), color 0.35s var(--ease);
+	--ring: none; /* focus is a plain border (--focus), no glow */
+	--focus: color-mix(in srgb, var(--fg) 38%, transparent);
+}
+.field:hover,
+.sb-search:hover,
+.modal input:not([role="switch"]):hover {
+	border-color: var(--border-2);
+}
+.field:focus-within,
+.sb-search:focus-within,
+.modal input:not([role="switch"]):focus {
+	border-color: var(--focus);
+	background-color: var(--field-hover);
+	box-shadow: var(--ring);
+	color: var(--fg);
+}
+.field .i,
+.sb-search .i {
+	transition: transform 0.45s var(--ease);
+}
+.field:focus-within .i,
+.sb-search:focus-within .i {
+	transform: scale(1.1);
+}
+input::placeholder {
+	transition: opacity 0.35s var(--ease);
+}
+input:focus::placeholder {
+	opacity: 0.45;
+}
+.field input {
+	flex: 1;
+	min-width: 0;
+	height: 100%;
+	border: 0;
+	outline: 0;
+	background: transparent;
+	color: var(--fg);
+}
+.field input::placeholder {
+	color: var(--fg-d);
+}
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	height: 34px;
+	padding: 0 0.95rem;
+	border: 1px solid var(--border);
+	border-radius: var(--r-sm);
+	background: var(--surface);
+	color: var(--fg-m);
+	font-size: 13px;
+	font-weight: 500;
+	white-space: nowrap;
+	transition: background-color var(--t-hover), border-color var(--t-hover), color var(--t-hover), transform 0.15s var(--ease);
+}
+.btn:hover {
+	border-color: var(--border-2);
+	background: var(--surface-2);
+	color: var(--fg);
+}
+.btn[aria-pressed="true"],
+.btn.primary {
+	border-color: var(--accent);
+	background: var(--accent);
+	color: var(--on-accent, #fff);
+}
+.btn.primary:hover,
+.btn[aria-pressed="true"]:hover {
+	filter: brightness(0.92);
+}
+.btn[aria-pressed="true"] .i {
+	fill: currentColor;
+}
+.btn.danger,
+.error,
+.status.error {
+	color: #ff6b6b;
+}
+.btn.primary.danger {
+	border-color: #e5484d;
+	background: #e5484d;
+	color: #fff;
+}
+
+/* Sidebar ------------------------------------------------------------------- */
+.sidebar {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	flex: none;
+	width: 220px;
+	height: 100%;
+	padding: 14px 12px;
+	border-right: 1px solid var(--border);
+	z-index: 20;
+	overflow: hidden auto;
+	transition: width 0.26s var(--ease);
+}
+.sb-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 2px 4px 4px 8px;
+}
+.brand {
+	display: flex;
+	align-items: flex-end;
+	gap: 6px;
+	padding: 0;
+	border: 0;
+	background: none;
+	font-family: "Manrope", "Geist", sans-serif;
+	font-size: 22px;
+	font-weight: 600;
+	line-height: 1;
+}
+.brand-logo {
+	width: 18px;
+	height: 23px;
+}
+.sb-search {
+	display: flex;
+	align-items: center;
+	gap: 0.45rem;
+	height: 32px;
+	padding: 0 0.7rem;
+	border: 1px solid var(--border);
+	border-radius: var(--r-xs);
+	background: var(--field);
+	color: var(--fg-m);
+	transition: var(--t-field);
+}
+.sb-search input {
+	flex: 1;
+	min-width: 0;
+	height: 100%;
+	border: 0;
+	outline: 0;
+	background: transparent;
+	color: var(--fg);
+	font-size: 12px;
+}
+.sb-search input::placeholder {
+	color: var(--fg-d);
+}
+.nav {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+/* Sliding highlight behind the current page (positioned by js/ui.js). */
+.nav-indicator {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 36px;
+	border-radius: var(--r-sm);
+	background: var(--surface-2);
+	transform: translate3d(0, var(--y, 0), 0);
+	transition: transform 0.35s var(--ease);
+	pointer-events: none;
+}
+.nav-item {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	height: 36px;
+	padding: 0 0.7rem;
+	border: 0;
+	border-radius: var(--r-sm);
+	background: transparent;
+	color: var(--fg-m);
+	font-size: 13px;
+	white-space: nowrap;
+	transition: background-color var(--t-hover), color var(--t-hover), transform 0.15s var(--ease);
+}
+.nav-item:hover {
+	color: var(--fg);
+}
+.nav-item:not([aria-current]):hover {
+	background: color-mix(in srgb, var(--surface-2) 60%, transparent);
+}
+.nav-item[aria-current] {
+	color: var(--fg);
+}
+@media (min-width: 761px) {
+	.sb-collapsed .sidebar {
+		width: 60px;
+		padding: 14px 8px;
+	}
+	.sb-collapsed .sb-head {
+		flex-direction: column;
+		gap: 12px;
+		padding: 2px 0 4px;
+	}
+	.sb-collapsed .brand span,
+	.sb-collapsed .sb-search,
+	.sb-collapsed .nav-item span {
+		display: none;
+	}
+	.sb-collapsed .sb-collapse {
+		margin: 0 auto;
+	}
+	.sb-collapsed .nav-item {
+		justify-content: center;
+		padding: 0;
+	}
+}
+.scrim,
+.menu-btn {
+	display: none;
+}
+
+/* Main + views -------------------------------------------------------------- */
+.main {
+	position: relative;
+	flex: 1;
+	min-width: 0;
+	height: 100%;
+}
+.view {
+	height: 100%;
+	overflow: auto;
+	padding: 20px 22px;
+}
+.home {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 28px;
+	padding-bottom: 12vh;
+}
+.home > * {
+	animation: rise 0.6s var(--ease) both;
+}
+.home > :nth-child(2) {
+	animation-delay: 0.08s;
+}
+.home > :nth-child(3) {
+	animation-delay: 0.16s;
+}
+.home > :nth-child(4) {
+	animation-delay: 0.24s;
+}
+.hero-wrap {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+}
+/* Wordmark: the F logo, then "lux" and "v3" in cells that can open from zero width. */
+/* All three parts are SVGs drawn on the F logo's grid (44 units tall, baseline 2.15
+   units above the bottom), so they're bottom-aligned and pulled down by that offset. */
+.hero {
+	display: flex;
+	align-items: flex-end;
+	margin: 0;
+	color: var(--fg);
+}
+.hero-logo {
+	width: 57px;
+	height: 72px;
+	margin: 0 -2px -3.5px 0;
+}
+.hero-lux {
+	width: 131px;
+	height: 72px;
+	margin-bottom: -3.5px;
+}
+.hero-v {
+	width: 60px;
+	height: 38px;
+	margin-bottom: -1.86px;
+	color: var(--fg-m);
+}
+/* Lucide-style glowing underline that grows in from the middle. */
+.hero-underline {
+	height: 4px;
+	margin-top: 0.6rem;
+	border-radius: 999px;
+	background: var(--accent);
+	box-shadow: 0 0 18px color-mix(in srgb, var(--accent) 40%, transparent);
+	animation: grow 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+}
+
+/* Intro on page load (js/ui.js playIntro): the F pops in alone in the middle, then
+   slides left while "lux" wipes out of it, then "v3" fades up. Only transform, opacity
+   and clip-path animate, so it stays smooth. Until the script starts, the wordmark is
+   hidden and the CSS parts below wait (paused), so everything runs on one clock. */
+html:not(.perf) .intro .hero > svg {
+	opacity: 0;
+}
+.intro.waiting > *,
+.intro.waiting .hero-underline {
+	animation-play-state: paused;
+}
+.intro > .hero-wrap {
+	animation: none;
+}
+.intro .hero-underline {
+	animation: grow 0.6s cubic-bezier(0.22, 1, 0.36, 1) 1.55s both;
+}
+.intro > :nth-child(2) {
+	animation-delay: 1.45s;
+}
+.intro > :nth-child(3) {
+	animation-delay: 1.55s;
+}
+.intro > :nth-child(4) {
+	animation-delay: 1.65s;
+}
+.home-search {
+	width: min(680px, 100%);
+	height: 50px;
+	gap: 0.75rem;
+	padding: 0 1.2rem;
+	border-radius: var(--r);
+	font-size: 15px;
+}
+.home-search .i {
+	width: 18px;
+	height: 18px;
+}
+.link-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--fg-m);
+	font-size: 13px;
+	transition: color var(--t-hover);
+}
+.link-btn .i {
+	transition: transform 0.3s var(--ease);
+}
+.link-btn:hover {
+	color: var(--fg);
+}
+.link-btn:hover .i {
+	transform: translate3d(3px, 0, 0);
+}
+.link-btn b {
+	color: var(--fg);
+	font-weight: 600;
+}
+
+/* Games grid ---------------------------------------------------------------- */
+/* No backdrop here or on the panel below, so the wallpaper shows through clearly. */
+.games-bar {
+	display: flex;
+	gap: 8px;
+	margin: 0 0 16px;
+}
+.games .panel {
+	border: 0;
+	background: none;
+	padding: 0;
+}
+.games-search {
+	flex: 1;
+	height: 38px;
+	border-radius: var(--r);
+}
+.games-bar .btn {
+	height: 38px;
+	border-radius: var(--r);
+}
+.grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+	gap: 14px;
+}
+.card {
+	position: relative;
+	content-visibility: auto;
+	contain-intrinsic-size: auto 150px;
+}
+.card-play {
+	position: relative;
+	display: block;
+	width: 100%;
+	padding: 0;
+	border: 0;
+	background: none;
+	text-align: left;
+}
+.card-art {
+	position: relative;
+	display: block;
+	width: 100%;
+	aspect-ratio: 1;
+	overflow: hidden;
+	border: 1px solid var(--border);
+	border-radius: 10px;
+	background: var(--surface-2);
+	transition: border-color var(--t-hover);
+}
+/* Image failed to load: show an "image unavailable" icon and the game's name. */
+.card-art.broken img {
+	visibility: hidden;
+}
+.card-art.broken::before {
+	content: "";
+	position: absolute;
+	inset: 0 0 18%;
+	margin: auto;
+	width: 30px;
+	height: 30px;
+	background: var(--fg-d);
+	-webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 2l20 20M10.41 10.41a2 2 0 1 1-2.83-2.83M13.5 13.5 6 21M18 12l-6 6M3.59 3.59A1.99 1.99 0 0 0 3 5v14a2 2 0 0 0 2 2h14c.55 0 1.052-.22 1.41-.59M21 15V5a2 2 0 0 0-2-2H9'/%3E%3C/svg%3E") center / contain no-repeat;
+	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 2l20 20M10.41 10.41a2 2 0 1 1-2.83-2.83M13.5 13.5 6 21M18 12l-6 6M3.59 3.59A1.99 1.99 0 0 0 3 5v14a2 2 0 0 0 2 2h14c.55 0 1.052-.22 1.41-.59M21 15V5a2 2 0 0 0-2-2H9'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.card-art.broken + .card-title {
+	opacity: 1;
+	transform: none;
+	background: none;
+	color: var(--fg-m);
+	text-align: center;
+}
+.card-art img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: fill; /* stretch every cover to the square */
+}
+.card-play:hover .card-art,
+.card-play:focus-visible .card-art {
+	border-color: var(--focus);
+}
+/* Title appears over the art on hover/focus, so the grid stays image-first. */
+.card-title {
+	position: absolute;
+	inset: auto 0 0;
+	z-index: 1;
+	padding: 28px 10px 9px;
+	overflow: hidden;
+	border-radius: 0 0 10px 10px;
+	background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+	color: #fff;
+	font-size: 12.5px;
+	font-weight: 500;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	opacity: 0;
+	transform: translate3d(0, 6px, 0);
+	transition: opacity 0.2s ease, transform 0.3s var(--ease);
+}
+.card-play:hover .card-title,
+.card-play:focus-visible .card-title {
+	opacity: 1;
+	transform: none;
+}
+.card-star {
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	z-index: 3;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 26px;
+	height: 26px;
+	padding: 0;
+	border: 0;
+	border-radius: var(--r-sm);
+	background: rgba(0, 0, 0, 0.55);
+	color: #fff;
+	opacity: 0;
+	transform: scale(0.85);
+	transition: opacity var(--t-hover), transform 0.25s var(--ease);
+}
+.card-star .i {
+	width: 14px;
+	height: 14px;
+}
+.card:hover .card-star,
+.card:focus-within .card-star,
+.card-star.on {
+	opacity: 1;
+	transform: none;
+}
+.card-star.on,
+.star-btn.on {
+	color: #ffc93c;
+}
+.card-star.on .i,
+.star-btn.on .i {
+	fill: currentColor;
+	animation: pop 0.3s var(--ease);
+}
+.empty {
+	padding: 48px 0;
+	color: var(--fg-m);
+	text-align: center;
+}
+
+/* Player + browser: frames sit edge to edge with no border. ------------------ */
+.player,
+.tv,
+.browser {
+	display: flex;
+	flex-direction: column;
+	padding: 0;
+	overflow: hidden;
+}
+.topbar {
+	position: relative;
+	z-index: 2;
+	flex: none;
+	border-bottom: 1px solid var(--border);
+}
+.bar {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	height: 52px;
+	padding: 0.5rem;
+}
+.bar-title {
+	flex: 1;
+	min-width: 0;
+	margin: 0 6px;
+	overflow: hidden;
+	font-size: 14px;
+	font-weight: 600;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.frame {
+	display: block;
+	flex: 1;
+	width: 100%;
+	border: 0;
+	background: #000;
+}
+.player .frame {
+	animation: fade 0.4s ease both;
+}
+.address {
+	flex: 1;
+	height: 34px;
+	border-radius: var(--r-sm);
+}
+.address input {
+	font-size: 13px;
+}
+.badge {
+	padding: 3px 8px;
+	border: 1px solid var(--border);
+	border-radius: var(--r-xs);
+	color: var(--fg-m);
+	font-size: 11px;
+	font-weight: 500;
+}
+.badge:empty {
+	display: none;
+}
+/* Thin loading bar along the bottom of the top bar while the active tab loads. */
+.progress {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: -1px;
+	height: 2px;
+	overflow: hidden;
+	opacity: 0;
+	transition: opacity 0.3s;
+	pointer-events: none;
+}
+.progress::before {
+	content: "";
+	position: absolute;
+	inset: 0;
+	width: 35%;
+	background: linear-gradient(90deg, transparent, var(--accent), transparent);
+}
+.loading .progress {
+	opacity: 1;
+}
+.loading .progress::before {
+	animation: slide 1.1s ease-in-out infinite;
+}
+.status {
+	margin: 0;
+	padding: 8px 14px;
+	color: var(--fg-m);
+	font-size: 13px;
+	animation: rise 0.3s var(--ease) both;
+}
+.tabstrip {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	padding: 6px 8px 0;
+	overflow-x: auto;
+	scrollbar-width: none;
+}
+.tab {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	flex: 0 1 200px;
+	min-width: 90px;
+	height: 32px;
+	padding: 0 0.3rem 0 0.7rem;
+	border-radius: var(--r-sm);
+	color: var(--fg-m);
+	font-size: 13px;
+	cursor: pointer;
+	transition: background-color var(--t-hover), color var(--t-hover);
+}
+.tab.new {
+	animation: tab-in 0.3s var(--ease) both;
+}
+.tab:hover,
+.tab[aria-selected="true"] {
+	background: var(--surface-2);
+	color: var(--fg);
+}
+.tab-title {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.tab-close {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	padding: 0;
+	border: 0;
+	border-radius: 5px;
+	background: none;
+	color: var(--fg-m);
+	opacity: 0;
+	transition: opacity var(--t-hover), background-color var(--t-hover), color var(--t-hover);
+}
+.tab:hover .tab-close,
+.tab[aria-selected="true"] .tab-close {
+	opacity: 1;
+}
+.tab-close:hover {
+	background: var(--border);
+	color: var(--fg);
+}
+.tab-close .i {
+	width: 13px;
+	height: 13px;
+}
+.tab-add {
+	width: 28px;
+	height: 28px;
+}
+.frames {
+	position: relative;
+	flex: 1;
+	min-height: 0;
+}
+.frames .frame {
+	position: absolute;
+	inset: 0;
+	height: 100%;
+	background: #fff;
+	animation: fade 0.3s ease both;
+}
+.newtab {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 14px;
+	height: 100%;
+	color: var(--fg-m);
+	font-size: 13px;
+	animation: rise 0.4s var(--ease) both;
+}
+.newtab-logo {
+	width: 40px;
+	height: 52px;
+	color: var(--fg-d);
+	animation: float 6s ease-in-out infinite;
+}
+
+/* Popups (settings, in-page prompts, toasts) --------------------------------- */
+.modal {
+	padding: 0;
+	border: 1px solid var(--border);
+	border-radius: var(--r);
+	background: color-mix(in srgb, var(--bg2) 96%, transparent);
+	color: var(--fg);
+	box-shadow: 0 24px 60px -10px rgba(0, 0, 0, 0.6);
+}
+.perf .modal {
+	background: var(--bg2);
+}
+.modal[open] {
+	animation: pop 0.3s var(--ease) both;
+}
+.modal::backdrop {
+	background: rgba(0, 0, 0, 0.6);
+}
+.modal[open]::backdrop {
+	animation: fade 0.25s ease both;
+}
+/* Closing plays the pop-in backwards (js/modal.js closeDialog). */
+@keyframes pop-out {
+	to { opacity: 0; transform: scale(0.97) translate3d(0, 6px, 0); }
+}
+@keyframes fade-out {
+	to { opacity: 0; }
+}
+.modal.closing {
+	animation: pop-out 0.22s ease-in forwards;
+}
+.modal.closing::backdrop {
+	animation: fade-out 0.22s ease-in forwards;
+}
+.modal h2 {
+	margin: 0;
+	font-family: "Manrope", "Geist", sans-serif;
+	font-size: 18px;
+	font-weight: 600;
+}
+.modal input,
+.modal select {
+	height: 36px;
+	padding: 0 0.75rem;
+	border: 1px solid var(--border);
+	border-radius: var(--r-xs);
+	background: var(--field);
+	color: var(--fg);
+	font-size: 13px;
+	transition: var(--t-field);
+}
+.modal input:not([role="switch"]):focus {
+	outline: 0;
+}
+.modal option {
+	background: var(--field);
+}
+.settings {
+	width: min(860px, calc(100% - 24px));
+	height: min(620px, calc(100% - 24px));
+}
+.settings[open] {
+	display: flex;
+	flex-direction: column;
+}
+.modal-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 14px 6px 22px;
+}
+.modal-head h2 {
+	font-size: 22px;
+}
+.s-layout {
+	display: grid;
+	grid-template-columns: 200px 1fr;
+	gap: 16px;
+	flex: 1;
+	min-height: 0;
+	padding: 8px 16px 16px;
+}
+.s-tabs {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.s-tab {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	height: 36px;
+	padding: 0 0.7rem;
+	border: 0;
+	border-radius: var(--r-sm);
+	background: transparent;
+	color: var(--fg-m);
+	font-size: 13px;
+	text-align: left;
+	white-space: nowrap;
+	transition: background-color var(--t-hover), color var(--t-hover);
+}
+.s-tab:hover {
+	color: var(--fg);
+}
+.s-tab[aria-current] {
+	background: var(--surface-2);
+	color: var(--fg);
+}
+.s-panels {
+	overflow: auto;
+}
+/* Each settings section is a card, like Lucide's. */
+.s-panel {
+	padding: 6px 20px;
+	border: 1px solid var(--border);
+	border-radius: var(--r);
+	background: var(--surface);
+}
+.s-panel:not([hidden]) {
+	animation: rise 0.3s var(--ease) both;
+}
+.row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 20px;
+	padding: 14px 0;
+	border-bottom: 1px solid var(--border);
+}
+.row:last-child {
+	border-bottom: 0;
+}
+.row > div:first-child {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.row.col {
+	flex-direction: column;
+	align-items: stretch;
+	gap: 10px;
+}
+.row b {
+	font-size: 13.5px;
+	font-weight: 600;
+}
+.row small,
+small {
+	color: var(--fg-m);
+	font-size: 12px;
+}
+/* Custom dropdown (js/select.js): animated menu instead of the browser's popup. */
+.dd {
+	position: relative;
+	min-width: 190px;
+}
+.dd-button {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	width: 100%;
+	height: 36px;
+	padding: 0 10px 0 12px;
+	border: 1px solid var(--border);
+	border-radius: var(--r-sm);
+	background: var(--field);
+	color: var(--fg);
+	font-size: 13px;
+	text-align: left;
+	transition: var(--t-field);
+}
+.dd-button:hover {
+	border-color: var(--border-2);
+	background-color: var(--field-hover);
+}
+.dd.open .dd-button,
+.dd-button:focus-visible {
+	border-color: var(--focus);
+	box-shadow: var(--ring);
+	outline: 0;
+}
+.dd-chev {
+	color: var(--fg-m);
+	transition: transform 0.4s var(--ease), color 0.3s ease;
+}
+.dd.open .dd-chev {
+	color: var(--fg);
+	transform: rotate(180deg);
+}
+.dd-list {
+	position: absolute;
+	top: calc(100% + 6px);
+	left: 0;
+	right: 0;
+	z-index: 30;
+	max-height: 240px;
+	padding: 4px;
+	overflow: auto;
+	border: 1px solid var(--border);
+	border-radius: var(--r);
+	background: var(--field);
+	box-shadow: 0 18px 40px -14px rgba(0, 0, 0, 0.7);
+	opacity: 0;
+	transform: translate3d(0, -6px, 0) scale(0.98);
+	transform-origin: top center;
+	visibility: hidden;
+	pointer-events: none;
+	transition: opacity 0.2s ease, transform 0.35s var(--ease), visibility 0s linear 0.35s;
+}
+.dd.open .dd-list {
+	opacity: 1;
+	transform: none;
+	visibility: visible;
+	pointer-events: auto;
+	transition: opacity 0.2s ease, transform 0.35s var(--ease), visibility 0s;
+}
+.dd-option {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	padding: 8px 10px;
+	border-radius: var(--r-sm);
+	color: var(--fg-m);
+	font-size: 13px;
+	cursor: pointer;
+	transition: background-color var(--t-hover), color var(--t-hover), padding-left 0.3s var(--ease);
+}
+.dd-option:hover {
+	padding-left: 13px;
+	background: var(--surface-2);
+	color: var(--fg);
+}
+.dd-option[aria-selected="true"] {
+	color: var(--fg);
+}
+.dd-option[aria-selected="true"]::after {
+	content: "";
+	width: 6px;
+	height: 6px;
+	flex: none;
+	border-radius: 50%;
+	background: var(--accent);
+}
+/* Background image (js/background.js), drawn on the fixed mesh layer instead of the page,
+   so it sits on its own GPU layer and never repaints with the page. */
+html.has-bg {
+	background: #000;
+}
+.has-bg body::before {
+	inset: 0;
+	background: var(--bg-image) center / cover no-repeat;
+	animation: none;
+}
+.has-bg .shell {
+	background: color-mix(in srgb, var(--bg2) 72%, transparent);
+}
+.inline-form {
+	display: flex;
+	gap: 8px;
+}
+.inline-form input {
+	flex: 1;
+	min-width: 0;
+}
+.inline-form .btn {
+	height: 36px;
+}
+.row .error {
+	margin: 0;
+}
+.reveal:not([hidden]) {
+	animation: rise 0.35s var(--ease) both;
+}
+.key-input {
+	width: 80px;
+	text-align: center;
+}
+.error {
+	margin: 12px 0 0;
+}
+.log {
+	padding: 4px 0 12px;
+}
+.log summary {
+	color: var(--fg-m);
+	font-size: 13px;
+	cursor: pointer;
+}
+.log-lines {
+	max-height: 220px;
+	margin-top: 8px;
+	padding: 10px;
+	overflow: auto;
+	border: 1px solid var(--border);
+	border-radius: var(--r-sm);
+	background: var(--field);
+	font: 11.5px/1.5 ui-monospace, Consolas, monospace;
+	word-break: break-all;
+}
+.log-lines .error {
+	margin: 0;
+	color: #ff8a8a;
+}
+/* Pill toggle like Lucide's. */
+input[role="switch"] {
+	padding: 0;
+	border: 0;
+	position: relative;
+	flex: none;
+	width: 42px;
+	height: 24px;
+	margin: 0;
+	border-radius: 999px;
+	background: var(--surface-3);
+	appearance: none;
+	cursor: pointer;
+	transition: background-color var(--t-hover);
+}
+input[role="switch"]::before {
+	content: "";
+	position: absolute;
+	top: 3px;
+	left: 3px;
+	width: 18px;
+	height: 18px;
+	border-radius: 50%;
+	background: var(--fg-m);
+	transition: transform 0.3s var(--ease), background-color var(--t-hover);
+}
+input[role="switch"]:checked {
+	background: var(--accent);
+}
+input[role="switch"]:checked::before {
+	background: var(--on-accent, #fff);
+	transform: translate3d(18px, 0, 0);
+}
+.ask {
+	width: min(420px, 90vw);
+}
+.ask form {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 1.1rem;
+}
+.ask p {
+	margin: 0;
+	color: var(--fg-m);
+	font-size: 13px;
+}
+#ask-fields {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+#ask-fields:empty {
+	display: none;
+}
+#ask-fields label {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	color: var(--fg-m);
+	font-size: 12px;
+}
+.ask-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 8px;
+	margin-top: 4px;
+}
+.toast {
+	position: fixed;
+	right: 16px;
+	bottom: 16px;
+	z-index: 55;
+	max-width: min(320px, calc(100vw - 32px));
+	padding: 12px 16px;
+	border: 1px solid var(--border);
+	border-radius: var(--r);
+	background: var(--surface);
+	box-shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+	font-size: 13px;
+	transform: translate3d(0, 16px, 0);
+	opacity: 0;
+	transition: transform 0.4s var(--ease), opacity 0.25s ease;
+	pointer-events: none;
+}
+.toast.show {
+	transform: none;
+	opacity: 1;
+}
+.perf .toast {
+	background: var(--bg2);
+}
+
+/* Phones and narrow windows: sidebar becomes a drawer. ---------------------- */
+@media (max-width: 760px) {
+	body {
+		padding: 0;
+	}
+	.shell {
+		border: 0;
+		border-radius: 0;
+	}
+	.sidebar {
+		position: fixed;
+		inset: 0 auto 0 0;
+		width: min(280px, 85vw);
+		background: var(--bg2);
+		transform: translate3d(-101%, 0, 0);
+		transition: transform 0.35s var(--ease);
+	}
+	.drawer-open .sidebar {
+		transform: none;
+		box-shadow: 20px 0 60px rgba(0, 0, 0, 0.5);
+	}
+	.drawer-open .scrim {
+		display: block;
+		position: fixed;
+		inset: 0;
+		z-index: 15;
+		background: rgba(0, 0, 0, 0.5);
+		animation: fade 0.3s ease both;
+	}
+	.menu-btn {
+		display: inline-flex;
+		position: absolute;
+		top: 10px;
+		left: 10px;
+		z-index: 5;
+		border: 1px solid var(--border);
+		background: var(--surface);
+	}
+	.sb-collapse {
+		display: none;
+	}
+	.view {
+		padding: 56px 16px 16px;
+	}
+	.games-bar {
+		flex-wrap: wrap;
+	}
+	.panel {
+		padding: 12px;
+	}
+	.grid {
+		grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+		gap: 10px;
+	}
+	.player .bar,
+	.browser .tabstrip {
+		padding-left: 52px;
+	}
+	/* Full-screen sections don't get the top gap the other pages leave for the menu button. */
+	.view.player,
+	.view.tv,
+	.view.browser {
+		padding: 0;
+	}
+	.address {
+		min-width: 0;
+	}
+	.browser .badge {
+		display: none;
+	}
+	.s-layout {
+		grid-template-columns: 1fr;
+		grid-template-rows: auto 1fr;
+	}
+	.s-tabs {
+		flex-direction: row;
+		overflow-x: auto;
+	}
+	.row {
+		flex-wrap: wrap;
+	}
+}
+
+/* Setup tour (js/ui.js): first-visit popup. ------------------------------------- */
+.tour {
+	width: min(560px, calc(100% - 24px));
+	padding: 22px 22px 16px;
+}
+.tour-step:not([hidden]) {
+	animation: rise 0.4s var(--ease) both;
+}
+.tour-count {
+	color: var(--fg-d);
+	font-size: 11.5px;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}
+.tour h2 {
+	margin: 4px 0 6px;
+}
+.tour p {
+	margin: 0 0 16px;
+	color: var(--fg-m);
+	font-size: 13.5px;
+}
+.tour-choices {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 10px;
+}
+.tour-choice,
+.wall {
+	border: 1px solid var(--border);
+	border-radius: var(--r);
+	background: var(--field);
+	color: var(--fg);
+	transition: border-color var(--t-hover), background-color var(--t-hover), box-shadow 0.45s var(--ease), transform 0.15s var(--ease);
+}
+.tour-choice {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 14px;
+	text-align: left;
+}
+.tour-choice b {
+	font-size: 14px;
+	font-weight: 600;
+}
+.tour-choice:hover,
+.wall:hover {
+	border-color: var(--border-2);
+	background-color: var(--field-hover);
+}
+.tour-choice:active,
+.wall:active {
+	transform: scale(0.98);
+}
+.tour-choice[aria-pressed="true"],
+.wall[aria-pressed="true"] {
+	border-color: var(--accent);
+	box-shadow: var(--ring);
+}
+.wall-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 8px;
+}
+.wall {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	aspect-ratio: 16 / 10;
+	overflow: hidden;
+	color: var(--fg-m);
+	font-size: 12.5px;
+}
+.wall img {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	transition: transform 0.5s var(--ease);
+}
+.wall:hover img {
+	transform: scale(1.05);
+}
+.tour-foot {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-top: 20px;
+}
+.tour-dots {
+	display: flex;
+	gap: 5px;
+	margin-right: auto;
+	margin-left: 12px;
+}
+.tour-dots i {
+	width: 6px;
+	height: 6px;
+	border-radius: 3px;
+	background: var(--border-2);
+	transition: width 0.35s var(--ease), background-color 0.35s ease;
+}
+.tour-dots i.on {
+	width: 16px;
+	background: var(--accent);
+}
+
+/* TV (media.html, loaded through Ultraviolet): see-through so the shell shows behind it. */
+#tv-frame {
+	background: transparent;
+}
+
+/* Touch screens can't hover, so show game names and stars all the time. */
+@media (hover: none) {
+	.card-title,
+	.card-star {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+/* Settings > Info counters */
+.stat {
+	font-family: "Manrope", "Geist", sans-serif;
+	font-size: 16px;
+	font-variant-numeric: tabular-nums;
+}

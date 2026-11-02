@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en" data-page="home">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Flux</title>
+		<link id="favicon" rel="icon" href="LOGO.svg" type="image/svg+xml" />
+		<script src="js/boot.js"></script>
+		<script src="js/guard.js"></script>
+		<link rel="stylesheet" href="css/style.css" />
+		<script type="module" src="js/ui.js"></script>
+	</head>
+	<body>
+		<svg width="0" height="0" style="position: absolute" aria-hidden="true">
+			<defs>
+				<symbol id="logo" viewBox="29 17 35 44"><path fill="currentColor" d="M35.8 18.85H57.3C60.2 18.85 61.6 20.45 60.9 23.05L59.4 28.45C58.9 30.15 57.7 30.95 55.7 30.95H41.8V35.85H56.2C58.3 35.85 59.2 37.15 58.5 39.25L57 44.05C56.5 45.65 55.4 46.35 53.6 46.35H41.8V56.05C41.8 57.85 40.7 58.85 38.8 58.85H34C32.1 58.85 31.2 57.85 31.2 55.95V23.75C31.2 20.55 32.6 18.85 35.8 18.85Z"/></symbol>
+				<symbol id="glyph-lux" viewBox="0 13.25 80 44"><g fill="currentColor" stroke="currentColor" stroke-linejoin="round">
+					<path stroke-width="0" transform="translate(1.5 0)" d="M3 15.1H7.6Q10.6 15.1 10.6 18.1V52.1Q10.6 55.1 7.6 55.1H3Q0 55.1 0 52.1V18.1Q0 15.1 3 15.1Z"/>
+					<path stroke-width="0" transform="translate(15.6 0)" d="M3 28.1H7.6Q10.6 28.1 10.6 31.1V42.6Q10.6 45.3 13.4 45.3H16.6Q19.4 45.3 19.4 42.6V31.1Q19.4 28.1 22.4 28.1H27Q30 28.1 30 31.1V52.1Q30 55.1 27 55.1H12C4.5 55.1 0 50.6 0 44V31.1Q0 28.1 3 28.1Z"/>
+					<path stroke-width="2" transform="translate(49.1 0)" d="M1 29.1H11L15 34.66L19 29.1H29L20 41.6L29 54.1H19L15 48.54L11 54.1H1L10 41.6Z"/>
+				</g></symbol>
+				<symbol id="glyph-v3" viewBox="-7 13.25 69 44"><g fill="currentColor" stroke="currentColor" stroke-linejoin="round">
+					<path stroke-width="2" d="M1 29.1H10L15 43L20 29.1H29L20 54.1H10Z"/>
+					<path stroke-width="0" transform="translate(34 0)" d="M3 15.1H25Q28 15.1 28 18.1V31Q28 33.5 26 35.1Q28 36.7 28 39.2V52.1Q28 55.1 25 55.1H3Q0 55.1 0 52.1V48.5Q0 45.5 3 45.5H17.4V40.2H8Q5 40.2 5 37.2V33Q5 30 8 30H17.4V24.7H3Q0 24.7 0 21.7V18.1Q0 15.1 3 15.1Z"/>
+				</g></symbol>
+				<symbol id="i-home" viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></symbol>
+				<symbol id="i-games" viewBox="0 0 24 24"><path d="M6 11h4M8 9v4M15 12h.01M18 10h.01"/><path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258A4 4 0 0 0 17.32 5z"/></symbol>
+				<symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20"/></symbol>
+				<symbol id="i-settings" viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></symbol>
+				<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></symbol>
+				<symbol id="i-chevron-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+				<symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+				<symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+				<symbol id="i-reload" viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></symbol>
+				<symbol id="i-panel" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M9 3v18"/></symbol>
+				<symbol id="i-star" viewBox="0 0 24 24"><path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/></symbol>
+				<symbol id="i-shuffle" viewBox="0 0 24 24"><path d="m18 14 4 4-4 4M18 2l4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22M2 6h1.972a4 4 0 0 1 3.6 2.2M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/></symbol>
+				<symbol id="i-max" viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></symbol>
+				<symbol id="i-external" viewBox="0 0 24 24"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
+				<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+				<symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
+				<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 12h16M4 6h16M4 18h16"/></symbol>
+				<symbol id="i-back" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></symbol>
+				<symbol id="i-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></symbol>
+				<symbol id="i-droplet" viewBox="0 0 24 24"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></symbol>
+				<symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49M14.084 14.158a3 3 0 0 1-4.242-4.242M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143M2 2l20 20"/></symbol>
+				<symbol id="i-sparkles" viewBox="0 0 24 24"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0zM20 3v4M22 5h-4M4 17v2M5 18H3"/></symbol>
+<symbol id="i-paperclip" viewBox="0 0 24 24"><path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"/></symbol>
+<symbol id="i-up" viewBox="0 0 24 24"><path d="m5 12 7-7 7 7M12 19V5"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-tv" viewBox="0 0 24 24"><rect width="20" height="15" x="2" y="7" rx="2" ry="2"/><path d="m17 2-5 5-5-5"/></symbol>
+<symbol id="i-stats" viewBox="0 0 24 24"><path d="M3 3v16a2 2 0 0 0 2 2h16M18 17V9M13 17V5M8 17v-3"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></symbol>
+			</defs>
+		</svg>
+
+		<div class="shell">
+		<aside class="sidebar" id="sidebar" aria-label="Sidebar">
+			<div class="sb-head">
+				<button class="brand" type="button" data-view="home" aria-label="Flux home">
+					<svg class="brand-logo"><use href="#logo" /></svg>
+				</button>
+				<button class="icon-btn sm sb-collapse" id="sb-collapse" type="button" aria-label="Collapse sidebar"><svg class="i"><use href="#i-panel" /></svg></button>
+			</div>
+
+			<form class="sb-search" id="sb-search" role="search">
+				<svg class="i"><use href="#i-search" /></svg>
+				<input type="text" placeholder="Search or enter URL" aria-label="Search or enter URL" spellcheck="false" autocomplete="off" />
+			</form>
+
+			<nav class="nav" id="nav">
+				<span class="nav-indicator" id="nav-indicator"></span>
+				<button class="nav-item" type="button" data-view="home" aria-current="true"><svg class="i"><use href="#i-home" /></svg><span>Home</span></button>
+				<button class="nav-item" type="button" data-view="games"><svg class="i"><use href="#i-games" /></svg><span>Games</span></button>
+				<button class="nav-item" type="button" data-view="tv" id="nav-tv" hidden><svg class="i"><use href="#i-tv" /></svg><span>TV</span></button>
+				<button class="nav-item" type="button" data-view="browser"><svg class="i"><use href="#i-globe" /></svg><span>Browser</span></button>
+				<button class="nav-item" type="button" id="open-settings"><svg class="i"><use href="#i-settings" /></svg><span>Settings</span></button>
+			</nav>
+
+		</aside>
+		<div class="scrim" id="scrim"></div>
+
+		<main class="main">
+			<button class="icon-btn menu-btn" id="menu-btn" type="button" aria-label="Open menu"><svg class="i"><use href="#i-menu" /></svg></button>
+
+			<section class="view home intro waiting" id="view-home">
+				<div class="hero-wrap">
+					<h1 class="hero" aria-label="Flux v3">
+						<svg class="hero-logo" aria-hidden="true"><use href="#logo" /></svg>
+						<svg class="hero-lux" aria-hidden="true"><use href="#glyph-lux" /></svg>
+						<svg class="hero-v" aria-hidden="true"><use href="#glyph-v3" /></svg>
+					</h1>
+					<span class="hero-underline"></span>
+				</div>
+				<form class="home-search field" id="home-search" role="search">
+					<svg class="i"><use href="#i-search" /></svg>
+					<input type="text" placeholder="Search the web or enter a URL" aria-label="Search or enter URL" spellcheck="false" autocomplete="off" />
+				</form>
+				<button class="link-btn" type="button" data-view="games">Browse <b id="game-count">…</b> games <svg class="i"><use href="#i-right" /></svg></button>
+			</section>
+
+			<section class="view games" id="view-games" hidden>
+				<h1 class="page-title">Games</h1>
+				<div class="games-bar">
+					<label class="field games-search">
+						<svg class="i"><use href="#i-search" /></svg>
+						<input id="game-search" type="search" placeholder="Search games" aria-label="Search games" spellcheck="false" autocomplete="off" />
+					</label>
+					<button class="btn" id="show-favs" type="button" aria-pressed="false"><svg class="i"><use href="#i-star" /></svg><span>Favorites</span></button>
+					<button class="btn" id="random-game" type="button"><svg class="i"><use href="#i-shuffle" /></svg><span>Random</span></button>
+				</div>
+				<div class="panel">
+					<div class="panel-head"><b id="games-heading">All games</b><small id="games-shown"></small></div>
+					<p class="empty" id="no-results" hidden></p>
+					<div class="grid" id="grid"></div>
+				</div>
+			</section>
+
+			<section class="view player" id="view-player" hidden>
+				<div class="bar topbar">
+					<button class="icon-btn" id="player-back" type="button" aria-label="Back to games"><svg class="i"><use href="#i-back" /></svg></button>
+					<h2 class="bar-title" id="player-title"></h2>
+					<button class="icon-btn star-btn" id="player-fav" type="button" aria-label="Favorite"><svg class="i"><use href="#i-star" /></svg></button>
+					<button class="icon-btn" id="player-fullscreen" type="button" aria-label="Fullscreen"><svg class="i"><use href="#i-max" /></svg></button>
+				</div>
+				<iframe class="frame" id="game-frame" title="Game" allow="fullscreen; autoplay; gamepad; pointer-lock; clipboard-write" allowfullscreen></iframe>
+			</section>
+
+			<section class="view tv" id="view-tv" hidden>
+				<p class="status" id="tv-status" role="status" hidden></p>
+				<iframe class="frame" id="tv-frame" title="TV" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+			</section>
+
+			<section class="view browser" id="view-browser" hidden>
+				<div class="topbar">
+					<div class="tabstrip" id="tabs" role="tablist" aria-label="Browser tabs"></div>
+					<div class="bar" id="browser-bar">
+						<span class="progress"></span>
+						<button class="icon-btn" id="sb-back" type="button" aria-label="Back"><svg class="i"><use href="#i-left" /></svg></button>
+						<button class="icon-btn" id="sb-forward" type="button" aria-label="Forward"><svg class="i"><use href="#i-right" /></svg></button>
+						<button class="icon-btn" id="sb-reload" type="button" aria-label="Reload"><svg class="i"><use href="#i-reload" /></svg></button>
+						<form class="address field" id="address-form" autocomplete="off">
+							<svg class="i"><use href="#i-globe" /></svg>
+							<input id="address-input" type="text" aria-label="Address" spellcheck="false" placeholder="Search or enter URL" />
+						</form>
+						<span class="badge" id="engine-badge"></span>
+						<button class="icon-btn" id="browser-newtab" type="button" aria-label="Open in a real tab"><svg class="i"><use href="#i-external" /></svg></button>
+					</div>
+				</div>
+				<p class="status" id="status" role="status" hidden></p>
+				<div class="frames" id="frames">
+					<div class="newtab" id="newtab-page">
+						<svg class="newtab-logo"><use href="#logo" /></svg>
+						<p>Type a URL or search in the bar above.</p>
+					</div>
+				</div>
+			</section>
+		</main>
+		</div>
+
+		<dialog class="modal settings" id="settings">
+			<div class="modal-head">
+				<h2>Settings</h2>
+				<button class="icon-btn" id="settings-close" type="button" aria-label="Close settings"><svg class="i"><use href="#i-x" /></svg></button>
+			</div>
+			<div class="s-layout">
+				<nav class="s-tabs">
+					<button class="s-tab" type="button" data-tab="browsing" aria-current="true"><svg class="i"><use href="#i-shield" /></svg>Browsing</button>
+					<button class="s-tab" type="button" data-tab="appearance"><svg class="i"><use href="#i-droplet" /></svg>Appearance</button>
+					<button class="s-tab" type="button" data-tab="cloak"><svg class="i"><use href="#i-eye-off" /></svg>Tab cloak</button>
+					<button class="s-tab" type="button" data-tab="data"><svg class="i"><use href="#i-trash" /></svg>Data</button>
+					<button class="s-tab" type="button" data-tab="info"><svg class="i"><use href="#i-stats" /></svg>Info</button>
+				</nav>
+
+				<div class="s-panels">
+					<form class="s-panel" data-panel="browsing" id="browsing-form" onsubmit="return false">
+						<div class="row">
+							<div><b>Proxy engine</b><small>Scramjet works on the most sites. Try Ultraviolet if a site won't load.</small></div>
+							<select name="engine">
+								<option value="scramjet">Scramjet</option>
+								<option value="uv">Ultraviolet</option>
+							</select>
+						</div>
+						<div class="row">
+							<div><b>Transport</b><small>How traffic reaches the Wisp server.</small></div>
+							<select name="transport">
+								<option value="epoxy">epoxy</option>
+								<option value="libcurl">libcurl</option>
+							</select>
+						</div>
+						<div class="row">
+							<div><b>Wisp server</b><small id="wisp-status">Auto uses the first server that answers.</small></div>
+							<select name="wispChoice">
+								<option value="">Auto</option>
+							</select>
+						</div>
+						<div class="row col reveal" id="wisp-custom-row" hidden>
+							<div><b>Custom server</b><small>Your own Wisp server address.</small></div>
+							<div class="inline-form">
+								<input id="wisp-custom" type="text" spellcheck="false" placeholder="wss://example.com/wisp/" />
+								<button class="btn" id="wisp-custom-save" type="button">Connect</button>
+							</div>
+							<p class="error" id="wisp-error" hidden></p>
+						</div>
+						<div class="row col">
+							<div><b>Search engine</b><small><code>%s</code> is replaced with what you typed.</small></div>
+							<input name="search" type="text" spellcheck="false" />
+						</div>
+						<details class="log">
+							<summary>Connection log</summary>
+							<div id="debug-log" class="log-lines"></div>
+						</details>
+					</form>
+
+					<div class="s-panel" data-panel="appearance" hidden>
+						<div class="row col">
+							<div><b>Wallpaper</b><small>Pick one of ours or upload your own.</small></div>
+							<div class="wall-grid" data-pick="wall"></div>
+							<input id="bg-file" type="file" accept="image/*" hidden />
+						</div>
+						<label class="row">
+							<div><b>Performance mode</b><small>Turns off blur and animation. Try it if the site feels slow.</small></div>
+							<input type="checkbox" role="switch" id="perf-toggle" />
+						</label>
+					</div>
+
+					<div class="s-panel" data-panel="cloak" hidden>
+						<div class="row">
+							<div><b>Disguise this tab</b><small>Changes the tab's title and icon.</small></div>
+							<select id="cloak-select"></select>
+						</div>
+						<div class="row">
+							<div><b>about:blank</b><small>Opens Flux inside a blank tab that doesn't show in history.</small></div>
+							<button class="btn" id="open-blank" type="button">Open</button>
+						</div>
+						<div class="row">
+							<div><b>Panic key</b><small>Press a key to set it. Backspace turns it off.</small></div>
+							<input class="key-input" id="panic-key" type="text" readonly />
+						</div>
+						<div class="row col">
+							<div><b>Panic key goes to</b></div>
+							<input id="panic-url" type="url" spellcheck="false" />
+						</div>
+					</div>
+
+					<div class="s-panel" data-panel="data" hidden>
+						<div class="row">
+							<div><b>Favorites</b><small>Remove every starred game.</small></div>
+							<button class="btn" id="clear-favs" type="button">Clear</button>
+						</div>
+						<div class="row">
+							<div><b>Reset settings</b><small>Background, cloak and proxy options go back to default.</small></div>
+							<button class="btn danger" id="reset-settings" type="button">Reset</button>
+						</div>
+					</div>
+
+					<div class="s-panel" data-panel="info" hidden>
+						<div class="row">
+							<div><b>Version</b></div>
+							<b class="stat" id="flux-version">Beta 1.2</b>
+						</div>
+					</div>
+				</div>
+			</div>
+		</dialog>
+
+		<div class="toast" id="toast" role="status"></div>
+
+		<dialog class="modal tour" id="tour" aria-labelledby="tour-title">
+			<section class="tour-step" data-step="0">
+				<small class="tour-count">Step 1 of 3</small>
+				<h2 id="tour-title">Welcome to Flux</h2>
+				<p>Pick the proxy engine the browser uses. You can change any of this later in Settings.</p>
+				<div class="tour-choices" data-pick="engine">
+					<button class="tour-choice" type="button" data-value="scramjet"><b>Scramjet</b><small>Works on the most sites. Recommended.</small></button>
+					<button class="tour-choice" type="button" data-value="uv"><b>Ultraviolet</b><small>Try this if a site won't load.</small></button>
+				</div>
+			</section>
+			<section class="tour-step" data-step="1" hidden>
+				<small class="tour-count">Step 2 of 3</small>
+				<h2>Choose a wallpaper</h2>
+				<p>Pick one of ours or upload your own.</p>
+				<div class="wall-grid" data-pick="wall"></div>
+			</section>
+			<section class="tour-step" data-step="2" hidden>
+				<small class="tour-count">Step 3 of 3</small>
+				<h2>Performance mode</h2>
+				<p>Turn it on if the site feels slow. It switches off blur and animation.</p>
+				<div class="tour-choices" data-pick="perf">
+					<button class="tour-choice" type="button" data-value="off"><b>Off</b><small>Smooth animations. Best on most computers.</small></button>
+					<button class="tour-choice" type="button" data-value="on"><b>On</b><small>Faster on older or slower Chromebooks.</small></button>
+				</div>
+			</section>
+			<div class="tour-foot">
+				<button class="link-btn" id="tour-skip" type="button">Skip</button>
+				<span class="tour-dots" id="tour-dots"><i></i><i></i><i></i></span>
+				<button class="btn" id="tour-back" type="button">Back</button>
+				<button class="btn primary" id="tour-next" type="button">Next</button>
+			</div>
+		</dialog>
+
+		<dialog class="modal ask" id="ask">
+			<form method="dialog">
+				<h2 id="ask-title"></h2>
+				<p id="ask-message"></p>
+				<div id="ask-fields"></div>
+				<div class="ask-actions">
+					<button class="btn" value="" type="submit" formnovalidate>Cancel</button>
+					<button class="btn primary" id="ask-ok" value="ok" type="submit"></button>
+				</div>
+			</form>
+		</dialog>
+	</body>
+</html>

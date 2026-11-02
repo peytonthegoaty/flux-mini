@@ -1,0 +1,744 @@
+<!doctype html>
+<!-- Flux TV: movies, shows and anime from TMDB, played with 2Embed. Opened by the TV section
+     in index.html through Ultraviolet, so every request here goes through the proxy. -->
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Flux TV</title>
+		<link rel="stylesheet" href="css/style.css" />
+		<style>
+			/* The page sits inside the Flux shell, so let the shell show through. */
+			html,
+			body {
+				height: auto;
+				background: transparent;
+			}
+			body {
+				display: block;
+				padding: 0;
+				overflow: auto;
+			}
+			body::before,
+			body::after {
+				display: none;
+			}
+			main {
+				max-width: 1280px;
+				margin: 0 auto;
+				padding: 0 22px 40px;
+			}
+			.tv-bar {
+				display: flex;
+				align-items: center;
+				gap: 12px;
+				max-width: 1280px;
+				margin: 0 auto;
+				padding: 20px 22px 16px;
+			}
+			.tv-tabs {
+				display: flex;
+				gap: 2px;
+			}
+			.tv-tab {
+				padding: 7px 12px;
+				border: 0;
+				border-radius: var(--r-sm);
+				background: transparent;
+				color: var(--fg-m);
+				font-size: 13px;
+				font-weight: 500;
+				transition: background-color var(--t-hover), color var(--t-hover);
+			}
+			.tv-tab:hover,
+			.tv-tab[aria-current] {
+				background: var(--surface-2);
+				color: var(--fg);
+			}
+			.tv-search {
+				position: relative;
+				flex: 1;
+				max-width: 420px;
+				margin-left: auto;
+			}
+			.tv-results {
+				position: absolute;
+				top: calc(100% + 6px);
+				left: 0;
+				right: 0;
+				z-index: 20;
+				max-height: 380px;
+				padding: 4px;
+				overflow: auto;
+				border: 1px solid var(--border);
+				border-radius: var(--r);
+				background: var(--field);
+				box-shadow: 0 18px 40px -14px rgba(0, 0, 0, 0.7);
+				animation: rise 0.25s var(--ease) both;
+			}
+			.tv-result {
+				display: flex;
+				align-items: center;
+				gap: 10px;
+				width: 100%;
+				padding: 6px 8px;
+				border: 0;
+				border-radius: var(--r-sm);
+				background: transparent;
+				text-align: left;
+				transition: background-color var(--t-hover);
+			}
+			.tv-result:hover {
+				background: var(--surface-2);
+			}
+			.tv-result img {
+				width: 34px;
+				height: 51px;
+				flex: none;
+				border-radius: var(--r-xs);
+				object-fit: cover;
+				background: var(--surface-2);
+			}
+			.tv-result b {
+				display: block;
+				font-size: 13px;
+				font-weight: 500;
+			}
+			.tv-empty {
+				padding: 14px;
+				color: var(--fg-m);
+				font-size: 13px;
+				text-align: center;
+			}
+			.tv-row-title {
+				margin: 28px 0 12px;
+				font-family: "Manrope", "Geist", sans-serif;
+				font-size: 16px;
+				font-weight: 600;
+			}
+			/* Hero: the top trending title. */
+			.tv-hero {
+				position: relative;
+				display: flex;
+				align-items: flex-end;
+				min-height: 320px;
+				overflow: hidden;
+				border: 1px solid var(--border);
+				border-radius: var(--r);
+				background: var(--surface-2) center / cover no-repeat;
+			}
+			.tv-hero::before {
+				content: "";
+				position: absolute;
+				inset: 0;
+				background: linear-gradient(90deg, rgba(0, 0, 0, 0.88), rgba(0, 0, 0, 0.35) 60%, transparent);
+			}
+			.tv-hero-body {
+				position: relative;
+				max-width: 520px;
+				padding: 26px;
+			}
+			.tv-hero h1 {
+				margin: 6px 0 8px;
+				font-family: "Manrope", "Geist", sans-serif;
+				font-size: 24px;
+				font-weight: 700;
+				line-height: 1.2;
+			}
+			.tv-hero p,
+			.tv-overview {
+				margin: 0 0 16px;
+				color: #c4c4cc;
+				font-size: 13.5px;
+				line-height: 1.6;
+			}
+			.tv-actions {
+				display: flex;
+				gap: 8px;
+			}
+			.tv-tags {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 6px;
+			}
+			.tv-tag {
+				padding: 2px 8px;
+				border: 1px solid var(--border);
+				border-radius: var(--r-xs);
+				color: var(--fg-m);
+				font-size: 11.5px;
+			}
+			/* Poster grid */
+			.tv-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+				gap: 14px;
+			}
+			.tv-card {
+				display: flex;
+				flex-direction: column;
+				gap: 6px;
+				padding: 0;
+				border: 0;
+				background: none;
+				text-align: left;
+				content-visibility: auto;
+				contain-intrinsic-size: auto 260px;
+			}
+			.tv-poster {
+				display: block;
+				width: 100%;
+				aspect-ratio: 2 / 3;
+				overflow: hidden;
+				border: 1px solid var(--border);
+				border-radius: var(--r);
+				background: var(--surface-2);
+				transition: border-color var(--t-hover);
+			}
+			.tv-poster img {
+				display: block;
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+			}
+			.tv-card:hover .tv-poster,
+			.tv-card:focus-visible .tv-poster {
+				border-color: var(--focus);
+			}
+			.tv-card-title {
+				overflow: hidden;
+				font-size: 13px;
+				font-weight: 500;
+				text-overflow: ellipsis;
+				white-space: nowrap;
+			}
+			.tv-card small,
+			.tv-result small {
+				color: var(--fg-d);
+				font-size: 11.5px;
+			}
+			.tv-chips {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 6px;
+				margin-bottom: 16px;
+			}
+			.tv-chip {
+				padding: 5px 12px;
+				border: 1px solid var(--border);
+				border-radius: 999px;
+				background: transparent;
+				color: var(--fg-m);
+				font-size: 12.5px;
+				transition: border-color var(--t-hover), background-color var(--t-hover), color var(--t-hover);
+			}
+			.tv-chip:hover {
+				border-color: var(--border-2);
+				color: var(--fg);
+			}
+			.tv-chip[aria-pressed="true"] {
+				border-color: var(--accent);
+				background: var(--accent);
+				color: var(--on-accent);
+			}
+			.tv-more {
+				height: 1px;
+			}
+			.tv-loading {
+				padding: 30px 0;
+				color: var(--fg-m);
+				font-size: 13px;
+				text-align: center;
+			}
+			/* Info page */
+			.tv-info-head {
+				display: flex;
+				gap: 22px;
+				align-items: flex-end;
+				min-height: 300px;
+				padding: 24px;
+				border: 1px solid var(--border);
+				border-radius: var(--r);
+				background: var(--surface-2) top center / cover no-repeat;
+				position: relative;
+				overflow: hidden;
+			}
+			.tv-info-head::before {
+				content: "";
+				position: absolute;
+				inset: 0;
+				background: linear-gradient(transparent, rgba(0, 0, 0, 0.9));
+			}
+			.tv-info-head > * {
+				position: relative;
+			}
+			.tv-info-head img {
+				width: 130px;
+				aspect-ratio: 2 / 3;
+				flex: none;
+				border: 1px solid var(--border);
+				border-radius: var(--r);
+				object-fit: cover;
+			}
+			.tv-info-head h1 {
+				margin: 0 0 8px;
+				font-family: "Manrope", "Geist", sans-serif;
+				font-size: 24px;
+				font-weight: 700;
+				line-height: 1.2;
+			}
+			.tv-info-head .tv-actions {
+				margin-top: 14px;
+			}
+			.tv-facts {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+				gap: 14px;
+				margin-top: 18px;
+			}
+			.tv-facts small {
+				display: block;
+				color: var(--fg-d);
+				font-size: 11px;
+				letter-spacing: 0.04em;
+				text-transform: uppercase;
+			}
+			.tv-eps {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+				gap: 8px;
+			}
+			.tv-eps .btn[aria-pressed="true"] {
+				border-color: var(--accent);
+				background: var(--accent);
+				color: var(--on-accent);
+			}
+			/* Player */
+			.tv-watch-bar {
+				display: flex;
+				align-items: center;
+				gap: 12px;
+				margin-bottom: 12px;
+			}
+			.tv-watch-bar h1 {
+				margin: 0;
+				font-size: 15px;
+				font-weight: 600;
+			}
+			.tv-player {
+				position: relative;
+				aspect-ratio: 16 / 9;
+				overflow: hidden;
+				border: 1px solid var(--border);
+				border-radius: var(--r);
+				background: #000;
+			}
+			.tv-player iframe {
+				position: absolute;
+				inset: 0;
+				width: 100%;
+				height: 100%;
+				border: 0;
+			}
+			.tv-page:not([hidden]) {
+				animation: rise 0.4s var(--ease) both;
+			}
+			@media (max-width: 760px) {
+				.tv-bar {
+					flex-wrap: wrap;
+					padding: 14px 14px 10px 56px;
+				}
+				.tv-search {
+					max-width: none;
+					flex-basis: 100%;
+				}
+				main {
+					padding: 0 14px 30px;
+				}
+				.tv-grid {
+					grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+					gap: 10px;
+				}
+				.tv-info-head {
+					flex-direction: column;
+					align-items: flex-start;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<svg width="0" height="0" style="position: absolute" aria-hidden="true">
+			<symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></symbol>
+			<symbol id="i-play" viewBox="0 0 24 24"><path d="M6 3v18l15-9z" /></symbol>
+			<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></symbol>
+			<symbol id="i-back" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5" /></symbol>
+		</svg>
+
+		<header class="tv-bar">
+			<nav class="tv-tabs" id="tabs">
+				<button class="tv-tab" type="button" data-section="home" aria-current="true">Home</button>
+				<button class="tv-tab" type="button" data-section="movie">Movies</button>
+				<button class="tv-tab" type="button" data-section="tv">TV Shows</button>
+				<button class="tv-tab" type="button" data-section="anime">Anime</button>
+			</nav>
+			<label class="field tv-search">
+				<svg class="i"><use href="#i-search" /></svg>
+				<input id="search" type="search" placeholder="Search movies, shows and anime" aria-label="Search" autocomplete="off" spellcheck="false" />
+				<div class="tv-results" id="results" hidden></div>
+			</label>
+		</header>
+
+		<main>
+			<section class="tv-page" id="page-home">
+				<div class="tv-hero" id="hero"><div class="tv-hero-body"><p class="tv-loading">Loading…</p></div></div>
+				<h2 class="tv-row-title">Trending movies</h2>
+				<div class="tv-grid" id="home-movie"></div>
+				<h2 class="tv-row-title">Trending shows</h2>
+				<div class="tv-grid" id="home-tv"></div>
+				<h2 class="tv-row-title">Popular anime</h2>
+				<div class="tv-grid" id="home-anime"></div>
+			</section>
+
+			<section class="tv-page" id="page-browse" hidden>
+				<h1 class="page-title" id="browse-title"></h1>
+				<div class="tv-chips" id="chips"></div>
+				<div class="tv-grid" id="browse-grid"></div>
+				<div class="tv-more" id="more"></div>
+			</section>
+
+			<section class="tv-page" id="page-info" hidden>
+				<div class="tv-watch-bar"><button class="btn" type="button" data-back><svg class="i"><use href="#i-back" /></svg>Back</button></div>
+				<div class="tv-info-head" id="info-head"></div>
+				<div class="tv-facts" id="info-facts"></div>
+				<div id="info-seasons"></div>
+			</section>
+
+			<section class="tv-page" id="page-watch" hidden>
+				<div class="tv-watch-bar">
+					<button class="btn" type="button" data-back><svg class="i"><use href="#i-back" /></svg>Back</button>
+					<div>
+						<h1 id="watch-title"></h1>
+						<small id="watch-ep"></small>
+					</div>
+				</div>
+				<!-- Not sandboxed: 2Embed refuses to play in a sandbox. Its history.back() calls are
+				     caught by index.html (guardHistory in js/ui.js). -->
+				<div class="tv-player"><iframe id="player" title="Player" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
+				<div id="watch-seasons"></div>
+			</section>
+		</main>
+
+		<dialog class="modal ask" id="age-gate">
+			<form method="dialog">
+				<h2>Mature content</h2>
+				<p id="age-text"></p>
+				<div class="ask-actions">
+					<button class="btn" type="submit" value="">Go back</button>
+					<button class="btn primary" type="submit" value="ok">I'm 18+, continue</button>
+				</div>
+			</form>
+		</dialog>
+
+		<script>
+			const TMDB_KEY = "3a73619bbb8fc6d47742d1b5b2b707b5";
+			const POSTER = "https://image.tmdb.org/t/p/w342";
+			const BACKDROP = "https://image.tmdb.org/t/p/w1280";
+			const BLOCKED = new Set([95897]);
+			const ADULT = new Set(["R", "NC-17", "TV-MA", "18", "18+", "X", "MA15+", "R18+", "Rx", "C18", "18A", "18TC"]);
+			const BROWSE = {
+				movie: { title: "Movies", type: "movie", list: "/discover/movie?sort_by=popularity.desc", genres: "/genre/movie/list" },
+				tv: { title: "TV Shows", type: "tv", list: "/discover/tv?sort_by=popularity.desc", genres: "/genre/tv/list" },
+				anime: { title: "Anime", type: "tv", list: "/discover/tv?sort_by=popularity.desc&with_origin_country=JP", genres: "/genre/tv/list", only: [16, 10759, 10765, 9648, 35, 18], base: 16 },
+			};
+
+			const $ = (id) => document.getElementById(id);
+			const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+			const nameOf = (it) => it.title || it.name || "Untitled";
+			const yearOf = (it) => (it.release_date || it.first_air_date || "").slice(0, 4);
+			const typeOf = (it, fallback) => (it.media_type === "tv" || it.media_type === "movie" ? it.media_type : fallback);
+			const icon = (n) => `<svg class="i"><use href="#i-${n}"/></svg>`;
+
+			// Every request goes through the proxy, so keep answers for the session: reopening a
+			// title, season or list is then instant. Failed requests are dropped so they can retry.
+			const cache = new Map();
+			function tmdb(path) {
+				if (!cache.has(path)) {
+					const url = `https://api.themoviedb.org/3${path}${path.includes("?") ? "&" : "?"}api_key=${TMDB_KEY}&language=en-US`;
+					const req = fetch(url).then((res) => {
+						if (!res.ok) throw new Error(`TMDB ${res.status}`);
+						return res.json();
+					});
+					cache.set(path, req);
+					req.catch(() => cache.delete(path));
+				}
+				return cache.get(path);
+			}
+
+			// Ads in the player like to open pop-ups; drop them.
+			window.open = () => null;
+
+			// Pages ---------------------------------------------------------------
+			let page = "home";
+			let backTo = "home";
+			let nav = 0; // bumped on every page change, so slow loads can tell they've been left
+			function show(name) {
+				nav++;
+				if (page === "watch" && name !== "watch") $("player").src = "about:blank"; // stop playback
+				for (const p of document.querySelectorAll(".tv-page")) p.hidden = p.id !== `page-${name}`;
+				if (name === "home" || name === "browse") backTo = name;
+				page = name;
+				scrollTo(0, 0);
+			}
+			document.addEventListener("click", (e) => {
+				if (e.target.closest("[data-back]")) show(page === "watch" && current?.fromInfo ? "info" : backTo);
+			});
+
+			const card = (it, type) =>
+				`<button class="tv-card" type="button" data-id="${it.id}" data-type="${type}"><span class="tv-poster"><img src="${POSTER}${it.poster_path}" alt="" loading="lazy" decoding="async"></span>` +
+				`<span class="tv-card-title">${esc(nameOf(it))}</span><small>${type === "movie" ? "Movie" : "Series"}${yearOf(it) ? ` · ${yearOf(it)}` : ""}</small></button>`;
+			const cards = (list, type) => list.filter((it) => it.poster_path && !BLOCKED.has(it.id)).map((it) => card(it, typeOf(it, type))).join("");
+
+			document.addEventListener("click", (e) => {
+				const c = e.target.closest(".tv-card, .tv-result");
+				if (c) {
+					$("results").hidden = true;
+					openInfo(Number(c.dataset.id), c.dataset.type);
+				}
+			});
+
+			// Home ----------------------------------------------------------------
+			async function loadHome() {
+				const [trending, movies, shows, anime] = await Promise.all([
+					tmdb("/trending/all/week"),
+					tmdb("/trending/movie/week"),
+					tmdb("/trending/tv/week"),
+					tmdb("/discover/tv?sort_by=popularity.desc&with_genres=16&with_origin_country=JP"),
+				]);
+				const hero = trending.results.find((it) => it.backdrop_path && !BLOCKED.has(it.id));
+				if (hero) {
+					const type = typeOf(hero, "movie");
+					$("hero").style.backgroundImage = `url("${BACKDROP}${hero.backdrop_path}")`;
+					$("hero").innerHTML =
+						`<div class="tv-hero-body"><div class="tv-tags"><span class="tv-tag">#1 this week</span><span class="tv-tag">${type === "movie" ? "Movie" : "Series"}</span>` +
+						`${hero.vote_average ? `<span class="tv-tag">★ ${hero.vote_average.toFixed(1)}</span>` : ""}</div><h1>${esc(nameOf(hero))}</h1>` +
+						`<p>${esc((hero.overview || "").slice(0, 220))}${(hero.overview || "").length > 220 ? "…" : ""}</p>` +
+						`<div class="tv-actions"><button class="btn primary" type="button" data-play>${icon("play")}Watch</button>` +
+						`<button class="btn" type="button" data-info>${icon("info")}Info</button></div></div>`;
+					$("hero").querySelector("[data-play]").onclick = () => play(hero.id, type, nameOf(hero));
+					$("hero").querySelector("[data-info]").onclick = () => openInfo(hero.id, type);
+				}
+				$("home-movie").innerHTML = cards(movies.results.slice(0, 12), "movie");
+				$("home-tv").innerHTML = cards(shows.results.slice(0, 12), "tv");
+				$("home-anime").innerHTML = cards(anime.results.slice(0, 12), "tv");
+			}
+
+			// Browse (Movies / TV Shows / Anime) with genre chips and endless scroll
+			let browse = null;
+			async function openBrowse(key) {
+				const conf = BROWSE[key];
+				browse = { conf, genre: 0, page: 1, done: false, busy: false };
+				$("browse-title").textContent = conf.title;
+				$("browse-grid").innerHTML = "";
+				$("chips").innerHTML = "";
+				show("browse");
+				const { genres } = await tmdb(conf.genres);
+				const list = conf.only ? genres.filter((g) => conf.only.includes(g.id)) : genres;
+				$("chips").innerHTML = [{ id: 0, name: "All" }, ...list].map((g) => `<button class="tv-chip" type="button" data-genre="${g.id}" aria-pressed="${g.id === 0}">${esc(g.name)}</button>`).join("");
+				loadMore();
+			}
+			async function loadMore() {
+				const b = browse;
+				if (!b || b.busy || b.done) return;
+				b.busy = true;
+				try {
+					const genre = b.genre || b.conf.base;
+					const d = await tmdb(`${b.conf.list}&page=${b.page}${genre ? `&with_genres=${genre}` : ""}`);
+					if (b !== browse) return; // a newer genre or tab replaced this list
+					$("browse-grid").insertAdjacentHTML("beforeend", cards(d.results, b.conf.type));
+					b.done = b.page >= d.total_pages;
+					b.page++;
+				} finally {
+					b.busy = false;
+				}
+			}
+			$("chips").addEventListener("click", (e) => {
+				const chip = e.target.closest("[data-genre]");
+				if (!chip) return;
+				for (const c of $("chips").children) c.setAttribute("aria-pressed", c === chip);
+				browse = { ...browse, genre: Number(chip.dataset.genre), page: 1, done: false, busy: false };
+				$("browse-grid").innerHTML = "";
+				loadMore();
+			});
+			new IntersectionObserver((entries) => entries[0].isIntersecting && page === "browse" && loadMore(), { rootMargin: "600px" }).observe($("more"));
+
+			$("tabs").addEventListener("click", (e) => {
+				const tab = e.target.closest("[data-section]");
+				if (!tab) return;
+				for (const t of $("tabs").children) t.toggleAttribute("aria-current", t === tab);
+				if (tab.dataset.section === "home") show("home");
+				else openBrowse(tab.dataset.section);
+			});
+
+			// Age check for titles rated for adults (once per title per session) -
+			async function rating(id, type) {
+				try {
+					if (type === "movie") {
+						const d = await tmdb(`/movie/${id}/release_dates`);
+						return d.results.find((r) => r.iso_3166_1 === "US")?.release_dates.find((r) => r.certification)?.certification || "";
+					}
+					const d = await tmdb(`/tv/${id}/content_ratings`);
+					return d.results.find((r) => r.iso_3166_1 === "US")?.rating || "";
+				} catch {
+					return "";
+				}
+			}
+			// `at` is the page change the caller started on; if they've moved on, don't ask.
+			async function ageOk(id, type, at = nav) {
+				const key = `flux:age:${id}`;
+				if (sessionStorage.getItem(key)) return true;
+				const r = await rating(id, type);
+				if (!ADULT.has(r)) return true;
+				if (at !== nav) return false;
+				$("age-text").textContent = `This title is rated ${r} and is meant for adults.`;
+				const gate = $("age-gate");
+				gate.showModal();
+				const ok = await new Promise((resolve) => {
+					gate.querySelector("form").addEventListener("submit", (e) => resolve(e.submitter?.value === "ok"), { once: true });
+					gate.addEventListener("cancel", () => resolve(false), { once: true });
+				});
+				gate.close();
+				if (ok) sessionStorage.setItem(key, "1");
+				return ok;
+			}
+
+			// Info page -----------------------------------------------------------
+			let current = null; // { id, type, name, seasons, season, ep, fromInfo }
+			async function openInfo(id, type) {
+				// Show the page at once and load the details and age rating side by side.
+				$("info-head").innerHTML = `<p class="tv-loading">Loading…</p>`;
+				$("info-head").style.backgroundImage = "";
+				$("info-facts").innerHTML = $("info-seasons").innerHTML = "";
+				show("info");
+				const at = nav;
+				const [d, ok] = await Promise.all([tmdb(`/${type}/${id}`), ageOk(id, type, at)]);
+				if (at !== nav) return; // they went Back (or elsewhere) while it loaded
+				if (!ok) return show(backTo);
+				const name = nameOf(d);
+				const last = lastWatched(id);
+				current = { id, type, name, seasons: (d.seasons || []).filter((s) => s.season_number > 0), season: last.season, ep: last.ep, fromInfo: true };
+				if (d.backdrop_path) $("info-head").style.backgroundImage = `url("${BACKDROP}${d.backdrop_path}")`;
+				$("info-head").innerHTML =
+					`${d.poster_path ? `<img src="${POSTER}${d.poster_path}" alt="">` : ""}<div><h1>${esc(name)}</h1>` +
+					`<div class="tv-tags">${(d.genres || []).slice(0, 4).map((g) => `<span class="tv-tag">${esc(g.name)}</span>`).join("")}</div>` +
+					`<p class="tv-overview" style="margin-top: 12px">${esc(d.overview || "")}</p>` +
+					`<div class="tv-actions"><button class="btn primary" type="button" id="info-play">${icon("play")}${type === "tv" && (last.season > 1 || last.ep > 1) ? `Resume S${last.season} · E${last.ep}` : "Watch"}</button></div></div>`;
+				$("info-play").onclick = () => play(id, type, name, current.season, current.ep);
+				const runtime = d.runtime ? `${Math.floor(d.runtime / 60)}h ${d.runtime % 60}m` : d.number_of_seasons ? `${d.number_of_seasons} season${d.number_of_seasons > 1 ? "s" : ""}` : "";
+				$("info-facts").innerHTML = [
+					["Year", yearOf(d)],
+					["Rating", d.vote_average ? `★ ${d.vote_average.toFixed(1)}` : ""],
+					["Length", runtime],
+					["Studio", (d.production_companies || []).slice(0, 2).map((c) => c.name).join(", ")],
+					["Status", d.status],
+				]
+					.filter(([, v]) => v)
+					.map(([l, v]) => `<div><small>${l}</small>${esc(v)}</div>`)
+					.join("");
+				if (type === "tv") renderSeasons("info-seasons");
+			}
+
+			// Seasons and episodes (shared by the info and watch pages)
+			async function renderSeasons(boxId) {
+				const box = $(boxId);
+				const c = current;
+				const seasons = c.seasons.length > 1
+					? `<h2 class="tv-row-title">Seasons</h2><div class="tv-chips">${c.seasons.map((s) => `<button class="tv-chip" type="button" data-season="${s.season_number}" aria-pressed="${s.season_number === c.season}">Season ${s.season_number}</button>`).join("")}</div>`
+					: "";
+				box.innerHTML = `${seasons}<h2 class="tv-row-title">Episodes</h2><div class="tv-eps"><p class="tv-loading">Loading…</p></div>`;
+				try {
+					const d = await tmdb(`/tv/${c.id}/season/${c.season}`);
+					if (c !== current) return;
+					box.querySelector(".tv-eps").innerHTML = (d.episodes || [])
+						.map((ep) => `<button class="btn" type="button" data-ep="${ep.episode_number}" title="${esc(ep.name)}" aria-pressed="${page === "watch" && ep.episode_number === c.ep}">Episode ${ep.episode_number}</button>`)
+						.join("");
+				} catch {
+					box.querySelector(".tv-eps").innerHTML = `<p class="tv-loading">Couldn't load episodes.</p>`;
+				}
+			}
+			for (const id of ["info-seasons", "watch-seasons"]) {
+				$(id).addEventListener("click", (e) => {
+					const season = e.target.closest("[data-season]");
+					const ep = e.target.closest("[data-ep]");
+					if (season) {
+						current.season = Number(season.dataset.season);
+						current.ep = 1;
+						if (page === "watch") play(current.id, "tv", current.name, current.season, 1);
+						else renderSeasons(id);
+					} else if (ep) {
+						play(current.id, "tv", current.name, current.season, Number(ep.dataset.ep));
+					}
+				});
+			}
+
+			// Player (2Embed) -----------------------------------------------------
+			function lastWatched(id) {
+				try {
+					return { season: 1, ep: 1, ...JSON.parse(localStorage.getItem(`flux:tv:${id}`) || "{}") };
+				} catch {
+					return { season: 1, ep: 1 };
+				}
+			}
+			async function play(id, type, name, season = 1, ep = 1) {
+				const at = nav;
+				const [ok, d] = await Promise.all([ageOk(id, type, at), type === "tv" && current?.id !== id ? tmdb(`/tv/${id}`) : null]);
+				if (!ok || at !== nav) return;
+				if (current?.id !== id) current = { id, type, name, seasons: (d?.seasons || []).filter((s) => s.season_number > 0), fromInfo: page === "info" };
+				Object.assign(current, { season, ep });
+				if (type === "tv") {
+					try {
+						localStorage.setItem(`flux:tv:${id}`, JSON.stringify({ season, ep }));
+					} catch {
+						// Resume won't be remembered.
+					}
+				}
+				$("watch-title").textContent = name;
+				$("watch-ep").textContent = type === "tv" ? `Season ${season} · Episode ${ep}` : "";
+				$("player").src = type === "movie" ? `https://www.2embed.cc/embed/${id}` : `https://www.2embed.cc/embedtv/${id}&s=${season}&e=${ep}`;
+				show("watch");
+				guardHistory();
+				if (type === "tv") renderSeasons("watch-seasons");
+				else $("watch-seasons").innerHTML = "";
+			}
+
+			// The player's ads call history.back() to pull people away. Keep a spare same-page
+			// history entry on top while watching, so a "back" only lands on it, then re-add it.
+			const guardHistory = () => history.state?.fluxWatch || history.pushState({ fluxWatch: true }, "");
+			addEventListener("popstate", () => page === "watch" && guardHistory());
+
+			// Search --------------------------------------------------------------
+			let searchTimer;
+			let searchId = 0;
+			$("search").addEventListener("input", (e) => {
+				clearTimeout(searchTimer);
+				const q = e.target.value.trim();
+				if (!q) return ($("results").hidden = true);
+				searchTimer = setTimeout(async () => {
+					const id = ++searchId;
+					const d = await tmdb(`/search/multi?query=${encodeURIComponent(q)}&page=1`).catch(() => ({ results: [] }));
+					if (id !== searchId) return;
+					const hits = d.results.filter((it) => (it.media_type === "movie" || it.media_type === "tv") && it.poster_path && !BLOCKED.has(it.id)).slice(0, 8);
+					$("results").innerHTML = hits.length
+						? hits
+								.map((it) => `<button class="tv-result" type="button" data-id="${it.id}" data-type="${it.media_type}"><img src="${POSTER}${it.poster_path}" alt=""><span><b>${esc(nameOf(it))}</b><small>${it.media_type === "movie" ? "Movie" : "Series"}${yearOf(it) ? ` · ${yearOf(it)}` : ""}</small></span></button>`)
+								.join("")
+						: `<p class="tv-empty">No results for "${esc(q)}".</p>`;
+					$("results").hidden = false;
+				}, 300);
+			});
+			document.addEventListener("click", (e) => e.target.closest(".tv-search") || ($("results").hidden = true));
+			$("search").addEventListener("keydown", (e) => e.key === "Escape" && ($("results").hidden = true));
+
+			loadHome().catch((err) => ($("hero").innerHTML = `<div class="tv-hero-body"><p class="tv-loading">Couldn't load movies (${esc(err.message)}). Try reloading.</p></div>`));
+		</script>
+	</body>
+</html>

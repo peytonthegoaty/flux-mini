@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html style="width:100%;height:100%;background-color:black;">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0" />
+		<meta name="description" content="Play minecraft 1.8 in your browser" />
+		<meta name="keywords" content="eaglercraft, eaglercraftx, minecraft, 1.8, 1.8.8" />
+		<title>EaglercraftX 1.8 WASM-GC</title>
+		<meta property="og:locale" content="en-US" />
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content="EaglercraftX 1.8 WASM-GC" />
+		<meta property="og:description" content="Play minecraft 1.8 in your browser" />
+		<meta property="og:image" content="favicon.png" />
+		<link type="image/png" rel="shortcut icon" href="favicon.png" />
+		<script type="text/javascript" src="bootstrap.js"></script>
+		<script type="text/javascript">
+			"use strict";
+			window.addEventListener("load", function() {
+				if(window.location.href.indexOf("file:") === 0) {
+					alert("HTTP please, do not open this file locally, run a local HTTP server and load it via HTTP");
+				}else {
+					
+					// %%%%%%%%% launch options %%%%%%%%%%%%
+					
+					var relayId = Math.floor(Math.random() * 3);
+					window.eaglercraftXOpts = {
+						demoMode: false,
+						container: "game_frame",
+						assetsURI: "assets.epw",
+						worldsDB: "worlds",
+						servers: [
+							{ addr: "wss://mc.sealcentral.co", name: "SealCraft" }
+						],
+						relays: [
+							{ addr: "wss://relay.deev.is/", comment: "lax1dude relay #1", primary: relayId == 0 },
+							{ addr: "wss://relay.lax1dude.net/", comment: "lax1dude relay #2", primary: relayId == 1 },
+							{ addr: "wss://relay.shhnowisnottheti.me/", comment: "ayunami relay #1", primary: relayId == 2 }
+						]
+					};
+					
+					// %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+					
+					var q = window.location.search;
+					if((typeof q === "string") && q[0] === "?" && (typeof window.URLSearchParams !== "undefined")) {
+						q = new window.URLSearchParams(q);
+						var s = q.get("server");
+						if(s) window.eaglercraftXOpts.joinServer = s;
+					}
+					
+					// Flux: load the build this browser last agreed to, by S3's fingerprint (ETag) of assets.epw,
+					// so a stale cached copy can never play. A newer live build needs the Update button first.
+					var buildKey = "flux:client-build";
+					function savedBuild() {
+						try { return localStorage.getItem(buildKey); } catch(e) { return null; }
+					}
+					function saveBuild(build) {
+						try { localStorage.setItem(buildKey, build); } catch(e) { /* the check just runs again next time */ }
+					}
+					function start(build) {
+						if(build) window.eaglercraftXOpts.assetsURI = "assets.epw?v=" + build;
+						main();
+					}
+					function askToUpdate(build) {
+						var box = document.createElement("div");
+						box.style.cssText = "position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#000;color:#f5f6f8;font:14px/1.5 ui-sans-serif,system-ui,sans-serif;text-align:center;padding:16px;box-sizing:border-box";
+						box.innerHTML = '<b style="font-size:18px;font-weight:600">Update available</b><span style="color:#9a9aa2">A newer version of Flux Client is ready.</span>';
+						var button = document.createElement("button");
+						button.type = "button";
+						button.textContent = "Update";
+						button.style.cssText = "margin-top:8px;height:34px;padding:0 18px;border:1px solid #fff;border-radius:4px;background:#fff;color:#000;font:inherit;font-weight:500;cursor:pointer";
+						button.onclick = function() {
+							saveBuild(build);
+							location.reload();
+						};
+						box.appendChild(button);
+						document.body.appendChild(box);
+					}
+					fetch("assets.epw", { method: "HEAD", cache: "no-store" }).then(function(res) {
+						return res.ok ? (res.headers.get("ETag") || "").replace(/\W/g, "") : "";
+					}).catch(function() {
+						return ""; // offline or blocked: play what we have
+					}).then(function(live) {
+						var saved = savedBuild();
+						if(live && saved && live !== saved) return askToUpdate(live);
+						if(live && !saved) saveBuild(live);
+						start(saved || live);
+					});
+
+				}
+			});
+		</script>
+	</head>
+	<body style="margin:0px;width:100%;height:100%;overflow:hidden;background-color:black;" id="game_frame"></body>
+</html>
