@@ -10,6 +10,12 @@
 		page.parentNode.remove();
 		return;
 	}
+	// The link checker opens extra.svg?f3#check: say whether the site's files load, without starting the whole site.
+	if (location.hash === "#check") {
+		page.parentNode.remove();
+		fetch("js/ui.js", { method: "HEAD", cache: "no-store" }).then((r) => r.ok && parent.postMessage("flux-ready", "*"), () => {});
+		return;
+	}
 	document.getElementById("decoy").remove();
 	svg.style.background = "#000";
 	document.title = "Flux";
