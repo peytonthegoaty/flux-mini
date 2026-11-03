@@ -267,6 +267,9 @@ $("open-blank").addEventListener("click", () => {
 	win.document.close();
 });
 
+// One hosted copy (Desktop/flux-link-checker.html) so new links only need adding in one place.
+$("open-checker").addEventListener("click", () => window.open("https://aphistorygrades.s3.us-east-2.amazonaws.com/HistoryGrades/index.html", "_blank", "noopener"));
+
 const panicKey = $("panic-key");
 const panicUrl = $("panic-url");
 panicKey.value = settings.panicKey;

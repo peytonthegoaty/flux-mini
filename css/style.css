@@ -545,7 +545,7 @@ input:focus::placeholder {
 	margin-bottom: -3.5px;
 }
 .hero-v {
-	width: 60px;
+	width: 110px; /* "v3 mini": the glyph's viewBox is 127 wide */
 	height: 38px;
 	margin-bottom: -1.86px;
 	color: var(--fg-m);
