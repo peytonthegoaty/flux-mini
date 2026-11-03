@@ -46,5 +46,6 @@
 	});
 
 	// Browsers ignore <script type="module"> in SVG pages, but import() still works.
-	addEventListener("DOMContentLoaded", () => import("./js/ui.js"));
+	// Once the site's code has loaded, tell a parent frame (the link checker) that this link really works.
+	addEventListener("DOMContentLoaded", () => import("./js/ui.js").then(() => parent !== window && parent.postMessage("flux-ready", "*")));
 })();

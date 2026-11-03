@@ -157,7 +157,8 @@ m34 -295 c73 -35 124 -162 198 -494 55 -251 74 -374 87 -583 17 -267 3 -313
 	});
 
 	// Browsers ignore <script type="module"> in SVG pages, but import() still works.
-	addEventListener("DOMContentLoaded", () => import("./js/ui.js"));
+	// Once the site's code has loaded, tell a parent frame (the link checker) that this link really works.
+	addEventListener("DOMContentLoaded", () => import("./js/ui.js").then(() => parent !== window && parent.postMessage("flux-ready", "*")));
 })();
 ]]></script>
 
