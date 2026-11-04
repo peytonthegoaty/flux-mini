@@ -169,7 +169,7 @@ m34 -295 c73 -35 124 -162 198 -494 55 -251 74 -374 87 -583 17 -267 3 -313
 ]]></script>
 
 		
-		
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		
 		<link id="favicon" rel="icon" href="LOGO.svg" type="image/svg+xml" />
 		<script src="js/boot.js"></script>

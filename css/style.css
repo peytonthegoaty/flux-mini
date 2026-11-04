@@ -1492,7 +1492,7 @@ input[role="switch"]:checked::before {
 	}
 	.s-tabs {
 		flex-direction: row;
-		overflow-x: auto;
+		flex-wrap: wrap; /* all six tabs visible on a phone, in two rows */
 	}
 	.row {
 		flex-wrap: wrap;
@@ -1621,6 +1621,10 @@ input[role="switch"]:checked::before {
 	.card-star {
 		opacity: 1;
 		transform: none;
+	}	/* iPhones zoom the page in when a text box under 16px is tapped. */
+	input,
+	textarea {
+		font-size: 16px;
 	}
 }
 

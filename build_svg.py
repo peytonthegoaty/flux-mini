@@ -31,7 +31,7 @@ def build():
     page = (ROOT / "src" / "page.html").read_text(encoding="utf-8")
     page = re.sub(r"<!--.*?-->", "", page, flags=re.S)
     head = re.search(r"<head>(.*?)</head>", page, re.S).group(1)
-    head = re.sub(r"<meta[^>]*charset[^>]*>|<meta[^>]*viewport[^>]*>|<title>.*?</title>|<script type=\"module\".*?</script>", "", head, flags=re.S)
+    head = re.sub(r"<meta[^>]*charset[^>]*>|<title>.*?</title>|<script type=\"module\".*?</script>", "", head, flags=re.S)
     body = re.search(r"<body[^>]*>.*</body>", page, re.S).group(0)
     shim = (ROOT / "src" / "svgshim.js").read_text(encoding="utf-8")
     picture = (ROOT / "src" / "decoy.svg").read_text(encoding="utf-8")
