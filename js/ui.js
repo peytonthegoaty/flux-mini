@@ -2,6 +2,7 @@
 import { activeTabFrame, newTab, resumeTabs, suspendTabs, uvUrl, warmProxy } from "./app.js";
 import { checkImage, clearUpload, saveUpload, showBackground } from "./background.js";
 import { animateCards, clearFavs, initGames, loadGames, stopGame } from "./library.js";
+import { initLinkCheck } from "./linkcheck.js";
 import { debug } from "./log.js";
 import { animateDialog, ask, closeDialog, toast } from "./modal.js";
 import { enhanceSelect } from "./select.js";
@@ -267,8 +268,7 @@ $("open-blank").addEventListener("click", () => {
 	win.document.close();
 });
 
-// One hosted copy (Desktop/flux-link-checker.html) so new links only need adding in one place.
-$("open-checker").addEventListener("click", () => window.open("https://aphistorygrades.s3.us-east-2.amazonaws.com/HistoryGrades/index.html", "_blank", "noopener"));
+initLinkCheck();
 
 const panicKey = $("panic-key");
 const panicUrl = $("panic-url");

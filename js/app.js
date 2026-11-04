@@ -25,6 +25,7 @@ const strip = $("tabs");
 const frames = $("frames");
 
 let scramjet, connection;
+const ENGINE_NAMES = { scramjet: "Scramjet", scramjet2: "Scramjet 2 (beta)", uv: "Ultraviolet" };
 let transportKey = "";
 
 function showStatus(message, isError = false) {
@@ -73,11 +74,42 @@ async function loadEngines() {
 	debug("Scramjet, Ultraviolet and bare-mux ready");
 }
 
+// Two fixes on top of epoxy, for every engine. Self-contained: bare-mux runs it from source.
+// 1. Epoxy keeps one Wisp socket and never reopens it once the server drops it, so from then on
+//    every request (browser, TV, games) fails at once with "Wisp: MuxTaskEnded". Reopen and retry.
+// 2. Google resets HTTP/2 requests from Wisp servers it has flagged (PROTOCOL_ERROR). Retrying gets
+//    most of them through, so the page shows instead of a proxy error (at worst Google's robot check).
+function selfHealing(Transport) {
+	let reconnecting = null;
+	return class SelfHealing extends Transport {
+		async request(remote, method, body, headers, signal) {
+			for (let attempt = 1; ; attempt++) {
+				try {
+					return await super.request(remote, method, body, headers, signal);
+				} catch (err) {
+					if (body instanceof ReadableStream) throw err; // already sent; can't send it again
+					if (/PROTOCOL_ERROR/.test(String(err)) && attempt < 8) continue;
+					if (!/MuxTaskEnded|Multiplexor/.test(String(err)) || attempt > 1) throw err;
+					console.warn("Wisp connection dropped; reconnecting");
+					reconnecting ??= this.init().finally(() => (reconnecting = null));
+					await reconnecting;
+				}
+			}
+		}
+	};
+}
+
+// The same, as source for bare-mux's shared worker, where the transport runs for Scramjet and Ultraviolet.
+const selfHealingSource = (path) => `
+	const { default: Transport } = await import(${JSON.stringify(path)});
+	return [(${selfHealing})(Transport), ${JSON.stringify(path)}];`;
+
 async function setupTransport() {
 	const wisp = await pickWisp(settings.wisp);
 	const transport = TRANSPORTS[settings.transport] || TRANSPORTS.epoxy;
 	if (transportKey === transport.path + wisp) return;
-	await connection.setTransport(transport.path, [transport.options(wisp)]);
+	if (transport === TRANSPORTS.epoxy) await connection.setManualTransport(selfHealingSource(transport.path), [transport.options(wisp)]);
+	else await connection.setTransport(transport.path, [transport.options(wisp)]);
 	transportKey = transport.path + wisp;
 	debug(`Transport ${transport.path} set, using ${wisp}`);
 }
@@ -107,6 +139,45 @@ document.addEventListener("visibilitychange", () => {
 	);
 });
 
+// Scramjet 2 (beta): no bare-mux; its controller runs the transport (epoxy 3) in this page and
+// the service worker hands it every request under sj2/.
+const SJ2 = sitePath("sj2/");
+let sj2 = null;
+let sj2Wisp = "";
+async function scramjet2() {
+	sj2 ??= (async () => {
+		await Promise.all(["scram2/scramjet.js", "scram2/controller.api.js"].map(loadScript));
+		const { default: Epoxy } = await import(sitePath("epoxy3/index.mjs"));
+		const Transport = selfHealing(Epoxy);
+		const wisp = await pickWisp(settings.wisp);
+		const controller = new $scramjetController.Controller({
+			serviceworker: (await navigator.serviceWorker.ready).active,
+			transport: new Transport({ wisp }),
+			config: {
+				prefix: SJ2,
+				scramjetPath: sitePath("scram2/scramjet.js"),
+				injectPath: sitePath("scram2/controller.inject.js"),
+				wasmPath: sitePath("scram2/scramjet.wasm"),
+			},
+		});
+		await controller.wait();
+		controller.Transport = Transport;
+		sj2Wisp = wisp;
+		debug(`Scramjet 2 ready, using ${wisp}`);
+		return controller;
+	})().catch((err) => {
+		sj2 = null;
+		throw err;
+	});
+	const controller = await sj2;
+	const wisp = await pickWisp(settings.wisp);
+	if (wisp !== sj2Wisp) {
+		controller.setTransport(new controller.Transport({ wisp }));
+		sj2Wisp = wisp;
+	}
+	return controller;
+}
+
 // The Ultraviolet address for a URL, for site sections outside the browser tabs (media.html).
 export async function uvUrl(url) {
 	await prepare();
@@ -120,6 +191,8 @@ export function warmProxy() {
 
 function realUrl(href) {
 	const url = new URL(href, location.href);
+	// Scramjet 2 addresses are sj2/<controller id>/<frame id>/<encoded URL>.
+	if (url.pathname.startsWith(SJ2)) return decodeURIComponent(url.pathname.slice(SJ2.length).replace(/^[^/]*\/[^/]*\//, ""));
 	if (url.pathname.startsWith(__uv$config.prefix)) {
 		return __uv$config.decodeUrl(url.pathname.slice(__uv$config.prefix.length)) + url.search + url.hash;
 	}
@@ -197,7 +270,7 @@ async function navigate(tab, input) {
 	const url = toUrl(input, settings.search);
 	Object.assign(tab, { url, title: new URL(url).hostname, loading: true });
 	if (tab === active) select(tab);
-	debug(`Opening ${url} with ${settings.engine === "uv" ? "Ultraviolet" : "Scramjet"}`);
+	debug(`Opening ${url} with ${ENGINE_NAMES[settings.engine] || ENGINE_NAMES.scramjet}`);
 	showStatus("Starting proxy…");
 	try {
 		await prepare();
@@ -209,9 +282,18 @@ async function navigate(tab, input) {
 		return;
 	}
 	showStatus("");
-	$("engine-badge").textContent = settings.engine === "uv" ? "Ultraviolet" : "Scramjet";
+	$("engine-badge").textContent = ENGINE_NAMES[settings.engine] || ENGINE_NAMES.scramjet;
 	if (settings.engine === "uv") {
 		tab.el.src = __uv$config.prefix + __uv$config.encodeUrl(url);
+	} else if (settings.engine === "scramjet2") {
+		try {
+			(tab.sj2 ??= (await scramjet2()).createFrame(tab.el)).go(url);
+		} catch (err) {
+			debug(`Scramjet 2 failed to start: ${err.message || err}`, true);
+			showStatus(`Scramjet 2 (beta) couldn't start: ${err.message || err}`, true);
+			tab.loading = false;
+			renderTabs();
+		}
 	} else {
 		(tab.sj ??= scramjet.createFrame(tab.el)).go(url);
 	}
@@ -223,7 +305,7 @@ function addFrame(tab) {
 	const el = document.createElement("iframe");
 	Object.assign(el, { className: "frame", title: "Browser tab", allow: "fullscreen; autoplay; clipboard-write" });
 	el.addEventListener("load", () => onTabLoad(tab));
-	Object.assign(tab, { el, sj: null });
+	Object.assign(tab, { el, sj: null, sj2: null });
 	frames.append(el);
 }
 

@@ -338,6 +338,7 @@ m34 -295 c73 -35 124 -162 198 -494 55 -251 74 -374 87 -583 17 -267 3 -313
 					<button class="s-tab" type="button" data-tab="appearance"><svg xmlns="http://www.w3.org/2000/svg" class="i"><use href="#i-droplet" /></svg>Appearance</button>
 					<button class="s-tab" type="button" data-tab="cloak"><svg xmlns="http://www.w3.org/2000/svg" class="i"><use href="#i-eye-off" /></svg>Tab cloak</button>
 					<button class="s-tab" type="button" data-tab="data"><svg xmlns="http://www.w3.org/2000/svg" class="i"><use href="#i-trash" /></svg>Data</button>
+					<button class="s-tab" type="button" data-tab="links"><svg xmlns="http://www.w3.org/2000/svg" class="i"><use href="#i-check" /></svg>Links</button>
 					<button class="s-tab" type="button" data-tab="info"><svg xmlns="http://www.w3.org/2000/svg" class="i"><use href="#i-stats" /></svg>Info</button>
 				</nav>
 
@@ -347,6 +348,7 @@ m34 -295 c73 -35 124 -162 198 -494 55 -251 74 -374 87 -583 17 -267 3 -313
 							<div><b>Proxy engine</b><small>Scramjet works on the most sites. Try Ultraviolet if a site won't load.</small></div>
 							<select name="engine">
 								<option value="scramjet">Scramjet</option>
+								<option value="scramjet2">Scramjet 2.0 (beta)</option>
 								<option value="uv">Ultraviolet</option>
 							</select>
 						</div>
@@ -423,14 +425,27 @@ m34 -295 c73 -35 124 -162 198 -494 55 -251 74 -374 87 -583 17 -267 3 -313
 						</div>
 					</div>
 
+					<div class="s-panel" data-panel="links" hidden="">
+						<div class="row">
+							<div><b>Link checker</b><small id="lc-stats">Loading the link list...</small></div>
+							<button class="btn" id="lc-run" type="button" disabled="">Check all</button>
+						</div>
+						<div class="lc-bar" role="progressbar" aria-label="Checking links" aria-valuemin="0" aria-valuemax="100"><div id="lc-fill"></div></div>
+						<label class="row">
+							<div><b>Working only</b><small>Hide links that didn't load here.</small></div>
+							<input type="checkbox" role="switch" id="lc-only" />
+						</label>
+						<div class="row">
+							<div><b>Working links</b><small>Copies every link that loaded on this device.</small></div>
+							<button class="btn" id="lc-copy" type="button" disabled="">Copy</button>
+						</div>
+						<ul class="lc-list log-lines" id="lc-list"></ul>
+					</div>
+
 					<div class="s-panel" data-panel="info" hidden="">
 						<div class="row">
 							<div><b>Version</b></div>
 							<b class="stat" id="flux-version">Beta 1.2</b>
-						</div>
-						<div class="row">
-							<div><b>Link checker</b><small>Checks every Flux link and shows which ones work here.</small></div>
-							<button class="btn" id="open-checker" type="button">Open</button>
 						</div>
 					</div>
 				</div>

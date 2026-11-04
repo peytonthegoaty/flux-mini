@@ -45,7 +45,9 @@ def build():
         '<html xmlns="http://www.w3.org/1999/xhtml">\n<head>\n<script><![CDATA[\n%s]]></script>\n%s\n</head>\n%s\n</html>\n'
         "</foreignObject>\n</svg>\n" % (view_box, picture, shim, xhtml(head), xhtml(body))
     )
-    (ROOT / "extra.svg").write_text(svg, encoding="utf-8", newline="\n")
+    out = ROOT / "extra.svg"
+    if not out.exists() or out.read_text(encoding="utf-8") != svg:  # unchanged keeps its date, so it isn't re-uploaded
+        out.write_text(svg, encoding="utf-8", newline="\n")
     ET.fromstring(svg.encode("utf-8"))  # a browser shows an error page for anything that isn't valid XML
     return svg
 

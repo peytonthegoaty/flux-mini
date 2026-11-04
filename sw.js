@@ -1,8 +1,9 @@
-// One service worker for both engines, registered in the site's folder (the root
+// One service worker for every engine, registered in the site's folder (the root
 // locally, /<bucket>/ on S3). Ultraviolet handles <folder>uv/service/*, Scramjet handles
-// <folder>scramjet/*, everything else (the site itself) passes through untouched.
+// <folder>scramjet/*, Scramjet 2 (beta) handles <folder>sj2/*, everything else (the site
+// itself) passes through untouched.
 const base = new URL("./", self.location.href).pathname;
-importScripts("uv/uv.bundle.js", "uv/uv.config.js", "uv/uv.sw.js", "scram/scramjet.all.js");
+importScripts("uv/uv.bundle.js", "uv/uv.config.js", "uv/uv.sw.js", "scram/scramjet.all.js", "scram2/controller.sw.js");
 
 const uv = new UVServiceWorker();
 const { ScramjetServiceWorker } = $scramjetLoadWorker();
@@ -55,6 +56,8 @@ async function handleRequest(event) {
 
 // Only proxy traffic goes through the worker; games and site files load natively (faster, range requests work).
 self.addEventListener("fetch", (event) => {
+	// Scramjet 2 knows its own tabs (the page's controller registers them with this worker).
+	if ($scramjetController.shouldRoute(event)) return event.respondWith($scramjetController.route(event));
 	const { pathname } = new URL(event.request.url);
 	if (
 		pathname.startsWith(__uv$config.prefix) ||
