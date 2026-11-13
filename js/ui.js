@@ -255,6 +255,11 @@ cloakSelect.value = settings.cloak;
 const styleSelect = $("style-select");
 styleSelect.value = settings.style === "os" ? "os" : "default";
 styleSelect.addEventListener("change", () => {
+	// Same phone test as js/boot.js.
+	if (styleSelect.value === "os" && Math.min(screen.width, screen.height) < 600) {
+		styleSelect.value = "default";
+		return toast("OS mode isn't supported on phones.");
+	}
 	settings.style = styleSelect.value;
 	saveSettings();
 	location.reload();
@@ -436,6 +441,7 @@ const gamesReady = loadGames().then(
 	}
 );
 if (osMode) bootOS(gamesReady);
+if ("osBlocked" in root.dataset) toast("OS mode isn't supported on phones, so you're back on the main Flux.");
 // Find a working Wisp server in the background so the proxy is ready when needed.
 (window.requestIdleCallback || setTimeout)(showWisp);
 requestAnimationFrame(playIntro);

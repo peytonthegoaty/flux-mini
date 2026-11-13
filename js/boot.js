@@ -20,6 +20,16 @@
 	const root = document.documentElement;
 	root.classList.toggle("perf", !!s.perf);
 	root.classList.toggle("sb-collapsed", !!s.collapsed);
+	// OS mode isn't supported on phones (screen's short side under 600px): back to the main Flux.
+	if (s.style === "os" && Math.min(screen.width, screen.height) < 600) {
+		s.style = "default";
+		root.dataset.osBlocked = "";
+		try {
+			localStorage.setItem("flux:settings", JSON.stringify(s));
+		} catch {
+			// It's switched back again next load.
+		}
+	}
 	root.classList.toggle("os", s.style === "os");
 	if (s.bg === "link" && s.bgLink) {
 		root.classList.add("has-bg");
