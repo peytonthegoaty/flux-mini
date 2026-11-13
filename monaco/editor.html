@@ -15,6 +15,9 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #141418; }
 <script src="vs/loader.js"></script>
 <script>
 require.config({ paths: { vs: new URL("vs", location.href).href } }); // full address: Monaco's workers resolve it from elsewhere
+// Start workers straight from their file, not from a blob: wrapper. On S3 the bucket only serves files
+// asked for by the site's own pages, and a blob: worker's requests don't count as that.
+window.MonacoEnvironment = { getWorkerUrl: () => new URL("vs/base/worker/workerMain.js", location.href).href };
 require(["vs/editor/editor.main"], function () {
 	// Flux's colours (css/style.css tokens): near-black, grey text, white accent.
 	monaco.editor.defineTheme("flux", {
