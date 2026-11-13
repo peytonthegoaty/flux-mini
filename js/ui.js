@@ -1,6 +1,6 @@
 // Page shell: views, sidebar, settings popup, background and tab cloak.
 import { activeTabFrame, newTab, resumeTabs, suspendTabs, uvUrl, warmProxy } from "./app.js";
-import { checkImage, clearUpload, saveUpload, showBackground } from "./background.js";
+import { applyFit, checkImage, checkVideo, clearUpload, isVideoLink, playVideo, saveUpload, showBackground } from "./background.js";
 import { animateCards, clearFavs, initGames, loadGames, stopGame } from "./library.js";
 import "./htmlrun.js";
 import { initLinkCheck } from "./linkcheck.js";
@@ -187,6 +187,7 @@ customInput.addEventListener("keydown", (e) => {
 function applyPerf(on) {
 	root.classList.toggle("perf", on);
 	$("perf-toggle").checked = on;
+	playVideo(!on); // a video wallpaper holds still in performance mode
 }
 $("perf-toggle").addEventListener("change", (e) => {
 	settings.perf = e.target.checked;
@@ -195,12 +196,15 @@ $("perf-toggle").addEventListener("change", (e) => {
 });
 
 // Background image ----------------------------------------------------------
-// Settings and the setup tour share one wallpaper grid: None, ours, or an upload.
+// Settings, the setup tour and the OS Wallpaper app share one wallpaper grid: None, ours, or an
+// upload (a picture, or an MP4 that plays behind the page).
 const MAX_UPLOAD = 25 * 1024 * 1024;
-const WALLPAPERS = ["Attack On Titan.jpg", "BW.jpg", "Cat Yuji.jpg", "Toji.jpg"].map((name) => ({
+const MAX_VIDEO = 150 * 1024 * 1024;
+const WALLPAPERS = ["Attack On Titan.jpg", "BW.jpg", "Kingdom Hearts.jpg", "Japan.jpg", "Heavenly Daydream.mp4", "Autumn Stillness.mp4"].map((name) => ({
 	name: name.replace(/\.\w+$/, ""),
 	path: new URL(`backgrounds/${encodeURIComponent(name)}`, document.baseURI).href, // absolute: css/ would resolve it otherwise
-	thumb: `backgrounds/thumbs/${encodeURIComponent(name)}`,
+	thumb: `backgrounds/thumbs/${encodeURIComponent(name.replace(/\.mp4$/, ".jpg"))}`, // videos have a still frame
+	video: name.endsWith(".mp4"),
 }));
 
 async function setBackground(mode, link = "") {
@@ -213,7 +217,7 @@ async function setBackground(mode, link = "") {
 for (const grid of document.querySelectorAll(".wall-grid")) {
 	grid.innerHTML =
 		`<button class="wall" type="button" data-value="none"><span>None</span></button>` +
-		WALLPAPERS.map((w) => `<button class="wall" type="button" data-value="${w.path}" aria-label="${w.name}"><img src="${w.thumb}" alt="" loading="lazy" decoding="async"></button>`).join("") +
+		WALLPAPERS.map((w) => `<button class="wall" type="button" data-value="${w.path}" aria-label="${w.name}${w.video ? " (video)" : ""}"><img src="${w.thumb}" alt="" loading="lazy" decoding="async">${w.video ? `<svg class="i wall-play"><use href="#i-play"/></svg>` : ""}</button>`).join("") +
 		`<button class="wall" type="button" data-value="upload"><span>Upload your own</span></button>`;
 	grid.addEventListener("click", (e) => {
 		const value = e.target.closest(".wall")?.dataset.value;
@@ -228,18 +232,33 @@ for (const grid of document.querySelectorAll(".wall-grid")) {
 	});
 }
 
+for (const group of document.querySelectorAll('[data-pick="fit"]')) {
+	group.addEventListener("click", (e) => {
+		const value = e.target.closest("[data-value]")?.dataset.value;
+		if (!value) return;
+		settings.bgFit = value;
+		saveSettings();
+		applyFit();
+		markChoices();
+	});
+}
+
 $("bg-file").addEventListener("change", async (e) => {
 	const file = e.target.files[0];
 	e.target.value = "";
 	if (!file) return;
-	if (!file.type.startsWith("image/")) return toast("That file isn't an image.");
-	if (file.size > MAX_UPLOAD) return toast("That image is over 25 MB. Try a smaller one.");
+	const video = file.type === "video/mp4";
+	if (!video && !file.type.startsWith("image/")) return toast("That file isn't a picture or an MP4 video.");
+	if (file.size > (video ? MAX_VIDEO : MAX_UPLOAD)) return toast(video ? "That video is over 150 MB. Try a shorter or smaller one." : "That image is over 25 MB. Try a smaller one.");
 	const preview = URL.createObjectURL(file);
 	try {
-		await checkImage(preview);
+		const ratio = video ? await checkVideo(preview) : await checkImage(preview);
 		await saveUpload(file);
+		settings.bgVideo = video;
 		await setBackground("upload");
-		toast("Background updated");
+		// A video that isn't the screen's shape: point at the Crop / Stretch choice.
+		const offShape = video && Math.abs(ratio - innerWidth / innerHeight) > 0.05;
+		toast(offShape ? "Video added. It isn't your screen's shape, so pick Crop or Stretch under the wallpapers." : "Background updated");
 	} catch (err) {
 		toast(err.message || "Couldn't save that image.");
 	} finally {
@@ -417,7 +436,10 @@ function markChoices() {
 		engine: settings.engine,
 		perf: settings.perf ? "on" : "off",
 		wall: settings.bg === "link" ? settings.bgLink : settings.bg || "none",
+		fit: settings.bgFit === "stretch" ? "stretch" : "crop",
 	};
+	const video = (settings.bg === "link" && isVideoLink(settings.bgLink)) || (settings.bg === "upload" && settings.bgVideo);
+	for (const fit of document.querySelectorAll("[data-fit]")) fit.hidden = !video;
 	for (const group of document.querySelectorAll("[data-pick]")) {
 		for (const choice of group.children) choice.setAttribute("aria-pressed", choice.dataset.value === current[group.dataset.pick]);
 	}

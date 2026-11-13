@@ -283,7 +283,8 @@
 						<div class="row col">
 							<div><b>Wallpaper</b><small>Pick one of ours or upload your own.</small></div>
 							<div class="wall-grid" data-pick="wall"></div>
-							<input id="bg-file" type="file" accept="image/*" hidden />
+							<div class="wall-fit" data-fit="" hidden><span>Video fit</span><div class="wall-fit-btns" data-pick="fit"><button class="btn" type="button" data-value="crop">Crop</button><button class="btn" type="button" data-value="stretch">Stretch</button></div><small>Crop fills the screen and trims the edges. Stretch shows all of it, squashed to fit. Only matters if the video isn't your screen's shape.</small></div>
+							<input id="bg-file" type="file" accept="image/*,video/mp4" hidden />
 						</div>
 						<label class="row">
 							<div><b>Performance mode</b><small>Turns off blur and animation. Try it if the site feels slow.</small></div>
@@ -380,8 +381,9 @@
 				<time class="os-clock" id="os-clock"></time>
 			</nav>
 			<section class="os-wallpaper" id="os-wallpaper" hidden>
-				<p>Pick one of ours or upload your own. It shows on the desktop and in the default style.</p>
+				<p>Pick one of ours or upload your own (a picture or an MP4). It shows on the desktop and in the default style.</p>
 				<div class="wall-grid" data-pick="wall"></div>
+				<div class="wall-fit" data-fit="" hidden><span>Video fit</span><div class="wall-fit-btns" data-pick="fit"><button class="btn" type="button" data-value="crop">Crop</button><button class="btn" type="button" data-value="stretch">Stretch</button></div><small>Crop fills the screen and trims the edges. Stretch shows all of it, squashed to fit. Only matters if the video isn't your screen's shape.</small></div>
 			</section>
 		</div>
 

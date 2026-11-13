@@ -11,6 +11,8 @@ export const DEFAULTS = Object.freeze({
 	collapsed: false,
 	bg: "", // "" | "link" | "upload" (js/background.js)
 	bgLink: "",
+	bgVideo: false, // the uploaded background is a video
+	bgFit: "crop", // video wallpapers: "crop" | "stretch" (js/background.js)
 	cloak: "none",
 	cloakTitle: "",
 	cloakIcon: "",

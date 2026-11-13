@@ -9,11 +9,17 @@ const EPOXY = new URL("../../epoxy3/index.mjs", import.meta.url).href;
 let wispUrl = "";
 let client = null;
 
-async function newClient() {
-	const { default: Epoxy } = await import(EPOXY);
-	const transport = new Epoxy({ wisp: wispUrl });
-	await transport.init();
-	return transport.client;
+// Epoxy shares one wasm instance, which crashes if several clients start at the same moment: start them one at a time.
+let starting = Promise.resolve();
+function newClient(wisp = wispUrl) {
+	const next = starting.then(async () => {
+		const { default: Epoxy } = await import(EPOXY);
+		const transport = new Epoxy({ wisp });
+		await transport.init();
+		return transport.client;
+	});
+	starting = next.catch(() => {});
+	return next;
 }
 
 // Sets up the Wisp connection every proxied socket shares.
@@ -21,6 +27,33 @@ export async function startProxy(wisp) {
 	wispUrl = wisp;
 	client = newClient();
 	await client;
+}
+
+// Can this Wisp server reach a WebSocket (like an Eaglercraft relay)? Opens its own connection and
+// does the WebSocket handshake; true only if the server at the far end accepts it.
+// shortcut: a probe that times out keeps its Wisp socket until the page closes; fine for one launch.
+export function reaches(wisp, url, ms = 8000) {
+	const u = new URL(url);
+	const probe = (async () => {
+		const c = await newClient(wisp);
+		const io = await c.connect_tls(`wss://${u.hostname}:${u.port || 443}`);
+		const writer = io.write.getWriter();
+		const reader = io.read.getReader();
+		const key = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))));
+		await writer.write(
+			enc.encode(`GET ${u.pathname}${u.search} HTTP/1.1\r\nHost: ${u.host}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n` +
+				`Sec-WebSocket-Key: ${key}\r\nSec-WebSocket-Version: 13\r\nOrigin: ${location.origin}\r\n\r\n`)
+		);
+		let head = "";
+		while (!head.includes("\r\n\r\n")) {
+			const { value, done } = await reader.read();
+			if (done) break;
+			head += dec.decode(value);
+		}
+		writer.close().catch(() => {});
+		return /^HTTP\/1\.1 101/.test(head);
+	})();
+	return Promise.race([probe.catch(() => false), new Promise((r) => setTimeout(() => r(false), ms))]);
 }
 
 // Opens a TLS or TCP stream; if the shared Wisp socket was dropped, reconnects once and retries.

@@ -8,9 +8,11 @@
 		// Defaults.
 	}
 	// Wallpapers are saved as full addresses, and every bucket shares these settings: keep them on this site.
+	// Cat Yuji and Toji were replaced on 2026-11-13: anyone who'd picked them gets the new ones.
 	const stale = /^https:\/\/s3\.amazonaws\.com\/[^/]+\/backgrounds\//;
-	if (stale.test(s.bgLink)) {
-		s.bgLink = s.bgLink.replace(stale, new URL("backgrounds/", document.baseURI).href);
+	const moved = /\/(Cat%20Yuji|Toji)\.jpg$/;
+	if (stale.test(s.bgLink) || moved.test(s.bgLink)) {
+		s.bgLink = s.bgLink.replace(stale, new URL("backgrounds/", document.baseURI).href).replace(moved, (m) => (m.includes("Toji") ? "/Japan.jpg" : "/Kingdom%20Hearts.jpg"));
 		try {
 			localStorage.setItem("flux:settings", JSON.stringify(s));
 		} catch {
@@ -33,7 +35,8 @@
 	root.classList.toggle("os", s.style === "os");
 	if (s.bg === "link" && s.bgLink) {
 		root.classList.add("has-bg");
-		root.style.setProperty("--bg-image", `url("${s.bgLink.replace(/["\\]/g, "\\$&")}")`);
+		// Video wallpapers start in js/background.js; only pictures can paint this early.
+		if (!/\.mp4(\?|$)/i.test(s.bgLink)) root.style.setProperty("--bg-image", `url("${s.bgLink.replace(/["\\]/g, "\\$&")}")`);
 	}
 	if (s.cloakTitle) document.title = s.cloakTitle;
 	if (s.cloakIcon) document.getElementById("favicon").href = s.cloakIcon;
