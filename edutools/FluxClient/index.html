@@ -29,7 +29,7 @@
 						assetsURI: "assets.epw",
 						worldsDB: "worlds",
 						servers: [
-							{ addr: "wss://mc.sealcentral.co", name: "SealCraft" }
+							/* example: { addr: "ws://localhost:8081/", name: "Local test server" } */
 						],
 						relays: [
 							{ addr: "wss://relay.deev.is/", comment: "lax1dude relay #1", primary: relayId == 0 },
@@ -47,45 +47,8 @@
 						if(s) window.eaglercraftXOpts.joinServer = s;
 					}
 					
-					// Flux: load the build this browser last agreed to, by S3's fingerprint (ETag) of assets.epw,
-					// so a stale cached copy can never play. A newer live build needs the Update button first.
-					var buildKey = "flux:client-build";
-					function savedBuild() {
-						try { return localStorage.getItem(buildKey); } catch(e) { return null; }
-					}
-					function saveBuild(build) {
-						try { localStorage.setItem(buildKey, build); } catch(e) { /* the check just runs again next time */ }
-					}
-					function start(build) {
-						if(build) window.eaglercraftXOpts.assetsURI = "assets.epw?v=" + build;
-						main();
-					}
-					function askToUpdate(build) {
-						var box = document.createElement("div");
-						box.style.cssText = "position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:#000;color:#f5f6f8;font:14px/1.5 ui-sans-serif,system-ui,sans-serif;text-align:center;padding:16px;box-sizing:border-box";
-						box.innerHTML = '<b style="font-size:18px;font-weight:600">Update available</b><span style="color:#9a9aa2">A newer version of Flux Client is ready.</span>';
-						var button = document.createElement("button");
-						button.type = "button";
-						button.textContent = "Update";
-						button.style.cssText = "margin-top:8px;height:34px;padding:0 18px;border:1px solid #fff;border-radius:4px;background:#fff;color:#000;font:inherit;font-weight:500;cursor:pointer";
-						button.onclick = function() {
-							saveBuild(build);
-							location.reload();
-						};
-						box.appendChild(button);
-						document.body.appendChild(box);
-					}
-					fetch("assets.epw", { method: "HEAD", cache: "no-store" }).then(function(res) {
-						return res.ok ? (res.headers.get("ETag") || "").replace(/\W/g, "") : "";
-					}).catch(function() {
-						return ""; // offline or blocked: play what we have
-					}).then(function(live) {
-						var saved = savedBuild();
-						if(live && saved && live !== saved) return askToUpdate(live);
-						if(live && !saved) saveBuild(live);
-						start(saved || live);
-					});
-
+					main();
+					
 				}
 			});
 		</script>

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Code editor</title>
+<style>
+html, body { margin: 0; height: 100%; overflow: hidden; background: #141418; }
+#editor { height: 100%; }
+</style>
+</head>
+<body>
+<div id="editor"></div>
+<!-- Monaco for the HTML section (js/htmlrun.js). It lives in its own page so its AMD loader
+     (global require/define) can't change how the site's other scripts load. -->
+<script src="vs/loader.js"></script>
+<script>
+require.config({ paths: { vs: new URL("vs", location.href).href } }); // full address: Monaco's workers resolve it from elsewhere
+require(["vs/editor/editor.main"], function () {
+	// Flux's colours (css/style.css tokens): near-black, grey text, white accent.
+	monaco.editor.defineTheme("flux", {
+		base: "vs-dark",
+		inherit: true,
+		rules: [
+			{ token: "comment", foreground: "6b6b73", fontStyle: "italic" },
+			{ token: "tag", foreground: "f5f6f8" },
+			{ token: "delimiter", foreground: "9a9aa2" },
+			{ token: "attribute.name", foreground: "b9b9c2" },
+			{ token: "attribute.value", foreground: "a8c7a0" },
+			{ token: "string", foreground: "a8c7a0" },
+			{ token: "keyword", foreground: "c5b3e6" },
+			{ token: "number", foreground: "e0c08b" },
+		],
+		colors: {
+			"editor.background": "#141418",
+			"editor.foreground": "#f5f6f8",
+			"editorLineNumber.foreground": "#4a4a52",
+			"editorLineNumber.activeForeground": "#f5f6f8",
+			"editor.lineHighlightBackground": "#1c1c22",
+			"editor.lineHighlightBorder": "#00000000",
+			"editor.selectionBackground": "#ffffff26",
+			"editorCursor.foreground": "#ffffff",
+			"editorIndentGuide.background1": "#24242b",
+			"editorWidget.background": "#1e1e24",
+			"editorWidget.border": "#2a2a31",
+			"editorSuggestWidget.background": "#1e1e24",
+			"editorSuggestWidget.selectedBackground": "#2a2a31",
+			"scrollbarSlider.background": "#ffffff1a",
+			"scrollbarSlider.hoverBackground": "#ffffff2e",
+			"minimap.background": "#141418",
+		},
+	});
+	const editor = monaco.editor.create(document.getElementById("editor"), {
+		language: "html",
+		theme: "flux",
+		automaticLayout: true,
+		fontSize: 13,
+		tabSize: 2,
+		scrollBeyondLastLine: false,
+		smoothScrolling: true,
+		cursorSmoothCaretAnimation: "on",
+		bracketPairColorization: { enabled: true },
+		minimap: { enabled: false }, // the preview sits beside the editor now
+		fontFamily: "'Cascadia Code', Consolas, ui-monospace, monospace",
+		padding: { top: 10 },
+	});
+	parent.fluxMonacoReady?.(editor);
+});
+</script>
+</body>
+</html>

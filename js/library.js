@@ -54,7 +54,9 @@ export async function loadGames() {
 	if (!res.ok) throw new Error(`Couldn't load edulist.txt (HTTP ${res.status})`);
 	// edulist.txt is a list of JS object literals (not JSON); Flux V2 read it the same way.
 	const list = Function(`"use strict"; return [${await res.text()}]`)();
-	const games = sortGames(list.map((g) => ({ ...g, title: g.title.replace(/[‎‏]/g, "").trim() })));
+	// In the OS style the Eaglercraft Launcher is its own app (js/os.js), not a game.
+	const os = document.documentElement.classList.contains("os");
+	const games = sortGames(list.filter((g) => !(os && g.id === "EaglercraftLauncher")).map((g) => ({ ...g, title: g.title.replace(/[‎‏]/g, "").trim() })));
 
 	grid.innerHTML = games
 		.map((g) => {
@@ -133,16 +135,40 @@ export function play(id) {
 	const game = byId.get(id);
 	if (!game) return;
 	current = game;
+	playerStar.hidden = false;
 	$("player-title").textContent = game.title;
 	playerStar.classList.toggle("on", favs.has(id));
 	frame.src = sitePath(game.url);
 	showView("player");
 }
 
+// Plays a page that isn't in the game list (the HTML section).
+export function playUrl(title, url) {
+	current = null;
+	$("player-title").textContent = title;
+	playerStar.hidden = true;
+	frame.src = url;
+	showView("player");
+}
+
+// Every game with its picture's full address (for the OS "Add game" picker).
+export const gameList = () => [...byId.values()].map((g) => ({ id: g.id, title: g.title, image: sitePath(g.image) }));
+
+// Fully quits whatever a frame is running. Taking it off the page ends the page with everything it
+// started (workers, sockets, audio) and skips "Leave site?" prompts, which Eaglercraft 26.x shows;
+// the same, now empty, frame goes straight back.
+export function quitFrame(el) {
+	if (el.src.startsWith("blob:")) URL.revokeObjectURL(el.src);
+	const [parent, next] = [el.parentNode, el.nextSibling];
+	el.remove();
+	el.removeAttribute("src");
+	parent?.insertBefore(el, next);
+}
+
 // Unloads the game so it stops using CPU and audio.
 export function stopGame() {
 	current = null;
-	frame.src = "about:blank";
+	quitFrame(frame);
 }
 
 export function initGames(show) {

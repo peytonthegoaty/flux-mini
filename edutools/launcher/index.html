@@ -19,11 +19,11 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
 body { display: grid; place-items: center; padding: 20px; overflow: auto; font: 14px/1.5 "Geist", ui-sans-serif, system-ui, "Segoe UI", sans-serif; color: var(--fg); -webkit-font-smoothing: antialiased;
-	background: linear-gradient(rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0.3)), url(sky.jpg) center / cover no-repeat #1f5fc4; }
+	background: linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.6)), url(dirt-texture.png) 0 0 / 64px repeat #3b2a1d; image-rendering: pixelated; }
 button, input { font: inherit; color: inherit; }
 .panel { width: min(440px, 100%); padding: 22px; border: 1px solid var(--border); border-radius: 12px; background: color-mix(in srgb, var(--bg2) 90%, transparent); backdrop-filter: blur(8px); animation: rise 0.4s var(--ease); }
 .head { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
-.head img { width: 44px; height: 44px; object-fit: contain; }
+.head img { width: 44px; height: 44px; border-radius: 8px; object-fit: cover; image-rendering: auto; }
 h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
 .sub { color: var(--fg-m); }
 .list { display: flex; flex-direction: column; gap: 6px; }
@@ -57,7 +57,7 @@ h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.
 </head>
 <body>
 <main class="panel">
-	<div class="head"><img src="logo.png" alt=""><div><h1>Eaglercraft</h1><p class="sub">Pick a version, then press Play.</p></div></div>
+	<div class="head"><img src="minecraft-icon.jpg" alt=""><div><h1>Eaglercraft</h1><p class="sub">Pick a version, then press Play.</p></div></div>
 	<div class="list" id="list" role="radiogroup" aria-label="Version"></div>
 	<label class="opt"><input type="checkbox" id="proxy"><span><b>Launch With Proxy</b><small>Use this if servers or LAN worlds won't connect on your Wi-Fi. Connections go through Flux's proxy.</small></span></label>
 	<button class="play" id="play" type="button">Play</button>

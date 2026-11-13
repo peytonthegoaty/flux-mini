@@ -54,8 +54,18 @@ async function handleRequest(event) {
 	return await fetch(event.request);
 }
 
+// Zip sites from the HTML section: js/files.js unpacks the zip into this cache.
+async function zipSite(request) {
+	const url = new URL(request.url);
+	if (url.pathname.endsWith("/")) url.pathname += "index.html";
+	const cache = await caches.open("flux-zipsite");
+	const hit = await cache.match(url.href, { ignoreSearch: true });
+	return hit || new Response("That file isn't in the zip.", { status: 404, headers: { "content-type": "text/plain" } });
+}
+
 // Only proxy traffic goes through the worker; games and site files load natively (faster, range requests work).
 self.addEventListener("fetch", (event) => {
+	if (new URL(event.request.url).pathname.startsWith(base + "zipsite/")) return event.respondWith(zipSite(event.request));
 	// Scramjet 2 knows its own tabs (the page's controller registers them with this worker).
 	if ($scramjetController.shouldRoute(event)) return event.respondWith($scramjetController.route(event));
 	const { pathname } = new URL(event.request.url);

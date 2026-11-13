@@ -2,9 +2,11 @@
 import { activeTabFrame, newTab, resumeTabs, suspendTabs, uvUrl, warmProxy } from "./app.js";
 import { checkImage, clearUpload, saveUpload, showBackground } from "./background.js";
 import { animateCards, clearFavs, initGames, loadGames, stopGame } from "./library.js";
+import "./htmlrun.js";
 import { initLinkCheck } from "./linkcheck.js";
 import { debug } from "./log.js";
 import { animateDialog, ask, closeDialog, toast } from "./modal.js";
+import { bootOS, openApp, osMode } from "./os.js";
 import { enhanceSelect } from "./select.js";
 import { DEFAULTS, resetSettings, saveSettings, settings } from "./settings.js";
 import { pickWisp, SERVERS } from "./wisp.js";
@@ -25,17 +27,19 @@ const CLOAKS = [
 
 const $ = (id) => document.getElementById(id);
 const root = document.documentElement;
-const VIEWS = ["home", "games", "player", "tv", "browser"];
+const VIEWS = ["home", "games", "player", "tv", "browser", "html"];
 let view = "home";
 let lastView = "home";
 
 // Views ---------------------------------------------------------------------
 function showView(name) {
+	// OS style: each app is its own window, so only the Games window's two views switch here.
+	if (osMode && name === "home") name = "games";
 	if (view === "player" && name !== "player") stopGame();
-	if (view === "browser" && name !== "browser") suspendTabs();
-	if (name === "browser" && view !== "browser") resumeTabs();
+	if (!osMode && view === "browser" && name !== "browser") suspendTabs();
+	if (!osMode && name === "browser" && view !== "browser") resumeTabs();
 	if (name !== "home") $("view-home").classList.remove("intro", "waiting"); // the intro only plays on page load
-	for (const v of VIEWS) $(`view-${v}`).hidden = v !== name;
+	for (const v of osMode ? ["games", "player"] : VIEWS) $(`view-${v}`).hidden = v !== name;
 	const navView = name === "player" ? "games" : name;
 	for (const item of document.querySelectorAll(".nav-item[data-view]")) {
 		item.toggleAttribute("aria-current", item.dataset.view === navView);
@@ -63,7 +67,8 @@ $("player-back").addEventListener("click", () => showView(lastView));
 
 function go(input) {
 	if (!input.trim()) return;
-	showView("browser");
+	if (osMode) openApp("browser");
+	else showView("browser");
 	newTab(input);
 }
 
@@ -246,7 +251,15 @@ $("bg-file").addEventListener("change", async (e) => {
 const cloakSelect = $("cloak-select");
 cloakSelect.innerHTML = CLOAKS.map((c) => `<option value="${c.id}">${c.name}</option>`).join("");
 cloakSelect.value = settings.cloak;
-for (const select of [form.elements.engine, form.elements.transport, wispChoice, cloakSelect]) enhanceSelect(select);
+// Website style: saved, then the page reloads into it (js/boot.js applies it before the first paint).
+const styleSelect = $("style-select");
+styleSelect.value = settings.style === "os" ? "os" : "default";
+styleSelect.addEventListener("change", () => {
+	settings.style = styleSelect.value;
+	saveSettings();
+	location.reload();
+});
+for (const select of [form.elements.engine, form.elements.transport, wispChoice, cloakSelect, styleSelect]) enhanceSelect(select);
 cloakSelect.addEventListener("change", () => {
 	const cloak = CLOAKS.find((c) => c.id === cloakSelect.value) || CLOAKS[0];
 	Object.assign(settings, { cloak: cloak.id, cloakTitle: cloak.title, cloakIcon: cloak.icon });
@@ -326,7 +339,11 @@ const tvFrame = $("tv-frame");
 // The players' ads call history.back(), which would take the whole tab out of Flux. While TV
 // is open keep a spare same-page history entry for that to land on, and re-add it each time.
 const guardHistory = () => history.state?.fluxTv || history.pushState({ fluxTv: true }, "");
-addEventListener("popstate", () => view === "tv" && guardHistory());
+// The OS TV window (js/os.js) gets the same start-up and history guard as the TV view.
+let tvWindow = false;
+document.addEventListener("flux:tv-open", () => ((tvWindow = true), openTv(), guardHistory()));
+document.addEventListener("flux:tv-close", () => (tvWindow = false));
+addEventListener("popstate", () => (view === "tv" || tvWindow) && guardHistory());
 fetch("media.html", { method: "HEAD" }).then((res) => ($("nav-tv").hidden = !res.ok), () => {});
 async function openTv() {
 	if (tvFrame.src) return;
@@ -410,7 +427,7 @@ showBackground(settings.bg, settings.bgLink);
 markChoices();
 moveIndicator();
 initGames(showView);
-loadGames().then(
+const gamesReady = loadGames().then(
 	(count) => ($("game-count").textContent = count),
 	(err) => {
 		$("no-results").textContent = err.message;
@@ -418,6 +435,7 @@ loadGames().then(
 		debug(err.message, true);
 	}
 );
+if (osMode) bootOS(gamesReady);
 // Find a working Wisp server in the background so the proxy is ready when needed.
 (window.requestIdleCallback || setTimeout)(showWisp);
 requestAnimationFrame(playIntro);

@@ -303,7 +303,7 @@ async function navigate(tab, input) {
 // A fresh frame for a tab (new tabs, and tabs waking up after the Browser was left).
 function addFrame(tab) {
 	const el = document.createElement("iframe");
-	Object.assign(el, { className: "frame", title: "Browser tab", allow: "fullscreen; autoplay; clipboard-write" });
+	Object.assign(el, { className: "frame", title: "Browser tab", allow: "fullscreen; autoplay; clipboard-write; pointer-lock; gamepad" });
 	el.addEventListener("load", () => onTabLoad(tab));
 	Object.assign(tab, { el, sj: null, sj2: null });
 	frames.append(el);

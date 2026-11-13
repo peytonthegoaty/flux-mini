@@ -17,6 +17,7 @@ export const DEFAULTS = Object.freeze({
 	panicKey: "`",
 	panicUrl: "https://classroom.google.com/",
 	toured: false, // the first-visit setup tour (js/ui.js) has been shown
+	style: "default", // "default" | "os" (the desktop in js/os.js; js/boot.js applies it)
 });
 
 // One shared, live object: modules read it and call saveSettings() after changing it.

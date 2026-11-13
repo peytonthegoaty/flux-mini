@@ -5,7 +5,7 @@ const STORE = "files";
 const KEY = "background";
 let objectUrl = "";
 
-function store(mode, action) {
+export function store(mode, action) {
 	return new Promise((resolve, reject) => {
 		const open = indexedDB.open(DB_NAME, 1);
 		open.onupgradeneeded = () => open.result.createObjectStore(STORE);

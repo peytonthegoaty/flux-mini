@@ -20,6 +20,7 @@
 	const root = document.documentElement;
 	root.classList.toggle("perf", !!s.perf);
 	root.classList.toggle("sb-collapsed", !!s.collapsed);
+	root.classList.toggle("os", s.style === "os");
 	if (s.bg === "link" && s.bgLink) {
 		root.classList.add("has-bg");
 		root.style.setProperty("--bg-image", `url("${s.bgLink.replace(/["\\]/g, "\\$&")}")`);

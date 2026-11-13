@@ -1634,3 +1634,990 @@ input[role="switch"]:checked::before {
 	font-size: 16px;
 	font-variant-numeric: tabular-nums;
 }
+
+/* OS style (js/os.js): desktop, windows, taskbar, start menu. --------------------- */
+html:not(.os) .os,
+.os .shell {
+	display: none;
+}
+.os body {
+	padding: 0;
+}
+.os .os {
+	--bar: 52px;
+	position: fixed;
+	inset: 0;
+	display: block;
+}
+.os-desk {
+	position: absolute;
+	inset: 0 0 calc(var(--bar) + 20px);
+	overflow: hidden;
+}
+/* Drag-select box on the desktop (js/os.js selectBox). */
+.os-sel {
+	position: absolute;
+	z-index: 1;
+	border: 1px solid rgba(var(--a), 0.45);
+	border-radius: var(--r-xs);
+	background: rgba(var(--a), 0.08);
+	pointer-events: none;
+}
+.os-icon.selected {
+	border-color: var(--border-2);
+	background: rgba(var(--a), 0.1);
+}
+.os-busy body::before {
+	animation-play-state: paused; /* the drifting background stops repainting while a window moves */
+}
+
+/* Desktop icons */
+.os-desk > .os-icon {
+	position: absolute;
+	top: 0;
+	left: 0;
+	transition: transform 0.25s var(--ease), background-color var(--t-hover), border-color var(--t-hover);
+	touch-action: none;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	width: 88px;
+	padding: 8px 4px;
+	border: 1px solid transparent;
+	border-radius: var(--r);
+	background: none;
+	color: var(--fg);
+	font-size: 12px;
+	text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+.os-desk > .os-icon.dragging {
+	z-index: 2;
+	opacity: 0.85;
+	transition: none;
+}
+.os-icon > span {
+	display: grid;
+	place-items: center;
+	width: 44px;
+	height: 44px;
+	border: 1px solid var(--border);
+	border-radius: var(--r);
+	background: color-mix(in srgb, var(--bg2) 80%, transparent);
+}
+.os-icon .i {
+	width: 20px;
+	height: 20px;
+}
+.os-icon:hover,
+.os-icon:focus-visible {
+	border-color: var(--border);
+	background: rgba(255, 255, 255, 0.06);
+}
+
+/* Windows */
+.os-win {
+	position: absolute;
+	top: 0;
+	left: 0;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.65);
+	will-change: transform;
+	transition: opacity 0.2s ease, scale 0.25s var(--ease), translate 0.25s var(--ease), visibility 0.25s;
+}
+.os-win,
+.perf .os-win {
+	border: 1px solid var(--border);
+	border-radius: var(--r);
+	background: var(--bg2); /* solid: stacked windows mustn't show through each other */
+	color: var(--fg);
+}
+.os-win:not(.active) {
+	box-shadow: 0 14px 34px -14px rgba(0, 0, 0, 0.6);
+}
+.os-win.opening {
+	animation: os-open 0.28s var(--ease) both;
+}
+.os-win.closing {
+	animation: os-close 0.2s ease-in forwards;
+	pointer-events: none;
+}
+@keyframes os-open {
+	from { opacity: 0; scale: 0.96; translate: 0 8px; }
+}
+@keyframes os-close {
+	to { opacity: 0; scale: 0.96; translate: 0 8px; }
+}
+.os-win.min {
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	scale: 0.9;
+	translate: 0 40px;
+}
+.os-win.max {
+	width: 100% !important;
+	height: 100% !important;
+	transform: none !important;
+	border-radius: 0;
+	border-width: 0;
+}
+.os-win.anim {
+	transition: transform 0.28s var(--ease), width 0.28s var(--ease), height 0.28s var(--ease), border-radius 0.28s;
+}
+.os-title {
+	display: flex;
+	flex: none;
+	align-items: center;
+	gap: 8px;
+	height: 38px;
+	padding: 0 6px 0 12px;
+	border-bottom: 1px solid var(--border);
+	color: var(--fg-m);
+	font-size: 13px;
+	cursor: default;
+	touch-action: none;
+	user-select: none;
+}
+.os-win.active .os-title {
+	color: var(--fg);
+}
+.os-title > span {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.os-title > .tabstrip {
+	flex: 1;
+	min-width: 0;
+	height: 100%;
+	padding: 0;
+}
+.os-title .tab {
+	height: 28px;
+}
+.os-title .icon-btn {
+	width: 28px;
+	height: 28px;
+}
+.os-body {
+	position: relative;
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	min-height: 0;
+}
+.os-body > .view {
+	flex: 1;
+	height: auto;
+	min-height: 0;
+}
+.os-body > .s-layout {
+	padding-top: 14px;
+}
+.os-win:fullscreen {
+	border: 0;
+	border-radius: 0;
+}
+.os-win:fullscreen .os-title,
+.os-win:fullscreen .os-rz {
+	display: none;
+}
+/* Resize handles: thin strips on each edge, small squares on the corners. */
+.os-rz {
+	position: absolute;
+	z-index: 3;
+	touch-action: none;
+}
+.os-rz[data-dir="n"], .os-rz[data-dir="s"] { left: 8px; right: 8px; height: 6px; cursor: ns-resize; }
+.os-rz[data-dir="e"], .os-rz[data-dir="w"] { top: 8px; bottom: 8px; width: 6px; cursor: ew-resize; }
+.os-rz[data-dir="n"] { top: -2px; }
+.os-rz[data-dir="s"] { bottom: -2px; }
+.os-rz[data-dir="e"] { right: -2px; }
+.os-rz[data-dir="w"] { left: -2px; }
+.os-rz[data-dir$="e"]:not([data-dir="e"]), .os-rz[data-dir$="w"]:not([data-dir="w"]) { width: 12px; height: 12px; }
+.os-rz[data-dir="ne"] { top: -2px; right: -2px; cursor: nesw-resize; }
+.os-rz[data-dir="sw"] { bottom: -2px; left: -2px; cursor: nesw-resize; }
+.os-rz[data-dir="nw"] { top: -2px; left: -2px; cursor: nwse-resize; }
+.os-rz[data-dir="se"] { bottom: -2px; right: -2px; cursor: nwse-resize; }
+.os-win.max .os-rz {
+	display: none;
+}
+.os-busy iframe {
+	pointer-events: none;
+}
+.os-busy,
+.os-busy * {
+	user-select: none;
+}
+
+/* Wallpaper app */
+.os-wallpaper {
+	flex: 1;
+	overflow: auto;
+	padding: 16px;
+}
+.os-wallpaper p {
+	margin: 0 0 14px;
+	color: var(--fg-m);
+	font-size: 13px;
+}
+
+/* Taskbar */
+.os-bar {
+	position: absolute;
+	bottom: 10px;
+	left: 50%;
+	z-index: 9000;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	height: var(--bar);
+	padding: 0 8px;
+	border: 1px solid var(--border-2);
+	border-radius: 18px;
+	background: color-mix(in srgb, var(--bg2) 78%, transparent);
+	backdrop-filter: blur(16px) saturate(1.2);
+	box-shadow: 0 16px 40px -12px rgba(0, 0, 0, 0.6);
+	translate: -50% 0;
+}
+.perf .os-bar {
+	background: var(--bg2);
+}
+.os-start-btn,
+.os-task {
+	position: relative;
+	display: grid;
+	place-items: center;
+	width: 40px;
+	height: 40px;
+	border: 1px solid transparent;
+	border-radius: 12px;
+	background: none;
+	color: var(--fg-m);
+	transition: background-color var(--t-hover), border-color var(--t-hover), color var(--t-hover), transform 0.15s var(--ease);
+}
+.os-start-btn:hover,
+.os-task:hover,
+.os-start-btn[aria-expanded="true"] {
+	border-color: var(--border);
+	background: var(--surface-2);
+	color: var(--fg);
+}
+.os-start-btn:active,
+.os-task:active {
+	transform: scale(0.94);
+}
+.os-f {
+	width: 18px;
+	height: 23px;
+	color: var(--fg);
+}
+.os-tasks {
+	display: flex;
+	gap: 4px;
+	padding-left: 6px;
+	margin-left: 2px;
+	border-left: 1px solid var(--border);
+}
+.os-task .i {
+	width: 18px;
+	height: 18px;
+}
+.os-task::after {
+	content: "";
+	position: absolute;
+	bottom: 3px;
+	left: 50%;
+	width: 4px;
+	height: 3px;
+	border-radius: 2px;
+	background: var(--fg-m);
+	opacity: 0;
+	transform: translateX(-50%);
+	transition: width 0.3s var(--ease), opacity 0.2s ease, background-color 0.2s ease;
+}
+.os-task.open::after {
+	opacity: 1;
+}
+.os-task.front {
+	color: var(--fg);
+	background: var(--surface-2);
+}
+.os-task.front::after {
+	width: 14px;
+	background: var(--fg);
+}
+.os-clock {
+	margin-left: 2px;
+	padding: 0 8px 0 10px;
+	border-left: 1px solid var(--border);
+	color: var(--fg-m);
+	font-size: 13px;
+	font-variant-numeric: tabular-nums;
+}
+
+/* Start menu: search, pinned apps (built from the app list in js/os.js), recent files, footer. */
+.os-start {
+	position: absolute;
+	bottom: calc(var(--bar) + 20px);
+	left: 50%;
+	z-index: 9001;
+	display: flex;
+	flex-direction: column;
+	width: min(440px, calc(100% - 20px));
+	max-height: calc(100% - var(--bar) - 40px);
+	border: 1px solid var(--border-2);
+	border-radius: 16px;
+	background: color-mix(in srgb, var(--bg2) 94%, transparent);
+	backdrop-filter: blur(20px) saturate(1.2);
+	box-shadow: 0 30px 70px -14px rgba(0, 0, 0, 0.7);
+	overflow: hidden;
+	translate: -50% 0;
+	animation: os-start-in 0.25s var(--ease) both;
+	transform-origin: bottom center;
+}
+.perf .os-start {
+	background: var(--bg2);
+}
+@keyframes os-start-in {
+	from { opacity: 0; transform: translate3d(0, 12px, 0) scale(0.98); }
+}
+.os-search {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 16px 16px 6px;
+	height: 40px;
+	padding: 0 14px;
+	border: 1px solid var(--border);
+	border-radius: 999px;
+	background: var(--field);
+	color: var(--fg-m);
+	transition: var(--t-field);
+}
+.os-search:focus-within {
+	border-color: var(--focus);
+	background: var(--field-hover);
+	color: var(--fg);
+}
+.os-search input {
+	flex: 1;
+	min-width: 0;
+	border: 0;
+	outline: 0;
+	background: none;
+	color: var(--fg);
+	font-size: 13.5px;
+}
+.os-search input::placeholder {
+	color: var(--fg-d);
+}
+.os-start-label {
+	margin: 12px 20px 6px;
+	color: var(--fg-d);
+	font-size: 11.5px;
+	font-weight: 500;
+}
+.os-start-apps {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 2px;
+	padding: 0 10px;
+}
+.os-start-apps button {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 7px;
+	padding: 10px 4px 9px;
+	border: 0;
+	border-radius: 12px;
+	background: none;
+	color: var(--fg-m);
+	font-size: 12px;
+	transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s var(--ease);
+}
+.os-tile {
+	display: grid;
+	place-items: center;
+	width: 44px;
+	height: 44px;
+	border: 1px solid var(--border);
+	border-radius: 13px;
+	background: linear-gradient(180deg, rgba(var(--a), 0.09), rgba(var(--a), 0.03));
+	color: var(--fg);
+	transition: transform 0.25s var(--ease);
+}
+.os-tile .i {
+	width: 20px;
+	height: 20px;
+}
+.os-tile img.i {
+	width: 100%;
+	height: 100%;
+}
+.os-tile img {
+	width: 100%;
+	height: 100%;
+	border-radius: inherit;
+	object-fit: cover;
+}
+.os-task img.i,
+.os-title img.i {
+	border-radius: 4px;
+	object-fit: cover;
+}
+.os-start-apps button:hover,
+.os-start-apps button:focus-visible {
+	background: var(--surface-2);
+	color: var(--fg);
+	outline: 0;
+}
+.os-start-apps button:hover .os-tile {
+	transform: translate3d(0, -2px, 0);
+}
+.os-start-apps button:active {
+	transform: scale(0.96);
+}
+.os-recent {
+	display: flex;
+	flex-direction: column;
+	padding: 0 10px;
+}
+.os-recent button {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 7px 10px;
+	border: 0;
+	border-radius: 10px;
+	background: none;
+	color: var(--fg);
+	font-size: 13px;
+	text-align: left;
+	transition: background-color 0.2s ease;
+}
+.os-recent button:hover,
+.os-recent button:focus-visible {
+	background: var(--surface-2);
+	outline: 0;
+}
+.os-recent .os-tile {
+	width: 30px;
+	height: 30px;
+	border-radius: 9px;
+}
+.os-recent .os-tile .i {
+	width: 15px;
+	height: 15px;
+}
+.os-recent span:not(.os-tile) {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.os-recent small {
+	color: var(--fg-d);
+	font-size: 11.5px;
+}
+.os-start-empty {
+	margin: 4px 20px 0;
+	color: var(--fg-m);
+	font-size: 13px;
+}
+.os-start-foot {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	margin-top: 14px;
+	padding: 10px 12px 10px 18px;
+	border-top: 1px solid var(--border);
+	background: rgba(0, 0, 0, 0.18);
+}
+.os-start-me {
+	display: flex;
+	flex: 1;
+	align-items: center;
+	gap: 10px;
+	color: var(--fg-m);
+	font-size: 13px;
+}
+.os-start-me .os-f {
+	width: 14px;
+	height: 18px;
+}
+
+/* Boot screen (js/os.js bootOS): shown until the apps are ready. */
+.os-boot {
+	position: fixed;
+	inset: 0;
+	z-index: 99999;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 18px;
+	background: var(--bg);
+	transition: opacity 0.45s ease;
+}
+.os-boot.done {
+	opacity: 0;
+	pointer-events: none;
+}
+.os-boot-logo {
+	width: 44px;
+	height: 56px;
+	color: var(--fg);
+	animation: float 6s ease-in-out infinite;
+}
+.os-boot-bar {
+	width: 180px;
+	height: 2px;
+	overflow: hidden;
+	border-radius: 2px;
+	background: var(--border);
+}
+.os-boot-bar i {
+	display: block;
+	height: 100%;
+	background: var(--fg);
+	transform: scaleX(0);
+	transform-origin: left;
+	transition: transform 0.4s var(--ease);
+}
+.os-boot small {
+	color: var(--fg-m);
+	font-size: 12.5px;
+}
+
+/* HTML section (js/htmlrun.js): VS Code's layout (files on the left, editor + live preview, status
+   bar) in Flux's own look. The editor is Monaco with a matching theme (monaco/editor.html). */
+.view.html {
+	padding: 0;
+	overflow: hidden;
+}
+.vsc {
+	display: grid;
+	grid-template-columns: 210px minmax(0, 1fr);
+	height: 100%;
+}
+.vsc-side {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	min-height: 0;
+	padding: 14px 10px;
+	border-right: 1px solid var(--border);
+}
+.vsc-newbtn {
+	justify-content: flex-start;
+}
+.vsc-sec {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 6px 6px 0;
+	color: var(--fg-d);
+	font-size: 11.5px;
+}
+.vsc-sec small {
+	color: var(--fg-d);
+}
+.vsc-files {
+	flex: 1;
+	margin: 0;
+	padding: 0;
+	overflow: auto;
+	list-style: none;
+}
+.vsc-files li {
+	display: flex;
+	align-items: center;
+	border-radius: var(--r-sm);
+	transition: background-color var(--t-hover);
+}
+.vsc-files li:hover {
+	background: var(--surface-2);
+}
+.vsc-files li.open {
+	background: var(--surface-3);
+}
+.vsc-file {
+	display: flex;
+	flex: 1;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+	height: 32px;
+	padding: 0 8px;
+	border: 0;
+	background: none;
+	color: var(--fg-m);
+	font-size: 13px;
+	text-align: left;
+}
+.vsc-files li:hover .vsc-file,
+.vsc-files li.open .vsc-file {
+	color: var(--fg);
+}
+.vsc-file span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.vsc-mini {
+	display: none;
+	place-items: center;
+	width: 26px;
+	height: 26px;
+	border: 0;
+	border-radius: var(--r-sm);
+	background: none;
+	color: var(--fg-m);
+}
+.vsc-files li:hover .vsc-mini,
+.vsc-files li.open .vsc-mini {
+	display: grid;
+}
+.vsc-mini:hover {
+	background: var(--surface-3);
+	color: var(--fg);
+}
+.vsc-mini .i {
+	width: 14px;
+	height: 14px;
+}
+.vsc-empty {
+	padding: 6px;
+	color: var(--fg-d);
+	font-size: 12.5px;
+}
+.vsc-main {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	min-height: 0;
+}
+.vsc-bar {
+	display: flex;
+	flex: none;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--border);
+}
+.vsc-name {
+	flex: 1;
+	min-width: 140px;
+}
+.vsc-name input {
+	flex: 1;
+	min-width: 0;
+	border: 0;
+	outline: 0;
+	background: none;
+	color: var(--fg);
+}
+.vsc-bar .btn[aria-pressed="false"] {
+	border-color: var(--border);
+	background: var(--surface);
+	color: var(--fg-m);
+}
+.vsc-bar .btn.primary .i {
+	fill: currentColor;
+}
+.vsc-split {
+	display: grid;
+	flex: 1;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	min-height: 0;
+}
+.vsc-split.no-preview {
+	grid-template-columns: minmax(0, 1fr);
+}
+.vsc-split.no-preview .vsc-preview {
+	display: none;
+}
+.vsc-pane {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	min-height: 0;
+}
+.vsc-editor {
+	position: relative;
+	flex: 1;
+	min-height: 0;
+}
+.vsc-plain,
+.vsc-monaco {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	border: 0;
+}
+.vsc-plain {
+	padding: 12px 14px;
+	background: transparent;
+	color: var(--fg);
+	font: 13px/1.55 ui-monospace, "Cascadia Code", Consolas, monospace;
+	resize: none;
+	outline: 0;
+	tab-size: 2;
+}
+.vsc-monaco {
+	z-index: 1;
+}
+.vsc-notice {
+	flex: none;
+	padding: 12px 14px;
+	border-top: 1px solid var(--border);
+}
+.vsc-notice p,
+.vsc-zipinfo p {
+	margin: 0 0 10px;
+	color: var(--fg-m);
+	font-size: 13px;
+}
+.vsc-zipinfo {
+	flex: 1;
+	min-height: 0;
+	overflow: auto;
+	padding: 14px;
+}
+.vsc-ziplist {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	color: var(--fg-d);
+	font: 12.5px/1.75 ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+.vsc-preview {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	min-height: 0;
+	border-left: 1px solid var(--border);
+}
+.vsc-preview-head {
+	display: flex;
+	align-items: baseline;
+	justify-content: space-between;
+	padding: 7px 12px;
+	border-bottom: 1px solid var(--border);
+	font-size: 12.5px;
+}
+.vsc-preview-head small {
+	color: var(--fg-d);
+	font-size: 11.5px;
+}
+.vsc-preview iframe {
+	flex: 1;
+	width: 100%;
+	border: 0;
+	background: #fff;
+}
+.vsc-status {
+	display: flex;
+	flex: none;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 18px;
+	min-height: 38px;
+	padding: 6px 12px;
+	border-top: 1px solid var(--border);
+	color: var(--fg-m);
+	font-size: 12.5px;
+}
+.vsc-toggle {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	cursor: pointer;
+}
+.vsc-toggle small {
+	color: var(--fg-d);
+	font-size: 11.5px;
+}
+.vsc-spacer {
+	flex: 1;
+}
+#html-status {
+	color: var(--fg-d);
+	font-variant-numeric: tabular-nums;
+}
+@media (max-width: 900px) {
+	.vsc {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.vsc-side {
+		display: none;
+	}
+	.vsc-split {
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+	}
+	.vsc-preview {
+		border-left: 0;
+		border-top: 1px solid var(--border);
+	}
+	.vsc-toggle small {
+		display: none;
+	}
+}
+
+/* Desktop files */
+.os-icon b {
+	max-width: 100%;
+	overflow: hidden;
+	font-weight: inherit;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.os-icon > span > img {
+	width: 100%;
+	height: 100%;
+	border-radius: inherit;
+	object-fit: cover;
+}
+.os-icon > span > img.i {
+	width: 100%; /* app pictures (Eaglercraft) fill the icon instead of shrinking to 20px */
+	height: 100%;
+}
+.os-icon > span:has(img) {
+	overflow: hidden;
+}
+
+/* Right-click menu */
+.os-menu {
+	position: fixed;
+	z-index: 9500;
+	min-width: 200px;
+	padding: 4px;
+	border: 1px solid var(--border);
+	border-radius: var(--r);
+	background: color-mix(in srgb, var(--bg2) 96%, transparent);
+	box-shadow: 0 18px 40px -14px rgba(0, 0, 0, 0.7);
+	animation: os-menu-in 0.18s var(--ease) both;
+}
+@keyframes os-menu-in {
+	from { opacity: 0; transform: translate3d(0, -4px, 0) scale(0.98); }
+}
+.os-menu button {
+	display: block;
+	width: 100%;
+	padding: 7px 10px;
+	border: 0;
+	border-radius: var(--r-sm);
+	background: none;
+	color: var(--fg-m);
+	font-size: 13px;
+	text-align: left;
+	transition: background-color 0.15s ease, color 0.15s ease;
+}
+.os-menu button:hover,
+.os-menu button:focus-visible {
+	background: var(--surface-2);
+	color: var(--fg);
+	outline: 0;
+}
+.os-menu hr {
+	margin: 4px 6px;
+	border: 0;
+	border-top: 1px solid var(--border);
+}
+
+/* Notepad and page windows */
+.os-notes {
+	flex: 1;
+	padding: 14px 16px;
+	border: 0;
+	background: none;
+	color: var(--fg);
+	font: 13.5px/1.6 "Geist", ui-sans-serif, system-ui, sans-serif;
+	resize: none;
+	outline: 0;
+}
+.os-run {
+	flex: 1;
+	width: 100%;
+	border: 0;
+	background: #fff;
+}
+
+/* OS "Add game" picker (js/os.js addGame): search, then 3 game cards across. */
+.os-pick {
+	width: min(600px, calc(100% - 24px));
+	height: min(640px, calc(100% - 24px));
+	padding: 18px;
+}
+.os-pick[open] {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+.os-pick-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+.modal .os-pick-search {
+	width: 100%;
+	flex: none;
+}
+.os-pick-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	align-content: start;
+	gap: 10px;
+	min-height: 0;
+	overflow: auto;
+	padding: 2px;
+}
+.os-pick-card {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 6px;
+	border: 1px solid var(--border);
+	border-radius: var(--r);
+	background: var(--surface);
+	color: var(--fg);
+	font-size: 12.5px;
+	text-align: left;
+	transition: border-color var(--t-hover), background-color var(--t-hover), transform 0.15s var(--ease);
+}
+.os-pick-card:hover,
+.os-pick-card:focus-visible {
+	border-color: var(--focus);
+	background: var(--surface-2);
+	outline: 0;
+}
+.os-pick-card:active {
+	transform: scale(0.97);
+}
+.os-pick-card img {
+	width: 100%;
+	aspect-ratio: 1;
+	border-radius: var(--r-sm);
+	background: var(--field);
+	object-fit: cover;
+}
+.os-pick-card span {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.os-pick-empty {
+	margin: 0;
+	color: var(--fg-m);
+}
