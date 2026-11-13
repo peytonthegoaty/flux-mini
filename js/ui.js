@@ -347,20 +347,62 @@ const guardHistory = () => history.state?.fluxTv || history.pushState({ fluxTv: 
 // The OS TV window (js/os.js) gets the same start-up and history guard as the TV view.
 let tvWindow = false;
 document.addEventListener("flux:tv-open", () => ((tvWindow = true), openTv(), guardHistory()));
-document.addEventListener("flux:tv-close", () => (tvWindow = false));
+document.addEventListener("flux:tv-close", () => {
+	tvWindow = false;
+	tvRun++;
+	clearInterval(tvTimer);
+	tvLoad.hidden = true;
+});
 addEventListener("popstate", () => (view === "tv" || tvWindow) && guardHistory());
 fetch("media.html", { method: "HEAD" }).then((res) => ($("nav-tv").hidden = !res.ok), () => {});
+// TV's loading screen: what's happening, a bar and a percentage. Each step sets a range; the bar
+// eases toward the top of it while the step runs, so it keeps moving without claiming to be done.
+const tvLoad = $("tv-load");
+let tvPct = 0;
+let tvTo = 0;
+let tvTimer = 0;
+let tvRun = 0; // a newer open (or a close) makes an older, still-loading open give up
+const paintTv = () => {
+	$("tv-load-fill").style.transform = `scaleX(${tvPct / 100})`;
+	$("tv-load-pct").textContent = `${Math.floor(tvPct)}%`;
+};
+function tvStep(text, from, to) {
+	$("tv-load-step").textContent = text;
+	tvPct = Math.max(tvPct, from);
+	tvTo = to;
+	paintTv();
+}
+function tvLoaded() {
+	clearInterval(tvTimer);
+	tvPct = 100;
+	paintTv();
+	tvLoad.classList.add("done");
+	setTimeout(() => (tvLoad.hidden = true), 400);
+}
 async function openTv() {
 	if (tvFrame.src) return;
+	const run = ++tvRun;
 	const status = $("tv-status");
-	Object.assign(status, { hidden: false, textContent: "Starting proxy…" });
+	status.hidden = true;
 	status.classList.remove("error");
+	tvPct = tvTo = 0;
+	tvLoad.hidden = false;
+	tvLoad.classList.remove("done");
+	clearInterval(tvTimer);
+	tvTimer = setInterval(() => ((tvPct += (tvTo - tvPct) * 0.05), paintTv()), 50);
 	try {
-		tvFrame.src = await uvUrl(new URL("media.html", location.href).href);
-		status.hidden = true;
+		const url = await uvUrl(new URL("media.html", location.href).href, tvStep);
+		if (run !== tvRun) return;
+		tvStep("Loading TV", 72, 97);
+		tvFrame.addEventListener("load", tvLoaded, { once: true });
+		tvFrame.src = url;
 	} catch (err) {
+		if (run !== tvRun) return;
+		clearInterval(tvTimer);
+		tvLoad.hidden = true;
 		status.textContent = err.message || String(err);
 		status.classList.add("error");
+		status.hidden = false;
 	}
 }
 

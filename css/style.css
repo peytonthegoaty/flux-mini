@@ -2621,3 +2621,57 @@ html:not(.os) .os,
 	margin: 0;
 	color: var(--fg-m);
 }
+
+/* TV loading screen (js/ui.js openTv): icon, thin bar, current step and percentage. */
+.view.tv {
+	position: relative;
+}
+.tv-load {
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 16px;
+	background: var(--bg2);
+	transition: opacity 0.4s ease;
+	animation: fade 0.25s ease both;
+}
+.tv-load.done {
+	opacity: 0;
+	pointer-events: none;
+}
+.tv-load-icon {
+	width: 30px;
+	height: 30px;
+	color: var(--fg-m);
+	animation: float 6s ease-in-out infinite;
+}
+.tv-load-bar {
+	width: min(240px, 70%);
+	height: 2px;
+	overflow: hidden;
+	border-radius: 2px;
+	background: var(--border);
+}
+.tv-load-bar i {
+	display: block;
+	height: 100%;
+	background: var(--fg);
+	transform: scaleX(0);
+	transform-origin: left; /* js/ui.js eases it every 50 ms, so no transition: bar and % stay in step */
+}
+.tv-load-text {
+	display: flex;
+	justify-content: space-between;
+	gap: 16px;
+	width: min(240px, 70%);
+	color: var(--fg-m);
+	font-size: 12.5px;
+}
+#tv-load-pct {
+	color: var(--fg-d);
+	font-variant-numeric: tabular-nums;
+}

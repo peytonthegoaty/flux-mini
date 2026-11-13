@@ -115,12 +115,14 @@ async function setupTransport() {
 }
 
 let ready = null;
-function prepare() {
+// step(text, from %, to %) reports progress to a loading screen (TV uses it).
+function prepare(step = () => {}) {
+	step("Starting the proxy", 2, 45);
 	ready ??= Promise.all([registerServiceWorker(), scramjet || loadEngines()]).catch((err) => {
 		ready = null;
 		throw err;
 	});
-	return ready.then(setupTransport);
+	return ready.then(() => (step("Finding a proxy server", 45, 70), setupTransport()));
 }
 
 // Coming back to this tab: while it was hidden the browser may have frozen it and the Wisp
@@ -179,8 +181,8 @@ async function scramjet2() {
 }
 
 // The Ultraviolet address for a URL, for site sections outside the browser tabs (media.html).
-export async function uvUrl(url) {
-	await prepare();
+export async function uvUrl(url, step) {
+	await prepare(step);
 	return __uv$config.prefix + __uv$config.encodeUrl(url);
 }
 

@@ -6,7 +6,6 @@
 		<title>Flux</title>
 		<link id="favicon" rel="icon" href="LOGO.svg" type="image/svg+xml" />
 		<script src="js/boot.js"></script>
-		<script src="js/guard.js"></script>
 		<link rel="stylesheet" href="css/style.css" />
 		<script type="module" src="js/ui.js"></script>
 	</head>
@@ -138,6 +137,11 @@
 
 			<section class="view tv" id="view-tv" hidden>
 				<p class="status" id="tv-status" role="status" hidden></p>
+				<div class="tv-load" id="tv-load" role="status" aria-live="polite" hidden>
+					<svg class="i tv-load-icon"><use href="#i-tv" /></svg>
+					<div class="tv-load-bar"><i id="tv-load-fill"></i></div>
+					<div class="tv-load-text"><span id="tv-load-step">Starting</span><span id="tv-load-pct">0%</span></div>
+				</div>
 				<iframe class="frame" id="tv-frame" title="TV" allow="autoplay; fullscreen; encrypted-media; picture-in-picture" allowfullscreen></iframe>
 			</section>
 
