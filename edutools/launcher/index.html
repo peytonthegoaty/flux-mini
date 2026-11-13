@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Eaglercraft Launcher</title>
+<style>
+@font-face { font-family: "Geist"; src: url(../../fonts/geist.woff2) format("woff2"); font-weight: 100 900; font-display: swap; }
+:root {
+	--bg2: #16161b; --fg: #f5f6f8; --fg-m: #9a9aa2; --fg-d: #6b6b73; --danger: #ff6b6b;
+	--surface: color-mix(in srgb, var(--bg2) 82%, transparent);
+	--surface-2: color-mix(in srgb, color-mix(in srgb, var(--bg2), var(--fg) 6%) 85%, transparent);
+	--border: rgba(255, 255, 255, 0.1); --border-2: rgba(255, 255, 255, 0.2);
+	--ease: cubic-bezier(0.16, 1, 0.3, 1); --r: 8px;
+	color-scheme: dark;
+}
+@keyframes rise { from { opacity: 0; transform: translate3d(0, 10px, 0); } }
+@keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { display: grid; place-items: center; padding: 20px; overflow: auto; font: 14px/1.5 "Geist", ui-sans-serif, system-ui, "Segoe UI", sans-serif; color: var(--fg); -webkit-font-smoothing: antialiased;
+	background: linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.8)), url(../../visuals/eaglercraft.jpg) center / cover no-repeat #000; }
+button, input { font: inherit; color: inherit; }
+.panel { width: min(440px, 100%); padding: 22px; border: 1px solid var(--border); border-radius: 12px; background: color-mix(in srgb, var(--bg2) 90%, transparent); backdrop-filter: blur(8px); animation: rise 0.4s var(--ease); }
+h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+.sub { color: var(--fg-m); margin: 2px 0 18px; }
+.list { display: flex; flex-direction: column; gap: 6px; }
+.ver { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--r); background: var(--surface); cursor: pointer; transition: border-color 0.25s ease, background-color 0.25s ease; }
+.ver:hover { border-color: var(--border-2); background: var(--surface-2); }
+.ver input { position: absolute; opacity: 0; pointer-events: none; }
+.ver .dot { flex: none; width: 16px; height: 16px; border: 1.5px solid var(--fg-d); border-radius: 50%; transition: border-color 0.25s ease, box-shadow 0.25s ease; }
+.ver b { font-weight: 600; }
+.ver small { display: block; color: var(--fg-m); font-size: 12px; }
+.ver .tag { margin-left: auto; padding: 1px 8px; border: 1px solid var(--border); border-radius: 99px; color: var(--fg-m); font-size: 11.5px; }
+.ver:has(input:checked) { border-color: var(--fg); background: var(--surface-2); }
+.ver:has(input:checked) .dot { border-color: var(--fg); box-shadow: inset 0 0 0 4px var(--bg2), inset 0 0 0 8px var(--fg); }
+.ver:has(input:focus-visible) { outline: 1px solid var(--fg); outline-offset: 1px; }
+.opt { display: flex; align-items: flex-start; gap: 12px; margin: 16px 0; cursor: pointer; }
+.opt input { -webkit-appearance: none; appearance: none; flex: none; position: relative; width: 36px; height: 20px; margin-top: 1px; border: 1px solid var(--border-2); border-radius: 99px; background: rgba(255, 255, 255, 0.08); cursor: pointer; transition: background-color 0.3s var(--ease); }
+.opt input::after { content: ""; position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--fg-m); transition: transform 0.3s var(--ease), background-color 0.3s var(--ease); }
+.opt input:checked { background: var(--fg); border-color: var(--fg); }
+.opt input:checked::after { transform: translateX(16px); background: #000; }
+.opt small { display: block; color: var(--fg-m); font-size: 12px; }
+.play { width: 100%; height: 44px; border: 0; border-radius: var(--r); background: var(--fg); color: #000; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 0.15s var(--ease), filter 0.25s ease; }
+.play:hover { filter: brightness(0.9); }
+.play:active { transform: scale(0.98); }
+.play:disabled { cursor: default; filter: brightness(0.7); }
+.bar { height: 2px; margin-top: 12px; overflow: hidden; border-radius: 2px; background: var(--border); }
+.bar i { display: block; width: 40%; height: 100%; background: var(--fg); animation: slide 1.1s ease-in-out infinite; }
+.note { min-height: 20px; margin-top: 8px; color: var(--fg-m); font-size: 12.5px; text-align: center; }
+.note.err { color: var(--danger); }
+.game { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition-duration: 0s !important; } }
+</style>
+</head>
+<body>
+<main class="panel">
+	<h1>Eaglercraft</h1>
+	<p class="sub">Pick a version, then press Play.</p>
+	<div class="list" id="list" role="radiogroup" aria-label="Version"></div>
+	<label class="opt"><input type="checkbox" id="proxy"><span><b>Launch With Proxy</b><small>Use this if servers or LAN worlds won't connect on your Wi-Fi. Connections go through Flux's proxy.</small></span></label>
+	<button class="play" id="play" type="button">Play</button>
+	<div class="bar" id="bar" hidden><i></i></div>
+	<p class="note" id="note" role="status"></p>
+</main>
+<div id="debug-log" hidden></div><!-- js/log.js (used by js/wisp.js) writes here -->
+<script type="module">
+import { pickWisp } from "../../js/wisp.js";
+
+const VERSIONS = [
+	{ id: "flux", name: "Flux Client", info: "Our own 1.8 client", url: "../FluxClient/index.html", tag: "Flux" },
+	{ id: "26.3", name: "26.3", info: "Newest version", url: "../eaglercraft/index26.3.html", tag: "New" },
+	{ id: "26.2", name: "26.2", info: "Previous version", url: "../eaglercraft/index26.2.html" },
+	{ id: "1.12.2", name: "1.12.2", info: "WASM build", url: "../eaglercraft/index1.12.2.html" },
+	{ id: "1.8.8", name: "1.8.8", info: "WASM build, the classic", url: "../eaglercraft/index.html" },
+];
+const KEY = "flux:launcher";
+const $ = (id) => document.getElementById(id);
+let saved = {};
+try { saved = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch { /* defaults */ }
+
+$("list").innerHTML = VERSIONS.map((v) =>
+	`<label class="ver"><input type="radio" name="ver" value="${v.id}"${v.id === (saved.version || "flux") ? " checked" : ""}>` +
+	`<span class="dot"></span><span><b>${v.name}</b><small>${v.info}</small></span>${v.tag ? `<span class="tag">${v.tag}</span>` : ""}</label>`).join("");
+$("proxy").checked = !!saved.proxy;
+if (!$("list").querySelector(":checked")) $("list").querySelector("input").checked = true;
+
+function busy(text, isError = false) {
+	$("note").textContent = text;
+	$("note").classList.toggle("err", isError);
+	$("bar").hidden = !text || isError;
+	$("play").disabled = !!text && !isError;
+}
+
+$("play").addEventListener("click", async () => {
+	const version = VERSIONS.find((v) => v.id === $("list").querySelector(":checked").value);
+	const proxy = $("proxy").checked;
+	try { localStorage.setItem(KEY, JSON.stringify({ version: version.id, proxy })); } catch { /* not remembered */ }
+	if (!proxy) {
+		busy(`Starting ${version.name}…`);
+		return location.replace(version.url); // runs in this same game frame, like any other game
+	}
+	try {
+		busy("Finding a proxy server…");
+		let preferred = "";
+		try { preferred = JSON.parse(localStorage.getItem("flux:settings") || "{}").wisp || ""; } catch { /* Auto */ }
+		const [wisp, { startProxy, proxySockets }] = await Promise.all([pickWisp(preferred), import("./proxyws.js")]);
+		await startProxy(wisp);
+		busy(`Starting ${version.name}…`);
+		launch(version.url, proxySockets);
+	} catch (err) {
+		console.error(err);
+		busy("Couldn't reach a proxy server on this network. Try again, or play without the proxy.", true);
+	}
+});
+
+// Proxy mode: the client runs in a full-size frame on this page, so its WebSocket can be swapped
+// for the proxied one while it is still loading (every client connects only after its load event).
+function launch(url, proxySockets) {
+	const frame = Object.assign(document.createElement("iframe"), { className: "game", src: url, allowFullscreen: true });
+	frame.allow = "fullscreen; pointer-lock; autoplay; gamepad; clipboard-read; clipboard-write; keyboard-map";
+	document.body.append(frame);
+	const timer = setInterval(() => {
+		try {
+			const win = frame.contentWindow;
+			if (!win || win.location.href === "about:blank") return;
+			if (!win.__fluxProxy) proxySockets(win);
+			if (win.document.readyState === "complete") clearInterval(timer);
+		} catch {
+			// Not readable for a moment while the new page commits.
+		}
+	}, 1);
+	const focus = () => { frame.focus(); frame.contentWindow?.focus(); };
+	frame.addEventListener("load", () => {
+		$("bar").hidden = true;
+		document.querySelector(".panel").remove();
+		focus();
+	});
+	addEventListener("focus", focus); // Flux focuses this page; hand keys on to the game
+}
+</script>
+</body>
+</html>
