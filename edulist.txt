@@ -1,4 +1,4 @@
-{id:"EaglercraftLauncher", title:"Eaglercraft Launcher", url:"edutools/launcher/index.html", image:"/visuals/eaglercraft.jpg"},
+{id:"EaglercraftLauncher", title:"Eaglercraft Launcher", url:"edutools/launcher/index.html", image:"/edutools/launcher/logo.png", tags:"flux client minecraft"},
 {id:"CookieClicker", title:"Cookie Clicker", url:"edutools/cookieclicker/index.html", image:"/visuals/cookieclicker.jpg"},
 {id:"Doodlejump", title:"Doodlejump", url:"edutools/doodlejump/index.html", image:"/visuals/doodlejump.jpg"},
 {id:"Ducklife", title:"Ducklife", url:"edutools/ducklife/ducklife.html", image:"/visuals/ducklife.webp"},

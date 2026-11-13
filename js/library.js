@@ -61,7 +61,7 @@ export async function loadGames() {
 			byId.set(g.id, g);
 			const title = esc(g.title);
 			return (
-				`<div class="card" data-id="${esc(g.id)}" data-title="${title.toLowerCase()}">` +
+				`<div class="card" data-id="${esc(g.id)}" data-title="${(title + (g.tags ? " " + esc(g.tags) : "")).toLowerCase()}">` +
 				`<button class="card-play" type="button" title="${title}">` +
 				`<span class="card-art"><img src="${esc(sitePath(g.image))}" alt="" loading="lazy" decoding="async" width="160" height="160"></span>` +
 				`<span class="card-title">${title}</span></button>` +
