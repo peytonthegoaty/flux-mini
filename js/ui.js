@@ -135,8 +135,10 @@ function showWisp() {
 }
 
 for (const key of ["engine", "transport", "search"]) form.elements[key].value = settings[key];
+form.elements.autoCombo.checked = settings.autoCombo;
 form.addEventListener("change", (e) => {
 	const { name, value } = e.target;
+	if (name === "autoCombo") return (settings.autoCombo = e.target.checked), saveSettings();
 	if (!["engine", "transport", "search"].includes(name)) return;
 	settings[name] = value.trim() || DEFAULTS[name];
 	saveSettings();

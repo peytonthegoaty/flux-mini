@@ -4,7 +4,7 @@
 import { debug } from "./log.js";
 import { toUrl } from "./search.js";
 import { settings } from "./settings.js";
-import { pickWisp } from "./wisp.js";
+import { SERVERS, checkWisp, pickWisp } from "./wisp.js";
 
 // Paths inside the site's folder. The site may live in a sub-folder (e.g. on S3), and
 // these are handed to workers, so they must be absolute, not relative to the worker.
@@ -27,6 +27,11 @@ const frames = $("frames");
 let scramjet, connection;
 const ENGINE_NAMES = { scramjet: "Scramjet", scramjet2: "Scramjet 2 (beta)", uv: "Ultraviolet" };
 let transportKey = "";
+// The engine and Wisp server Auto combination last got a page through with; used while it's on.
+let found = null;
+const pinned = () => (settings.autoCombo ? found : null);
+const engineNow = () => pinned()?.engine || settings.engine;
+const wispNow = async () => pinned()?.wisp || (await pickWisp(settings.wisp));
 
 function showStatus(message, isError = false) {
 	status.textContent = message;
@@ -105,7 +110,7 @@ const selfHealingSource = (path) => `
 	return [(${selfHealing})(Transport), ${JSON.stringify(path)}];`;
 
 async function setupTransport() {
-	const wisp = await pickWisp(settings.wisp);
+	const wisp = await wispNow();
 	const transport = TRANSPORTS[settings.transport] || TRANSPORTS.epoxy;
 	if (transportKey === transport.path + wisp) return;
 	if (transport === TRANSPORTS.epoxy) await connection.setManualTransport(selfHealingSource(transport.path), [transport.options(wisp)]);
@@ -151,7 +156,7 @@ async function scramjet2() {
 		await Promise.all(["scram2/scramjet.js", "scram2/controller.api.js"].map(loadScript));
 		const { default: Epoxy } = await import(sitePath("epoxy3/index.mjs"));
 		const Transport = selfHealing(Epoxy);
-		const wisp = await pickWisp(settings.wisp);
+		const wisp = await wispNow();
 		const controller = new $scramjetController.Controller({
 			serviceworker: (await navigator.serviceWorker.ready).active,
 			transport: new Transport({ wisp }),
@@ -172,7 +177,7 @@ async function scramjet2() {
 		throw err;
 	});
 	const controller = await sj2;
-	const wisp = await pickWisp(settings.wisp);
+	const wisp = await wispNow();
 	if (wisp !== sj2Wisp) {
 		controller.setTransport(new controller.Transport({ wisp }));
 		sj2Wisp = wisp;
@@ -241,12 +246,14 @@ function select(tab) {
 	for (const t of tabs) t.el.hidden = t !== tab || !t.url;
 	$("newtab-page").hidden = !!tab.url;
 	addressInput.value = tab.url;
+	showLoad();
 	renderTabs();
 }
 
 function closeTab(tab) {
 	const index = tabs.indexOf(tab);
 	tab.el.remove();
+	Object.assign(tab, { run: (tab.run || 0) + 1, load: null }); // stops its loading and Auto combination
 	tabs.splice(index, 1);
 	if (!tabs.length) newTab();
 	else if (tab === active) select(tabs[Math.min(index, tabs.length - 1)]);
@@ -268,47 +275,208 @@ function onTabLoad(tab) {
 	renderTabs();
 }
 
+// Page loading screen over the browser tabs (styled like TV's): what's happening, a bar and a
+// percentage. Each step sets a range; the bar eases toward its top while the step runs.
+const pageLoad = $("page-load");
+let loadTimer = 0;
+function paintLoad() {
+	const load = active?.load;
+	if (!load) return;
+	load.pct += Math.max(0, load.to - load.pct) * 0.05; // never backwards
+	$("page-load-fill").style.transform = `scaleX(${load.pct / 100})`;
+	$("page-load-pct").textContent = `${Math.floor(load.pct)}%`;
+	$("page-load-step").textContent = load.text;
+}
+function showLoad() {
+	const loading = !!active?.load;
+	if (loading) {
+		pageLoad.hidden = false;
+		pageLoad.classList.remove("done");
+		paintLoad();
+	} else if (!pageLoad.hidden && !pageLoad.classList.contains("done")) {
+		pageLoad.classList.add("done");
+		setTimeout(() => pageLoad.classList.contains("done") && (pageLoad.hidden = true), 400);
+	}
+	clearInterval(loadTimer);
+	if (tabs.some((t) => t.load)) loadTimer = setInterval(paintLoad, 50);
+}
+function loadStep(tab, text, from, to) {
+	tab.load = { text, pct: Math.max(tab.load?.pct || 0, from), to };
+	if (tab === active) showLoad();
+}
+function loadDone(tab) {
+	if (!tab.load) return;
+	tab.load = null;
+	if (tab !== active) return showLoad();
+	$("page-load-fill").style.transform = "scaleX(1)";
+	$("page-load-pct").textContent = "100%";
+	showLoad();
+}
+
 async function navigate(tab, input) {
 	const url = toUrl(input, settings.search);
+	const run = (tab.run = (tab.run || 0) + 1); // a newer navigation in this tab stops an older one
 	Object.assign(tab, { url, title: new URL(url).hostname, loading: true });
 	if (tab === active) select(tab);
-	debug(`Opening ${url} with ${ENGINE_NAMES[settings.engine] || ENGINE_NAMES.scramjet}`);
-	showStatus("Starting proxy…");
+	debug(`Opening ${url} with ${ENGINE_NAMES[engineNow()] || ENGINE_NAMES.scramjet}`);
+	showStatus("");
+	loadStep(tab, "Starting the proxy", 2, 40);
 	try {
-		await prepare();
+		await prepare((text, from, to) => tab.run === run && loadStep(tab, text, from, to));
 	} catch (err) {
 		debug(`Startup failed: ${err.message || err}`, true);
 		showStatus(err.message || String(err), true);
 		tab.loading = false;
+		loadDone(tab);
 		renderTabs();
 		return;
 	}
-	showStatus("");
-	$("engine-badge").textContent = ENGINE_NAMES[settings.engine] || ENGINE_NAMES.scramjet;
-	if (settings.engine === "uv") {
-		tab.el.src = __uv$config.prefix + __uv$config.encodeUrl(url);
-	} else if (settings.engine === "scramjet2") {
+	if (tab.run !== run) return;
+	if (settings.autoCombo) return autoCombo(tab, url, run);
+	loadStep(tab, `Loading ${new URL(url).hostname}`, 70, 95);
+	try {
+		await open(tab, url, engineNow());
+		await outcome(tab.el, 30000);
+	} catch (err) {
+		showStatus(err.message, true);
+		tab.loading = false;
+		renderTabs();
+	}
+	if (tab.run === run) loadDone(tab);
+}
+
+// Starts loading url in target ({ el, sj, sj2 }: a tab, or one of Auto combination's tries).
+async function open(target, url, engine) {
+	if (engine === "uv") {
+		target.el.src = __uv$config.prefix + __uv$config.encodeUrl(url);
+	} else if (engine === "scramjet2") {
 		try {
-			(tab.sj2 ??= (await scramjet2()).createFrame(tab.el)).go(url);
+			(target.sj2 ??= (await scramjet2()).createFrame(target.el)).go(url);
 		} catch (err) {
 			debug(`Scramjet 2 failed to start: ${err.message || err}`, true);
-			showStatus(`Scramjet 2 (beta) couldn't start: ${err.message || err}`, true);
-			tab.loading = false;
-			renderTabs();
+			throw new Error(`Scramjet 2 (beta) couldn't start: ${err.message || err}`);
 		}
 	} else {
-		(tab.sj ??= scramjet.createFrame(tab.el)).go(url);
+		(target.sj ??= scramjet.createFrame(target.el)).go(url);
 	}
+	if (target.el === active?.el) $("engine-badge").textContent = ENGINE_NAMES[engine] || ENGINE_NAMES.scramjet;
+}
+
+// Auto combination, in hidden frames behind the loading screen: the usual engine and server first
+// (while every other server is tested); if that fails, every engine at once on each server in turn.
+// Engines run in parallel because they share a server; servers can't, since Scramjet and
+// Ultraviolet use one connection for the whole site. The first page that loads is moved into the tab.
+async function autoCombo(tab, url, run) {
+	const host = new URL(url).hostname;
+	const first = { engine: engineNow(), wisp: await wispNow() };
+	const live = Promise.all(SERVERS.map((w) => (w === first.wisp ? false : checkWisp(w))));
+	const engines = [first.engine, ...Object.keys(ENGINE_NAMES).filter((e) => e !== first.engine)];
+	const serverName = (w) => (SERVERS.includes(w) ? `Server ${SERVERS.indexOf(w) + 1}` : "your server");
+	let rounds = [[first]];
+	let tried = 0;
+	let lastError = null;
+	for (let r = 0; r < rounds.length; r++) {
+		const combos = rounds[r];
+		const total = rounds.length > 1 ? rounds.reduce((n, x) => n + x.length, 0) : engines.length * (SERVERS.length + 1);
+		if (r === 0) loadStep(tab, `Loading ${host}`, 70, 85);
+		else loadStep(tab, `Trying ${combos.length} engines on ${serverName(combos[0].wisp)} (${tried}/${total})`, 86 + (12 * (r - 1)) / (rounds.length - 1), 86 + (12 * r) / (rounds.length - 1));
+		found = combos[0];
+		// Scramjet and Ultraviolet share one connection: set it once for the round, never twice at the same time.
+		const shared = combos.some((c) => c.engine !== "scramjet2") ? limit(setupTransport(), 15000).catch((err) => err) : null;
+		const tries = combos.map((combo) => ({ combo, el: makeFrame(tab), sj: null, sj2: null }));
+		for (const t of tries) t.el.hidden = true;
+		const results = tries.map(async (t) => {
+			let result;
+			try {
+				if (t.combo.engine !== "scramjet2") {
+					const err = await shared;
+					if (err) throw err;
+				}
+				await limit(open(t, url, t.combo.engine), 15000);
+				result = await outcome(t.el, 15000);
+			} catch (err) {
+				result = err.message || String(err);
+			}
+			if (tab.run === run && t.el.isConnected) debug(`Auto combination: ${ENGINE_NAMES[t.combo.engine]} on ${t.combo.wisp}: ${result}`, result !== "ok");
+			if (result !== "ok") throw t;
+			return t;
+		});
+		const winner = await Promise.any(results).catch(() => null);
+		tried += combos.length;
+		if (tab.run !== run) return tries.forEach((t) => t.el.remove());
+		// Keep one failed try (Flux's error page) to show if nothing works.
+		const shown = winner ? null : tries.find((t) => t.el.contentDocument?.title === "Couldn't load this page") || tries[0];
+		for (const t of tries) if (t !== winner && t !== shown) t.el.remove();
+		if (winner) {
+			found = winner.combo;
+			lastError?.el.remove();
+			return adopt(tab, winner);
+		}
+		lastError?.el.remove();
+		lastError = shown;
+		if (r === 0) {
+			loadStep(tab, "Finding proxy servers that answer", 70, 72);
+			const ok = await live;
+			if (tab.run !== run) return lastError.el.remove();
+			const wisps = [first.wisp, ...SERVERS.filter((w, n) => ok[n])];
+			const rest = wisps.map((wisp) => engines.map((engine) => ({ engine, wisp })).filter((c) => !(c.engine === first.engine && c.wisp === first.wisp)));
+			rounds = [[first], ...rest.filter((x) => x.length)];
+		}
+	}
+	found = first;
+	adopt(tab, lastError); // the error page says what went wrong
+	debug(`Auto combination: none of ${tried} engine and server combinations could load ${url}`, true);
+}
+
+// Rejects if promise takes longer than ms, so one stuck try can't stall Auto combination.
+const limit = (promise, ms) => Promise.race([promise, new Promise((_, reject) => setTimeout(() => reject(new Error(`no answer in ${ms / 1000} s`)), ms))]);
+
+// Moves a finished try into the tab, replacing the tab's frame.
+function adopt(tab, t) {
+	tab.el.remove();
+	Object.assign(tab, { el: t.el, sj: t.sj, sj2: t.sj2 });
+	t.el.hidden = false;
+	if (tab === active) select(tab);
+	onTabLoad(tab);
+	if (t.combo && tab === active) $("engine-badge").textContent = ENGINE_NAMES[t.combo.engine];
+	tab.loading = false;
+	loadDone(tab);
+	renderTabs();
+}
+
+// "ok" once a page shows in the frame, "error" for Flux's proxy error page, "timeout" if neither in ms.
+function outcome(el, ms) {
+	const start = Date.now();
+	return new Promise((resolve) => {
+		const timer = setInterval(() => {
+			let result = Date.now() - start > ms || !el.isConnected ? "timeout" : "";
+			try {
+				const doc = el.contentDocument;
+				if (el.contentWindow.location.href !== "about:blank" && doc.readyState !== "loading") {
+					result = doc.title === "Couldn't load this page" ? "error" : "ok"; // sw.js errorPage()
+				}
+			} catch {
+				// Mid-navigation.
+			}
+			if (result) {
+				clearInterval(timer);
+				resolve(result);
+			}
+		}, 250);
+	});
 }
 
 // Opens a new tab, optionally loading a URL or search in it. A blank current tab is reused.
 // A fresh frame for a tab (new tabs, and tabs waking up after the Browser was left).
 function addFrame(tab) {
+	Object.assign(tab, { el: makeFrame(tab), sj: null, sj2: null });
+}
+function makeFrame(tab) {
 	const el = document.createElement("iframe");
 	Object.assign(el, { className: "frame", title: "Browser tab", allow: "fullscreen; autoplay; clipboard-write; pointer-lock; gamepad" });
-	el.addEventListener("load", () => onTabLoad(tab));
-	Object.assign(tab, { el, sj: null, sj2: null });
+	el.addEventListener("load", () => tab.el === el && onTabLoad(tab));
 	frames.append(el);
+	return el;
 }
 
 export function newTab(input) {
@@ -347,9 +515,10 @@ export const activeTabFrame = () => (active?.url ? active.el : null);
 export function suspendTabs() {
 	for (const tab of tabs) {
 		if (!tab.url || tab.asleep) continue;
-		Object.assign(tab, { asleep: true, loading: false });
+		Object.assign(tab, { asleep: true, loading: false, run: (tab.run || 0) + 1, load: null });
 		tab.el.remove();
 	}
+	showLoad();
 }
 export const resumeTabs = () => active?.asleep && wake(active);
 function wake(tab) {

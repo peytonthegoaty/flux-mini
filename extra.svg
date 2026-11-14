@@ -331,6 +331,11 @@ m34 -295 c73 -35 124 -162 198 -494 55 -251 74 -374 87 -583 17 -267 3 -313
 				</div>
 				<p class="status" id="status" role="status" hidden=""></p>
 				<div class="frames" id="frames">
+					<div class="tv-load" id="page-load" role="status" aria-live="polite" hidden="">
+						<svg xmlns="http://www.w3.org/2000/svg" class="i tv-load-icon"><use href="#i-globe" /></svg>
+						<div class="tv-load-bar"><i id="page-load-fill"></i></div>
+						<div class="tv-load-text"><span id="page-load-step">Starting</span><span id="page-load-pct">0%</span></div>
+					</div>
 					<div class="newtab" id="newtab-page">
 						<svg xmlns="http://www.w3.org/2000/svg" class="newtab-logo"><use href="#logo" /></svg>
 						<p>Type a URL or search in the bar above.</p>
@@ -430,6 +435,10 @@ m34 -295 c73 -35 124 -162 198 -494 55 -251 74 -374 87 -583 17 -267 3 -313
 							</div>
 							<p class="error" id="wisp-error" hidden=""></p>
 						</div>
+						<label class="row">
+							<div><b>Auto combination</b><small>If a site won't load, try every proxy engine with every Wisp server until one works.</small></div>
+							<input type="checkbox" role="switch" name="autoCombo" />
+						</label>
 						<div class="row col">
 							<div><b>Search engine</b><small><code>%s</code> is replaced with what you typed.</small></div>
 							<input name="search" type="text" spellcheck="false" />

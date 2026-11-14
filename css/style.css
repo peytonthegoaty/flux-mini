@@ -2622,7 +2622,8 @@ html:not(.os) .os,
 	color: var(--fg-m);
 }
 
-/* TV loading screen (js/ui.js openTv): icon, thin bar, current step and percentage. */
+/* TV loading screen (js/ui.js openTv), also over browser tabs (js/app.js #page-load):
+   icon, thin bar, current step and percentage. */
 .view.tv {
 	position: relative;
 }
@@ -2671,7 +2672,8 @@ html:not(.os) .os,
 	color: var(--fg-m);
 	font-size: 12.5px;
 }
-#tv-load-pct {
+#tv-load-pct,
+#page-load-pct {
 	color: var(--fg-d);
 	font-variant-numeric: tabular-nums;
 }
