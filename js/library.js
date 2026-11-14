@@ -1,5 +1,9 @@
 // Game library (from edulist.txt) and the game player.
+import { uvUrl } from "./app.js";
+import { debug } from "./log.js";
 import { toast } from "./modal.js";
+import { enhanceSelect } from "./select.js";
+import { volumeControl } from "./volume.js";
 
 const FAVS_KEY = "flux:favs";
 const $ = (id) => document.getElementById(id);
@@ -49,6 +53,9 @@ function sortGames(list) {
 	);
 }
 
+let localGames = [];
+let gnGames = [];
+
 export async function loadGames() {
 	const res = await fetch("edulist.txt");
 	if (!res.ok) throw new Error(`Couldn't load edulist.txt (HTTP ${res.status})`);
@@ -56,11 +63,21 @@ export async function loadGames() {
 	const list = Function(`"use strict"; return [${await res.text()}]`)();
 	// In the OS style the Eaglercraft Launcher is its own app (js/os.js), not a game.
 	const os = document.documentElement.classList.contains("os");
-	const games = sortGames(list.filter((g) => !(os && g.id === "EaglercraftLauncher")).map((g) => ({ ...g, title: g.title.replace(/[‎‏]/g, "").trim() })));
+	localGames = list.filter((g) => !(os && g.id === "EaglercraftLauncher")).map((g) => ({ ...g, title: g.title.replace(/[‎‏]/g, "").trim() }));
+	render();
+	return localGames.length;
+}
 
+// The list the dropdown at the top shows: "flux" (edulist.txt) or "gn" (gn-math).
+const source = $("game-source");
+const sourceName = () => source.selectedOptions[0].text;
+
+function render() {
+	byId.clear();
+	for (const g of [...localGames, ...gnGames]) byId.set(g.id, g);
+	const games = sortGames([...(source.value === "gn" ? gnGames : localGames)]);
 	grid.innerHTML = games
 		.map((g) => {
-			byId.set(g.id, g);
 			const title = esc(g.title);
 			return (
 				`<div class="card" data-id="${esc(g.id)}" data-title="${(title + (g.tags ? " " + esc(g.tags) : "")).toLowerCase()}">` +
@@ -72,8 +89,113 @@ export async function loadGames() {
 			);
 		})
 		.join("");
-	showCount(games.length);
-	return games.length;
+	if (query() || onlyFavs) filter();
+	else {
+		empty.hidden = games.length > 0;
+		showCount(games.length);
+	}
+}
+
+// gn-math (gn-math.dev) ---------------------------------------------------------
+// gn-math reads its game list from zones.json on jsDelivr and each game from freebuisness/html,
+// whose pages carry a <base> pointing at the game's files on jsDelivr. jsDelivr serves those pages
+// as text/plain, so they're fetched and shown from a blob. Where jsDelivr is blocked, the list,
+// covers and games all come through Ultraviolet instead (the Wisp server pickWisp finds).
+const GN = "https://cdn.jsdelivr.net/gh/freebuisness/";
+const gnUrl = (u) => u.replace("{COVER_URL}", GN + "covers@main").replace("{HTML_URL}", GN + "html@main");
+let gnProxy = false;
+
+// This site's Ultraviolet address for a URL, usable from this page as well as from frames.
+async function viaProxy(url) {
+	const path = await uvUrl(url);
+	// The service worker only sees this page's own requests (list, covers) once it controls the page.
+	if (!navigator.serviceWorker.controller) {
+		const claimed = new Promise((resolve) => navigator.serviceWorker.addEventListener("controllerchange", resolve, { once: true }));
+		(await navigator.serviceWorker.ready).active.postMessage("claim");
+		await claimed;
+	}
+	return new URL(path, location.href).href;
+}
+
+async function gnText(url) {
+	if (!gnProxy) {
+		const stop = new AbortController();
+		const timer = setTimeout(() => stop.abort(), 8000);
+		try {
+			const res = await fetch(url, { signal: stop.signal });
+			clearTimeout(timer);
+			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			return await res.text();
+		} catch (err) {
+			if (err.message?.startsWith("HTTP")) throw err; // jsDelivr answered; the file is the problem
+			gnProxy = true;
+			debug(`gn-math: jsDelivr didn't answer (${err.message || err}); loading gn-math through the proxy`, true);
+		}
+	}
+	const res = await fetch(await viaProxy(url));
+	if (!res.ok) throw new Error(`HTTP ${res.status} through the proxy`);
+	return res.text();
+}
+
+let gnLoading = null;
+export const loadGnMath = () => (gnLoading ??= fetchGnMath());
+async function fetchGnMath() {
+	empty.textContent = "Loading GN-Math games…";
+	try {
+		const zones = JSON.parse(await gnText(GN + "assets@main/zones.json"));
+		gnGames = await Promise.all(
+			zones
+				.filter((z) => z.url.startsWith("{HTML_URL}")) // the rest are links (their Discord)
+				.map(async (z) => ({
+					id: `gn-${z.id}`,
+					title: z.name,
+					gn: gnUrl(z.url),
+					image: gnProxy ? await viaProxy(gnUrl(z.cover)) : gnUrl(z.cover),
+				}))
+		);
+		render();
+		debug(`gn-math: ${gnGames.length} games${gnProxy ? " through the proxy" : ""}`);
+	} catch (err) {
+		gnLoading = null; // try again next time the list is picked
+		debug(`gn-math games didn't load: ${err.message || err}`, true);
+		if (source.value === "gn") empty.textContent = "Couldn't load the GN-Math games. Switch to Flux Games and back to try again.";
+	}
+}
+
+// jsDelivr refuses some GitHub users' files ("User gn-math is blocked"); githack serves the same files.
+// shortcut: the users found blocked on 2026-11-14; add any that a game's console shows as blocked.
+const unblock = (html) =>
+	html.replace(/https:\/\/cdn\.jsdelivr\.net\/gh\/(gn-math|genizy|NotRexed)\/([^/@"'\s]+)(?:@([^/"'\s]+))?/g, (_, user, repo, ref) => `https://raw.githack.com/${user}/${repo}/${!ref || ref === "latest" ? "HEAD" : ref}`);
+
+// Loads a game into a frame: the game player's, or an OS window's. Every frame is on this site, so a
+// game keeps its saves (and its proxied site's storage) wherever it's played.
+export function startGame(game, el) {
+	const run = (el.run = (el.run || 0) + 1);
+	if (game.gn) playGn(game, el, () => run !== el.run);
+	else el.src = sitePath(game.url);
+}
+
+async function playGn(game, frame, stale) {
+	try {
+		const html = unblock(await gnText(game.gn));
+		if (stale()) return;
+		if (!gnProxy) return void (frame.src = URL.createObjectURL(new Blob([html], { type: "text/html" })));
+		// Through the proxy: open a small page in Ultraviolet, move it to the game's folder, then write
+		// the game into it. Ultraviolet rewrites what's written, so the game's files load through the
+		// proxy too. It resolves them against __uv.meta.base, which a written <base> doesn't update.
+		const folder = new URL(html.match(/<base\s[^>]*href=["']?([^"' >]+)/i)?.[1] || ".", game.gn).href;
+		frame.src = await viaProxy("https://example.com/");
+		await new Promise((resolve) => frame.addEventListener("load", resolve, { once: true }));
+		if (stale()) return;
+		// Started by the frame's own timer: document.open() gives the page the address of the script
+		// that started the call, which from here would be Flux's.
+		const win = frame.contentWindow;
+		win.setTimeout(new win.Function("url", "html", "history.replaceState(null, '', url); __uv.meta.base = new URL(url); document.open(); document.write(html); document.close();"), 0, folder, html);
+	} catch (err) {
+		if (stale()) return;
+		debug(`gn-math: ${game.title}: ${err.message || err}`, true);
+		toast(`Couldn't load ${game.title}.`);
+	}
 }
 
 function filter() {
@@ -91,7 +213,7 @@ function filter() {
 }
 
 function showCount(shown) {
-	$("games-heading").textContent = onlyFavs ? "Favorites" : query() ? "Results" : "All games";
+	$("games-heading").textContent = onlyFavs ? "Favorites" : query() ? "Results" : sourceName();
 	$("games-shown").textContent = `${shown} game${shown === 1 ? "" : "s"}`;
 }
 const query = () => search.value.trim();
@@ -138,7 +260,7 @@ export function play(id) {
 	playerStar.hidden = false;
 	$("player-title").textContent = game.title;
 	playerStar.classList.toggle("on", favs.has(id));
-	frame.src = sitePath(game.url);
+	startGame(game, frame);
 	showView("player");
 }
 
@@ -151,13 +273,20 @@ export function playUrl(title, url) {
 	showView("player");
 }
 
-// Every game with its picture's full address (for the OS "Add game" picker).
-export const gameList = () => [...byId.values()].map((g) => ({ id: g.id, title: g.title, image: sitePath(g.image) }));
+// Every game with its picture's full address (for the OS "Add game" picker). gn: from gn-math.
+export const gameList = () => [...byId.values()].map((g) => ({ id: g.id, title: g.title, image: sitePath(g.image), gn: !!g.gn }));
+
+// A game by id, loading the gn-math list first when it's one of theirs (an OS desktop icon).
+export async function findGame(id) {
+	if (id.startsWith("gn-")) await loadGnMath();
+	return byId.get(id);
+}
 
 // Fully quits whatever a frame is running. Taking it off the page ends the page with everything it
 // started (workers, sockets, audio) and skips "Leave site?" prompts, which Eaglercraft 26.x shows;
 // the same, now empty, frame goes straight back.
 export function quitFrame(el) {
+	el.run = (el.run || 0) + 1; // a game still loading into it stops
 	if (el.src.startsWith("blob:")) URL.revokeObjectURL(el.src);
 	const [parent, next] = [el.parentNode, el.nextSibling];
 	el.remove();
@@ -182,16 +311,23 @@ export function initGames(show) {
 		else play(card.dataset.id);
 	});
 	search.addEventListener("input", filter);
+	enhanceSelect(source);
+	source.addEventListener("change", () => {
+		if (source.value === "gn") loadGnMath();
+		render();
+		animateCards();
+	});
 	favsButton.addEventListener("click", () => {
 		onlyFavs = !onlyFavs;
 		favsButton.setAttribute("aria-pressed", onlyFavs);
 		filter();
 	});
 	$("random-game").addEventListener("click", () => {
-		const ids = [...byId.keys()];
+		const ids = [...grid.children].map((card) => card.dataset.id);
 		play(ids[Math.floor(Math.random() * ids.length)]);
 	});
 	playerStar.addEventListener("click", () => current && toggleFavWithToast(current.id));
+	$("player-fav").before(volumeControl($("view-player"), "player"));
 	// Keys go to whatever has focus, which after a click is the button, not the game; hand it back.
 	const focusGame = () => {
 		frame.focus();

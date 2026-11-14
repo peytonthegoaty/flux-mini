@@ -4,7 +4,8 @@
 // js/boot.js sets html.os before the first paint; CSS hides .shell and shows #os.
 import { newTab, resumeTabs, suspendTabs, warmProxy } from "./app.js";
 import { addFile, files, filesReady, htmlUrl, removeFile, saveFiles } from "./files.js";
-import { gameList, play, quitFrame, stopGame } from "./library.js";
+import { volumeControl } from "./volume.js";
+import { findGame, gameList, loadGnMath, quitFrame, startGame, stopGame } from "./library.js";
 import { animateDialog, ask, closeDialog, toast } from "./modal.js";
 import { saveSettings, settings } from "./settings.js";
 
@@ -104,6 +105,8 @@ function build(id) {
 	body.append(first, ...rest);
 	// Browser: the tabs sit in the title bar, like Chrome, instead of a row of their own.
 	if (id === "browser") el.querySelector(".os-title > span").replaceWith(el.querySelector("#tabs"));
+	// Volume of just this window's pages (not for Settings and Wallpaper, which make no sound).
+	if (id !== "settings" && id !== "wallpaper") el.querySelector('[data-act="min"]').before(volumeControl(el, app.file?.gameId || id));
 	desk.append(el);
 
 	const { w: dw, h: dh } = area();
@@ -118,7 +121,7 @@ function build(id) {
 
 	el.addEventListener("pointerdown", () => focus(id), true);
 	el.querySelector(".os-title").addEventListener("pointerdown", (e) => drag(win, e));
-	el.querySelector(".os-title").addEventListener("dblclick", (e) => !e.target.closest("button, .tab") && toggleMax(win));
+	el.querySelector(".os-title").addEventListener("dblclick", (e) => !e.target.closest("button, .tab, .vol") && toggleMax(win));
 	el.addEventListener("pointerdown", (e) => e.target.classList.contains("os-rz") && resize(win, e, e.target.dataset.dir));
 	el.querySelector(".os-title").addEventListener("click", (e) => {
 		const act = e.target.closest("button")?.dataset.act;
@@ -231,7 +234,7 @@ function track(e, target, onMove, onEnd) {
 }
 
 function drag(win, e) {
-	if (e.button || e.target.closest("button, .tab")) return;
+	if (e.button || e.target.closest("button, .tab, .vol")) return;
 	const { w: dw, h: dh } = area();
 	if (win.max) {
 		// Pull a maximized window off the top: it restores under the cursor at the same relative spot.
@@ -428,6 +431,27 @@ function fileApp(file) {
 	return app;
 }
 
+// A game added to the desktop runs in its own window, like an HTML file, loaded the same way as in
+// the Games window (so its saves are shared with it).
+function gameApp(file) {
+	const frame = Object.assign(document.createElement("iframe"), { className: "os-run", title: file.name, allowFullscreen: true });
+	frame.allow = "fullscreen; autoplay; gamepad; pointer-lock; clipboard-write";
+	return {
+		title: file.name,
+		icon: "i-games",
+		img: file.image?.replace(/"/g, "&quot;"),
+		size: [0.7, 0.8],
+		content: () => frame,
+		file,
+		onOpen: async () => {
+			const game = await findGame(file.gameId);
+			if (game) startGame(game, frame);
+			else toast(`Couldn't find ${file.name}. If it's a GN-Math game, check your connection and open it again.`);
+		},
+		onClose: () => quitFrame(frame),
+	};
+}
+
 // Closes a file's window for good (its file was deleted, or an unsaved page is replaced).
 function removeApp(id) {
 	const win = wins[id];
@@ -441,13 +465,9 @@ function removeApp(id) {
 }
 
 export function openFile(file) {
-	if (file.type === "game") {
-		openApp("games");
-		return play(file.gameId);
-	}
 	const id = `file-${file.id || "unsaved"}`;
 	if (APPS[id] && APPS[id].file !== file) removeApp(id);
-	APPS[id] ??= fileApp(file);
+	APPS[id] ??= file.type === "game" ? gameApp(file) : fileApp(file);
 	openApp(id);
 }
 
@@ -492,6 +512,7 @@ function addGame() {
 	}
 	picker.querySelector("input").value = "";
 	showPicks();
+	loadGnMath().then(() => picker.open && showPicks()); // GN-Math games join the list once loaded
 	picker.showModal();
 	picker.querySelector("input").focus();
 }
@@ -503,6 +524,7 @@ function showPicks() {
 			const card = Object.assign(document.createElement("button"), { type: "button", className: "os-pick-card" });
 			card.dataset.id = g.id;
 			card.append(Object.assign(document.createElement("img"), { src: g.image, alt: "", loading: "lazy" }), Object.assign(document.createElement("span"), { textContent: g.title }));
+			if (g.gn) card.append(Object.assign(document.createElement("small"), { textContent: "GN-Math" }));
 			return card;
 		})
 	);
@@ -598,12 +620,23 @@ function layoutIcons() {
 	}
 }
 
+// Desktop icons select like a real desktop: a click selects one, Ctrl/Shift/Cmd + click adds or
+// removes one, a box drawn on empty space selects everything it touches, and dragging a selected
+// icon moves the whole selection.
+const selected = () => [...desk.querySelectorAll(".os-icon.selected")];
+const cellOf = (el) => el.dataset.cell.split(",").map(Number);
+
 function dragIcon(e) {
 	const el = e.target.closest(".os-desk > .os-icon");
 	if (!el || e.button) return;
-	const [c0, r0] = el.dataset.cell.split(",").map(Number);
-	const x0 = PAD + c0 * CELL_W;
-	const y0 = PAD + r0 * CELL_H;
+	const add = e.ctrlKey || e.shiftKey || e.metaKey;
+	if (add) el.classList.toggle("selected");
+	else if (!el.classList.contains("selected")) for (const icon of desk.querySelectorAll(".os-icon")) icon.classList.toggle("selected", icon === el);
+	if (!el.classList.contains("selected")) return; // Ctrl-clicked off the selection
+	const group = selected().map((icon) => {
+		const [c, r] = cellOf(icon);
+		return { icon, c, r, x: PAD + c * CELL_W, y: PAD + r * CELL_H };
+	});
 	let moved = false;
 	track(
 		e,
@@ -613,22 +646,35 @@ function dragIcon(e) {
 			const dy = ev.clientY - e.clientY;
 			if (!moved && Math.hypot(dx, dy) < 5) return; // a click, not a drag
 			moved = true;
-			el.classList.add("dragging");
-			el.style.transform = `translate3d(${x0 + dx}px, ${y0 + dy}px, 0)`;
+			for (const g of group) {
+				g.icon.classList.add("dragging");
+				g.icon.style.transform = `translate3d(${g.x + dx}px, ${g.y + dy}px, 0)`;
+			}
 		},
 		(ev) => {
-			if (!moved) return;
-			el.classList.remove("dragging");
+			if (!moved) {
+				// A plain click on one of several selected icons leaves just that one selected.
+				if (!add) for (const icon of selected()) icon.classList.toggle("selected", icon === el);
+				return;
+			}
 			el.dataset.dragged = "1";
 			setTimeout(() => delete el.dataset.dragged, 0); // only swallows this drag's own click
-			const c = clamp(Math.round((x0 + ev.clientX - e.clientX - PAD) / CELL_W), 0, Math.floor((desk.clientWidth - PAD) / CELL_W) - 1);
-			const r = clamp(Math.round((y0 + ev.clientY - e.clientY - PAD) / CELL_H), 0, rows() - 1);
+			const cols = Math.floor((desk.clientWidth - PAD) / CELL_W);
+			const dc = Math.round((ev.clientX - e.clientX) / CELL_W);
+			const dr = Math.round((ev.clientY - e.clientY) / CELL_H);
 			// Every icon keeps the cell it's in now, so the others don't shift into the gap.
-			for (const o of desk.querySelectorAll(".os-icon")) spots[iconKey(o)] = o.dataset.cell.split(",").map(Number);
-			// Dropped on another icon: they swap places.
-			const other = [...desk.querySelectorAll(".os-icon")].find((o) => o !== el && o.dataset.cell === `${c},${r}`);
-			if (other) spots[iconKey(other)] = [c0, r0];
-			spots[iconKey(el)] = [c, r];
+			for (const o of desk.querySelectorAll(".os-icon")) spots[iconKey(o)] = cellOf(o);
+			for (const g of group) g.to = [clamp(g.c + dc, 0, cols - 1), clamp(g.r + dr, 0, rows() - 1)];
+			const targets = new Set(group.map((g) => String(g.to)));
+			// Cells the selection leaves and doesn't land on again: icons it lands on move there.
+			const free = group.map((g) => [g.c, g.r]).filter((cell) => !targets.has(String(cell)));
+			for (const o of desk.querySelectorAll(".os-icon")) {
+				if (!o.classList.contains("selected") && targets.has(String(spots[iconKey(o)])) && free.length) spots[iconKey(o)] = free.shift();
+			}
+			for (const g of group) {
+				g.icon.classList.remove("dragging");
+				spots[iconKey(g.icon)] = g.to;
+			}
 			try {
 				localStorage.setItem(SPOTS_KEY, JSON.stringify(spots));
 			} catch {
@@ -639,11 +685,13 @@ function dragIcon(e) {
 	);
 }
 
-// Desktop: drag on empty space to draw a selection box over the icons, like Windows.
+// Desktop: drag on empty space to draw a selection box over the icons, like Windows. Ctrl/Shift/Cmd
+// keeps what was already selected.
 function selectBox(e) {
 	if (e.button || e.target !== desk) return;
 	const icons = [...desk.querySelectorAll(".os-icon")];
-	for (const icon of icons) icon.classList.remove("selected");
+	const keep = new Set(e.ctrlKey || e.shiftKey || e.metaKey ? selected() : []);
+	for (const icon of icons) icon.classList.toggle("selected", keep.has(icon));
 	const box = document.createElement("div");
 	box.className = "os-sel";
 	desk.append(box);
@@ -658,7 +706,7 @@ function selectBox(e) {
 			box.style.cssText = `left:${l}px;top:${t}px;width:${r - l}px;height:${b - t}px`;
 			for (const icon of icons) {
 				const ir = icon.getBoundingClientRect();
-				icon.classList.toggle("selected", ir.left < r && ir.right > l && ir.top < b && ir.bottom > t);
+				icon.classList.toggle("selected", keep.has(icon) || (ir.left < r && ir.right > l && ir.top < b && ir.bottom > t));
 			}
 		},
 		() => box.remove()

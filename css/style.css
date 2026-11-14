@@ -636,6 +636,13 @@ html:not(.perf) .intro .hero > svg {
 	background: none;
 	padding: 0;
 }
+.games-bar .dd {
+	min-width: 170px;
+}
+.games-bar .dd-button {
+	height: 38px;
+	border-radius: var(--r);
+}
 .games-search {
 	flex: 1;
 	height: 38px;
@@ -2664,6 +2671,11 @@ html:not(.os) .os,
 	text-overflow: ellipsis;
 	white-space: nowrap;
 }
+.os-pick-card small {
+	margin-top: -4px;
+	color: var(--fg-m);
+	font-size: 11px;
+}
 .os-pick-empty {
 	margin: 0;
 	color: var(--fg-m);
@@ -2771,4 +2783,42 @@ html:not(.os) .os,
 	flex-basis: 100%;
 	color: var(--fg-m);
 	font-size: 12px;
+}
+
+/* Volume slider of one app (js/volume.js): OS window title bars and the game player. */
+.vol {
+	display: flex;
+	align-items: center;
+	gap: 2px;
+	flex: none;
+}
+.vol input {
+	width: 72px;
+	height: 4px;
+	border-radius: 2px;
+	background: linear-gradient(to right, var(--fg-m) var(--fill, 100%), var(--border-2) var(--fill, 100%));
+	accent-color: var(--fg);
+	appearance: none;
+	cursor: pointer;
+}
+.vol input::-webkit-slider-thumb {
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	background: var(--fg);
+	appearance: none;
+}
+.vol input::-moz-range-thumb {
+	width: 12px;
+	height: 12px;
+	border: 0;
+	border-radius: 50%;
+	background: var(--fg);
+}
+.vol input:focus-visible {
+	outline: 2px solid var(--focus);
+	outline-offset: 4px;
+}
+.os .player .vol {
+	display: none; /* the Games window's title bar has one */
 }

@@ -2,195 +2,9 @@
 <html style="width:100%;height:100%;background-color:black;">
 <head>
 <script type="text/javascript">
-// Flux: a WebGL2 state cache. The game sets most GL state again for every draw (each enable, texture, sampler,
-// buffer, vertex attribute and texture parameter), about 4,700 calls a frame for some 340 draws. Every WebGL call
-// crosses into Chrome's GPU process with its own validation, which on a Chromebook's CPU is most of a frame. This
-// drops the calls that would set something to what it already is; the GL state itself is never different from what
-// the game asked for. Installed before the game makes its context; each context keeps its own cache.
 (function () {
   "use strict";
-  if (typeof WebGL2RenderingContext === "undefined" || WebGL2RenderingContext.prototype.__fluxCached) return;
-  var P = WebGL2RenderingContext.prototype;
-  P.__fluxCached = true;
-  var UNKNOWN = {};
-  var stats = window.__fluxGlStats = { passed: 0, skipped: 0 };
-
-  function S(gl) {
-    var s = gl.__fluxState;
-    if (!s) {
-      s = gl.__fluxState = {
-        caps: Object.create(null), program: UNKNOWN, vao: UNKNOWN, vaoState: new WeakMap(), defaultVao: { element: UNKNOWN, attribs: [] },
-        buffers: Object.create(null), indexed: Object.create(null), active: UNKNOWN, units: Object.create(null), samplers: Object.create(null),
-        texParams: new WeakMap(), fbos: Object.create(null), misc: Object.create(null), uniforms: new WeakMap()
-      };
-    }
-    return s;
-  }
-  // The bound vertex array's own state, or null while which one is bound isn't known (then nothing of it is skipped).
-  function vaoOf(s) {
-    if (s.vao === UNKNOWN) return null;
-    if (s.vao === null) return s.defaultVao;
-    var v = s.vaoState.get(s.vao);
-    if (!v) s.vaoState.set(s.vao, v = { element: UNKNOWN, attribs: [] });
-    return v;
-  }
-  function same(a, b) {
-    if (a === undefined || a.length !== b.length) return false;
-    for (var i = 0; i < a.length; ++i) if (a[i] !== b[i]) return false;
-    return true;
-  }
-  function wrap(name, fn) {
-    var orig = P[name];
-    if (typeof orig !== "function") return;
-    P[name] = function () { return fn.call(this, orig, arguments); };
-  }
-  function pass(gl, orig, args) { stats.passed++; return orig.apply(gl, args); }
-  function skip() { stats.skipped++; }
-
-  // Plain on/off and value state: skipped when unchanged.
-  wrap("enable", function (orig, a) { var s = S(this); if (s.caps[a[0]] === true) return skip(); s.caps[a[0]] = true; return pass(this, orig, a); });
-  wrap("disable", function (orig, a) { var s = S(this); if (s.caps[a[0]] === false) return skip(); s.caps[a[0]] = false; return pass(this, orig, a); });
-  ["blendFunc", "blendFuncSeparate", "blendEquation", "blendEquationSeparate", "depthFunc", "depthMask", "colorMask", "cullFace",
-    "frontFace", "polygonOffset", "viewport", "scissor", "clearColor", "clearDepth", "clearStencil", "lineWidth", "stencilMask",
-    "stencilFunc", "stencilOp", "blendColor"].forEach(function (name) {
-    wrap(name, function (orig, a) {
-      var s = S(this), args = Array.prototype.slice.call(a);
-      if (same(s.misc[name], args)) return skip();
-      s.misc[name] = args;
-      if (name === "blendFunc") delete s.misc.blendFuncSeparate; else if (name === "blendFuncSeparate") delete s.misc.blendFunc;
-      if (name === "blendEquation") delete s.misc.blendEquationSeparate; else if (name === "blendEquationSeparate") delete s.misc.blendEquation;
-      return pass(this, orig, a);
-    });
-  });
-  wrap("pixelStorei", function (orig, a) { var s = S(this), k = "ps" + a[0]; if (s.misc[k] === a[1]) return skip(); s.misc[k] = a[1]; return pass(this, orig, a); });
-  wrap("useProgram", function (orig, a) { var s = S(this); if (s.program === a[0]) return skip(); s.program = a[0]; return pass(this, orig, a); });
-
-  // Buffers: the element array binding belongs to the vertex array; a ranged binding also sets the plain one.
-  wrap("bindBuffer", function (orig, a) {
-    var s = S(this);
-    if (a[0] === this.ELEMENT_ARRAY_BUFFER) {
-      var v = vaoOf(s);
-      if (!v) return pass(this, orig, a);
-      if (v.element === a[1]) return skip();
-      v.element = a[1];
-    } else {
-      if (s.buffers[a[0]] === a[1]) return skip();
-      s.buffers[a[0]] = a[1];
-    }
-    return pass(this, orig, a);
-  });
-  wrap("bindBufferRange", function (orig, a) {
-    var s = S(this), k = a[0] + ":" + a[1], cur = s.indexed[k];
-    if (cur && cur[0] === a[2] && cur[1] === a[3] && cur[2] === a[4]) return skip();
-    s.indexed[k] = [a[2], a[3], a[4]];
-    s.buffers[a[0]] = a[2];
-    return pass(this, orig, a);
-  });
-  wrap("bindBufferBase", function (orig, a) {
-    var s = S(this), k = a[0] + ":" + a[1], cur = s.indexed[k];
-    if (cur && cur[0] === a[2] && cur[1] === -1) return skip();
-    s.indexed[k] = [a[2], -1, -1];
-    s.buffers[a[0]] = a[2];
-    return pass(this, orig, a);
-  });
-  wrap("bindVertexArray", function (orig, a) { var s = S(this); if (s.vao === a[0]) return skip(); s.vao = a[0]; return pass(this, orig, a); });
-  wrap("enableVertexAttribArray", function (orig, a) {
-    var v = vaoOf(S(this));
-    if (!v) return pass(this, orig, a);
-    var at = v.attribs, x = at[a[0]] || (at[a[0]] = {});
-    if (x.on === true) return skip();
-    x.on = true;
-    return pass(this, orig, a);
-  });
-  wrap("disableVertexAttribArray", function (orig, a) {
-    var v = vaoOf(S(this));
-    if (!v) return pass(this, orig, a);
-    var at = v.attribs, x = at[a[0]] || (at[a[0]] = {});
-    if (x.on === false) return skip();
-    x.on = false;
-    return pass(this, orig, a);
-  });
-  function attribPointer(orig, a) {
-    var s = S(this), v = vaoOf(s);
-    if (!v) return pass(this, orig, a);
-    var at = v.attribs, x = at[a[0]] || (at[a[0]] = {});
-    var key = [s.buffers[this.ARRAY_BUFFER]].concat(Array.prototype.slice.call(a, 1));
-    if (key[0] !== undefined && key[0] !== UNKNOWN && same(x.ptr, key)) return skip();
-    x.ptr = key;
-    return pass(this, orig, a);
-  }
-  wrap("vertexAttribPointer", attribPointer);
-  wrap("vertexAttribIPointer", attribPointer);
-
-  // Textures and samplers, per unit; texture parameters per texture.
-  wrap("activeTexture", function (orig, a) { var s = S(this); if (s.active === a[0]) return skip(); s.active = a[0]; return pass(this, orig, a); });
-  function boundTexture(gl, s, target) { return s.active === UNKNOWN ? UNKNOWN : s.units[s.active + ":" + target]; }
-  wrap("bindTexture", function (orig, a) {
-    var s = S(this);
-    if (s.active !== UNKNOWN) {
-      var k = s.active + ":" + a[0];
-      if (s.units[k] === a[1]) return skip();
-      s.units[k] = a[1];
-    }
-    return pass(this, orig, a);
-  });
-  wrap("bindSampler", function (orig, a) { var s = S(this); if (s.samplers[a[0]] === a[1]) return skip(); s.samplers[a[0]] = a[1]; return pass(this, orig, a); });
-  function texParam(orig, a) {
-    var s = S(this), tex = boundTexture(this, s, a[0]);
-    if (!tex || tex === UNKNOWN) return pass(this, orig, a);
-    var p = s.texParams.get(tex);
-    if (!p) s.texParams.set(tex, p = Object.create(null));
-    if (p[a[1]] === a[2]) return skip();
-    p[a[1]] = a[2];
-    return pass(this, orig, a);
-  }
-  wrap("texParameteri", texParam);
-  wrap("texParameterf", texParam);
-  wrap("uniform1i", function (orig, a) {
-    var s = S(this);
-    if (a[0] && typeof a[0] === "object") {
-      if (s.uniforms.get(a[0]) === a[1]) return skip();
-      s.uniforms.set(a[0], a[1]);
-    }
-    return pass(this, orig, a);
-  });
-
-  // Framebuffers: FRAMEBUFFER sets both the draw and the read binding.
-  wrap("bindFramebuffer", function (orig, a) {
-    var s = S(this);
-    if (a[0] === this.FRAMEBUFFER) {
-      if (s.fbos.d === a[1] && s.fbos.r === a[1]) return skip();
-      s.fbos.d = s.fbos.r = a[1];
-    } else {
-      var k = a[0] === this.READ_FRAMEBUFFER ? "r" : "d";
-      if (s.fbos[k] === a[1]) return skip();
-      s.fbos[k] = a[1];
-    }
-    return pass(this, orig, a);
-  });
-
-  // A deleted object leaves every binding it had: those go back to unknown.
-  function forget(map, obj) { for (var k in map) if (map[k] === obj) map[k] = UNKNOWN; }
-  wrap("deleteBuffer", function (orig, a) {
-    var s = S(this);
-    forget(s.buffers, a[0]);
-    for (var k in s.indexed) if (s.indexed[k] && s.indexed[k][0] === a[0]) delete s.indexed[k];
-    var v = vaoOf(s);
-    if (v && v.element === a[0]) v.element = UNKNOWN;
-    return orig.apply(this, a);
-  });
-  wrap("deleteTexture", function (orig, a) { forget(S(this).units, a[0]); return orig.apply(this, a); });
-  wrap("deleteSampler", function (orig, a) { forget(S(this).samplers, a[0]); return orig.apply(this, a); });
-  wrap("deleteFramebuffer", function (orig, a) { forget(S(this).fbos, a[0]); return orig.apply(this, a); });
-  wrap("deleteProgram", function (orig, a) { var s = S(this); if (s.program === a[0]) s.program = UNKNOWN; return orig.apply(this, a); });
-  wrap("deleteVertexArray", function (orig, a) { var s = S(this); if (s.vao === a[0]) s.vao = UNKNOWN; return orig.apply(this, a); });
-})();
-
-</script>
-<script type="text/javascript">
-(function () {
-  "use strict";
-  var M = {"parts":[8143423,8127610,8245214,8127827,8384847,8127579,8321907,8127579,8127579,8127579,8127579,8127579,8127579,8127579,8127579,8127579,8127579,1661979],"sizes":{"eag-inline-decoder":208439,"eag-inline-wasm-br":14407483,"eag-inline-mesh-wasm-br":3178694,"eag-inline-server-wasm-br":7663998,"eag-inline-assets":14498103,"eag-inline-sounds":65340504},"version":"f470ef00cb5e"};
+  var M = {"parts":[8143423,8127610,8212666,8127827,8384847,8127579,8321907,8127579,8127579,8127579,8127579,8127579,8127579,8127579,8127579,8127579,8127579,1661979],"sizes":{"eag-inline-decoder":208439,"eag-inline-wasm-br":14384589,"eag-inline-mesh-wasm-br":3177178,"eag-inline-server-wasm-br":7663998,"eag-inline-assets":14498103,"eag-inline-sounds":65340504},"version":"3411d5153d48"};
   var store = Object.create(null);
   var total = 0;
   var loaded = 0;
@@ -592,7 +406,7 @@ window.__fluxInstallShim = function () {
 				window.__eaglerRecoveredCrash = previousReport;
 				var journal = {
 					version: 2,
-					build: "3d720923926f3e82",
+					build: "1181be991b01b85c",
 					sessionId: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2),
 					startedAt: Date.now(),
 					heartbeat: Date.now(),
@@ -843,8 +657,8 @@ window.__fluxInstallShim = function () {
 		window.eaglercraftXOpts = {
 			container: "game_frame",
 			assetsURI: [
-				{ url: "assets.epk?v=3d720923926f3e82", path: "" },
-				{ url: "sounds.epk?v=3d720923926f3e82", path: "" }
+				{ url: "assets.epk?v=1181be991b01b85c", path: "" },
+				{ url: "sounds.epk?v=1181be991b01b85c", path: "" }
 			],
 			localesURI: "lang/",
 			worldsDB: "worlds",
@@ -1053,18 +867,18 @@ var TeaVM=TeaVM||{};TeaVM.wasmGC=TeaVM.wasmGC||(()=>{let n=new Map;let e=null;le
 					}
 					let module;
 					const meshModulePromise = WebAssembly.compileStreaming(
-							fetch("mesh-worker.wasm?v=3d720923926f3e82"), { builtins: ["js-string"] }
+							fetch("mesh-worker.wasm?v=1181be991b01b85c"), { builtins: ["js-string"] }
 						).catch(async (meshStreamErr) => {
 							window.__log.push("W:[shell] mesh compileStreaming failed (" + meshStreamErr + "), falling back to byte fetch");
-							const meshResp = await fetch("mesh-worker.wasm?v=3d720923926f3e82");
+							const meshResp = await fetch("mesh-worker.wasm?v=1181be991b01b85c");
 							return WebAssembly.compile(await meshResp.arrayBuffer(), { builtins: ["js-string"] });
 						});
 					const serverModulePromise = true ? WebAssembly.compileStreaming(
-						fetch("server-worker.wasm?v=3d720923926f3e82"), { builtins: ["js-string"] }
+						fetch("server-worker.wasm?v=1181be991b01b85c"), { builtins: ["js-string"] }
 					).catch(async (serverStreamErr) => {
 						window.__log.push("W:[shell] server compileStreaming failed (" + serverStreamErr + "), falling back to byte fetch");
 						try {
-							const serverResp = await fetch("server-worker.wasm?v=3d720923926f3e82");
+							const serverResp = await fetch("server-worker.wasm?v=1181be991b01b85c");
 							return await WebAssembly.compile(await serverResp.arrayBuffer(), { builtins: ["js-string"] });
 						} catch (serverByteErr) {
 							window.__log.push("W:[shell] dedicated server Wasm unavailable (" + serverByteErr + "); using full image for server worker");
@@ -1072,11 +886,11 @@ var TeaVM=TeaVM||{};TeaVM.wasmGC=TeaVM.wasmGC||(()=>{let n=new Map;let e=null;le
 						}
 					}) : Promise.resolve(null);
 					try {
-						module = await WebAssembly.compileStreaming(fetch("classes.wasm?v=3d720923926f3e82"), { builtins: ["js-string"] });
+						module = await WebAssembly.compileStreaming(fetch("classes.wasm?v=1181be991b01b85c"), { builtins: ["js-string"] });
 						window.__log.push("L:[shell] wasm compileStreaming path OK");
 					} catch (streamErr) {
 						window.__log.push("L:[shell] compileStreaming failed (" + streamErr + "), falling back to byte fetch");
-						const resp = await fetch("classes.wasm?v=3d720923926f3e82");
+						const resp = await fetch("classes.wasm?v=1181be991b01b85c");
 						const bytes = await resp.arrayBuffer();
 						window.__log.push("L:[shell] fetched classes.wasm " + bytes.byteLength + " bytes");
 						module = await WebAssembly.compile(bytes, { builtins: ["js-string"] });
@@ -1103,7 +917,7 @@ var TeaVM=TeaVM||{};TeaVM.wasmGC=TeaVM.wasmGC||(()=>{let n=new Map;let e=null;le
 					window.__eaglerWasmModule = null;
 					window.__eaglerMeshWasmModule = null;
 					window.__eaglerServerWasmModule = null;
-					tv = await TeaVM.wasmGC.load("classes.wasm?v=3d720923926f3e82", { installImports(i) {} });
+					tv = await TeaVM.wasmGC.load("classes.wasm?v=1181be991b01b85c", { installImports(i) {} });
 					window.__log.push("L:[shell] wasm compileStreaming path OK");
 				}
 				window.__loaded = true;
