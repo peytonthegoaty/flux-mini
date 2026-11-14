@@ -1,9 +1,10 @@
 /*global $scramjetLoadController, BareMux, __uv$config*/
 // The tabbed web proxy (Scramjet or Ultraviolet over bare-mux). Its ~5 MB of
 // scripts load the first time it's used, so the rest of the site starts fast.
+import { store } from "./background.js";
 import { debug } from "./log.js";
 import { toUrl } from "./search.js";
-import { settings } from "./settings.js";
+import { saveSettings, settings } from "./settings.js";
 import { SERVERS, checkWisp, pickWisp } from "./wisp.js";
 
 // Paths inside the site's folder. The site may live in a sub-folder (e.g. on S3), and
@@ -247,6 +248,7 @@ function select(tab) {
 	$("newtab-page").hidden = !!tab.url;
 	addressInput.value = tab.url;
 	showLoad();
+	syncDevtools();
 	renderTabs();
 }
 
@@ -261,6 +263,7 @@ function closeTab(tab) {
 }
 
 function onTabLoad(tab) {
+	if (tab === active) syncDevtools();
 	try {
 		const href = tab.el.contentWindow.location.href;
 		if (!href || href === "about:blank") return;
@@ -526,6 +529,496 @@ function wake(tab) {
 	addFrame(tab);
 	navigate(tab, tab.url);
 }
+
+// Devtools: Eruda (Elements with a picker, and a Console) runs inside the tab's page, but draws in
+// its own small HTML frame in the panel beside it (on S3 Flux is an SVG page, where Eruda can't draw).
+// The Console's input is Monaco (the HTML section's editor), right after the last log, like Chrome's.
+const devPane = $("devtools-pane");
+const devEmpty = $("devtools-empty");
+const FLUX_THEME = {
+	background: "--bg2", darkerBackground: "--field", contrast: "--bg", foreground: "--fg-m",
+	selectForeground: "--fg", textColor: "--fg", primary: "--fg", accent: "--accent", highlight: "--field-hover",
+	border: "#2a2a31", varColor: "#e36eec", stringColor: "#f29766", keywordColor: "#9980ff", numberColor: "#9980ff",
+	operatorColor: "#7f7f7f", linkColor: "#ababab", tagNameColor: "#5db0d7", functionColor: "#d5d5d5",
+	attributeNameColor: "#9bbbdc", commentColor: "#747474",
+	consoleWarnBackground: "#2a2410", consoleWarnForeground: "#ffcb6b", consoleWarnBorder: "#4a3f12",
+	consoleErrorBackground: "#2a1214", consoleErrorForeground: "#ff8a8a", consoleErrorBorder: "#4d1c20",
+	light: "#ccc", dark: "#aaa",
+};
+const SPLIT = 500; // px: from this panel width, the element tree and its styles sit side by side
+let erudaCode;
+let erudaFonts = "";
+function splitDevtools() {
+	const query = devPane.doc?.defaultView?.eruda?.get("elements")?._splitMediaQuery;
+	if (!query) return;
+	const wide = devPane.offsetWidth >= SPLIT;
+	if (query.isMatch() === wide) return;
+	query.setQuery(wide ? "all" : "not all");
+	query.emit(wide ? "match" : "unmatch");
+}
+new ResizeObserver(splitDevtools).observe(devPane);
+
+// While open, it follows whatever page the tab shows, attaching as soon as a new page starts (so its
+// logs show from the start) and showing nothing while there's no page.
+setInterval(() => !devPane.hidden && syncDevtools(), 100);
+// Scramjet wraps the page's console methods in getters Eruda can't replace, so they become plain ones
+// here, which also keep what the page logs before Eruda is in (it's shown once it is).
+const LOGGERS = ["log", "info", "warn", "error", "debug", "dir", "table", "trace"];
+function holdLogs(w, held = []) {
+	let names = [];
+	try {
+		names = Object.getOwnPropertyNames(w.console);
+	} catch {
+		// Its console can't be read: logs show from when Eruda is in.
+	}
+	for (const key of names) {
+		try {
+			const prop = Object.getOwnPropertyDescriptor(w.console, key);
+			if (prop.value?.fluxHeld) continue;
+			const real = prop.get ? prop.get.call(w.console) : prop.value;
+			if (typeof real !== "function") continue;
+			let value = real;
+			if (LOGGERS.includes(key)) {
+				value = function (...args) {
+					if (!held.done) held.push([key, args]);
+					return real.apply(this, args);
+				};
+				value.fluxHeld = true;
+			}
+			Object.defineProperty(w.console, key, { value, writable: true, configurable: true });
+		} catch {
+			// This one stays as it is.
+		}
+	}
+	return held;
+}
+async function syncDevtools() {
+	const w = active?.url ? active.el.contentWindow : null;
+	let doc = null;
+	try {
+		if (w && w.location.href !== "about:blank") doc = w.document;
+	} catch {
+		// Mid-navigation.
+	}
+	if (devPane.hidden) return;
+	if (doc !== devPane.doc) {
+		devPane.doc = doc;
+		devPane.attached = false;
+		devPane.querySelector(".devtools-frame")?.remove();
+		devEmpty.textContent = "Open a page to inspect it.";
+		devEmpty.hidden = !!doc;
+		if (doc) devPane.held = holdLogs(w);
+	}
+	// Eruda needs the page's <body>; until then the page's logs are held for it.
+	if (!doc || devPane.attached || doc.readyState === "loading") return;
+	devPane.attached = true;
+	try {
+		// Eruda lays Elements out side by side by the screen width; in its frame that's the panel's width.
+		erudaCode ??= fetch("js/eruda.js").then(async (r) => (await r.text()).replace(/@media screen and \(min-width:680px\)/g, `@media (min-width:${SPLIT}px)`));
+		const code = await erudaCode;
+		if (devPane.doc !== doc) return;
+		holdLogs(w, devPane.held); // again: Scramjet can put its getters back while the page loads
+		if (!w.eruda) w.eval(code);
+		const frame = devPane.appendChild(Object.assign(document.createElement("iframe"), { className: "devtools-frame", title: "Devtools" }));
+		const ui = frame.contentDocument;
+		const flux = getComputedStyle(document.documentElement);
+		const theme = Object.fromEntries(Object.entries(FLUX_THEME).map(([k, v]) => [k, v.startsWith("--") ? flux.getPropertyValue(v).trim() : v]));
+		// Eruda's icon fonts go in the page's <head> (fonts don't load from a shadow root), where the proxy
+		// mangles their data: URLs. Its frame gets them straight from Eruda's code.
+		erudaFonts ||= [...code.matchAll(/@font-face\{font-family:([\w-]+);src:url\(\\?'(data:[^'\\]+)/g)].map(([, name, src]) => `@font-face{font-family:${name};src:url('${src}') format('woff')}`).join("");
+		ui.head.append(Object.assign(ui.createElement("style"), { textContent: `${erudaFonts}html,body{margin:0;height:100%;background:${theme.background};color-scheme:dark}body>div{height:100%}` }));
+		w.eruda.init({ container: ui.body.appendChild(ui.createElement("div")), inline: true, tool: ["elements", "console"], defaults: { theme: "Dark" } });
+		w.eruda.util.evalCss.setTheme(theme);
+		const held = devPane.held;
+		held.done = true;
+		for (const [key, args] of held) w.console[key](...args);
+		w.eruda.util.evalCss(`#_console ._js-input{display:none!important}#_console{padding-bottom:0!important}
+.flux-prompt{position:relative;padding-left:22px;min-height:40px;cursor:text}
+.flux-prompt::before{content:"›";position:absolute;left:9px;top:0;color:${theme.accent};font:15px/20px ui-monospace,Consolas,monospace}
+.flux-prompt iframe{display:block;width:100%;height:20px;border:0}`);
+		ui.defaultView.fluxConsoleReady = fluxConsoleReady; // Monaco (monaco/editor.html?console) reports in here
+		w.eruda.util.evalCss(INJECTOR_CSS + EDIT_CSS);
+		addInjector(w, ui);
+		addEditing(w, ui);
+		w.eruda.remove("settings"); // only Eruda's own look, which Flux sets
+		const tools = w.eruda.get();
+		tools.on("showTool", (name) => name === "console" && addPrompt(w, ui));
+		// Eruda selects <body> on open, which outlines it on the page; Chrome only outlines on hover.
+		setTimeout(() => w.eruda?.chobitsu.domain("Overlay").hideHighlight(), 100);
+		splitDevtools();
+	} catch (err) {
+		devPane.querySelector(".devtools-frame")?.remove();
+		devEmpty.textContent = "Devtools can't open on this page.";
+		devEmpty.hidden = false;
+		debug(`Devtools couldn't open on this page: ${err.message || err}`, true);
+	}
+}
+
+// JS Runner, a devtools tab beside Console: drop a .js file (or pick a preset) and run it in the page.
+// Presets are scripts you saved, kept in this browser's IndexedDB (they can be megabytes).
+const FILE_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M10 13l-2 2 2 2M14 17l2-2-2-2"/></svg>`;
+const PLAY_ICON = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></svg>`;
+const PRESETS_KEY = "injector-presets";
+let presets = null; // [{ name, code }], once read
+// Always in the list, loaded from Flux itself (injector/ on the site) when picked.
+const BUILT_IN = [{ name: "X-Gui (Blooket)", url: "injector/x-gui.js" }];
+let injectable = null; // the loaded script: { name, code }
+const INJECTOR_CSS = `.inj{max-width:560px;padding:14px;height:100%;overflow:auto;box-sizing:border-box;color:var(--foreground);font-size:12px}
+.inj svg{width:14px;height:14px;flex:none}
+.inj-drop{display:flex;align-items:center;gap:12px;padding:14px;border:1px dashed var(--border);border-radius:10px;cursor:pointer;transition:border-color .2s,background .2s}
+.inj-drop:hover,.inj-drop.over{border-color:var(--foreground);background:var(--darker-background)}
+.inj-drop.ready{border-style:solid}
+.inj-tile{display:grid;place-items:center;flex:none;width:40px;height:40px;border-radius:9px;background:var(--darker-background);border:1px solid var(--border);color:var(--select-foreground)}
+.inj-tile svg{width:20px;height:20px}
+.inj-drop span:not(.inj-tile){display:flex;flex-direction:column;gap:2px;min-width:0}
+.inj-drop b{color:var(--select-foreground);font-size:13px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.inj-row{display:flex;gap:6px;margin-top:10px}
+.inj input[type=text]{flex:1;min-width:0;padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:var(--darker-background);color:var(--select-foreground);font:inherit;outline:0;transition:border-color .2s}
+.inj input[type=text]:focus{border-color:var(--foreground)}
+.inj button{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:7px 12px;border:1px solid var(--border);border-radius:7px;background:var(--darker-background);color:var(--select-foreground);font:inherit;cursor:pointer;transition:background .15s,opacity .15s}
+.inj button:hover:not(:disabled){background:var(--highlight)}
+.inj button:disabled{opacity:.4;cursor:default}
+.inj .inj-go{width:100%;margin-top:8px;padding:9px;border:0;background:var(--select-foreground);color:var(--background);font-weight:600}
+.inj .inj-go:hover:not(:disabled){background:var(--select-foreground);opacity:.85}
+.inj-status{min-height:18px;margin:8px 0 0;color:var(--foreground)}
+.inj-status.bad{color:var(--console-error-foreground)}
+.inj-head{margin:16px 0 8px;color:var(--foreground);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em}
+.inj-preset{display:flex;align-items:stretch;gap:6px;margin-bottom:6px}
+.inj .inj-preset .inj-load{flex:1;min-width:0;justify-content:flex-start;gap:10px;padding:8px 10px;text-align:left}
+.inj .inj-preset .inj-load.on{border-color:var(--foreground)}
+.inj .inj-load .inj-badge{flex:none;padding:2px 5px;border-radius:4px;background:var(--highlight);color:var(--select-foreground);font:600 10px/1.2 ui-monospace,Consolas,monospace}
+.inj-load span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.inj-preset small{color:var(--foreground)}
+.inj .inj-del{padding:0 10px;color:var(--foreground)}
+.inj .inj-del:hover{color:var(--console-error-foreground)}
+.inj-empty{color:var(--foreground)}`;
+
+function addInjector(w, ui) {
+	w.eruda.add({
+		name: "JS Runner",
+		init($el) {
+			this.$el = $el;
+			$el.get(0).append(injectorPanel(w, ui));
+		},
+		show() {
+			this.$el.show();
+			return this;
+		},
+		hide() {
+			this.$el.hide();
+			return this;
+		},
+		destroy() {},
+	});
+}
+
+function injectorPanel(w, ui) {
+	const el = ui.createElement("div");
+	el.className = "inj";
+	el.innerHTML = `<label class="inj-drop"><input type="file" accept=".js,.mjs,.txt,text/javascript" hidden /><span class="inj-tile">${FILE_ICON}</span><span><b class="inj-file">Drop a .js file here</b><span class="inj-meta">or click to choose one</span></span></label>
+<div class="inj-row"><input type="text" class="inj-name" placeholder="Name" spellcheck="false" /><button type="button" class="inj-save" disabled>Save as preset</button></div>
+<button type="button" class="inj-go" disabled>${PLAY_ICON}Run in page</button>
+<p class="inj-status" role="status"></p>
+<div class="inj-head">Presets</div>
+<div class="inj-list"></div>`;
+	const $ = (s) => el.querySelector(s);
+	const drop = $(".inj-drop");
+	const status = (text, bad = false) => (($(".inj-status").textContent = text), $(".inj-status").classList.toggle("bad", bad));
+	const load = async (script) => {
+		if (script.url && script.code == null) {
+			// Built-in presets live on Flux and are fetched the first time they're picked.
+			status(`Loading "${script.name}"…`);
+			try {
+				const res = await fetch(sitePath(script.url), { cache: "no-cache" });
+				if (!res.ok) throw new Error(`HTTP ${res.status}`);
+				script.code = await res.text();
+			} catch (err) {
+				return status(`Couldn't load "${script.name}": ${err.message || err}`, true);
+			}
+		}
+		injectable = script;
+		$(".inj-file").textContent = script.name;
+		$(".inj-meta").textContent = `${size(script.code.length)}, ${script.code.split("\n").length} lines`;
+		$(".inj-name").value = script.name;
+		$(".inj-go").disabled = $(".inj-save").disabled = false;
+		drop.classList.add("ready");
+		for (const b of el.querySelectorAll(".inj-load")) b.classList.toggle("on", b.preset === script);
+		status("");
+	};
+	const readFile = async (file) => file && load({ name: file.name.replace(/\.(m?js|txt)$/i, ""), code: await file.text() });
+	const savePresets = () => store("readwrite", (s) => s.put(presets, PRESETS_KEY)).catch(() => status("Couldn't save presets in this browser.", true));
+	const render = () => {
+		const list = $(".inj-list");
+		list.replaceChildren();
+		for (const preset of [...BUILT_IN, ...presets]) {
+			const row = ui.createElement("div");
+			row.className = "inj-preset";
+			const builtIn = BUILT_IN.includes(preset);
+			row.innerHTML = `<button type="button" class="inj-load"><span class="inj-badge">JS</span><span></span><small>${builtIn ? "Flux" : size(preset.code.length)}</small></button><button type="button" class="inj-del" aria-label="Delete preset" title="Delete">✕</button>`;
+			row.querySelector("span + span").textContent = preset.name;
+			const button = row.querySelector(".inj-load");
+			button.preset = preset;
+			button.classList.toggle("on", preset === injectable);
+			button.addEventListener("click", () => load(preset));
+			if (builtIn) row.querySelector(".inj-del").remove();
+			row.querySelector(".inj-del")?.addEventListener("click", () => {
+				presets.splice(presets.indexOf(preset), 1);
+				savePresets();
+				render();
+			});
+			list.append(row);
+		}
+	};
+	(presets ? Promise.resolve() : store("readonly", (s) => s.get(PRESETS_KEY)).then((list) => (presets = Array.isArray(list) ? list : []), () => (presets = []))).then(render);
+
+	$("input[type=file]").addEventListener("change", (e) => readFile(e.target.files[0]));
+	// Dropping a file anywhere in devtools would open it in place of devtools; only the drop area takes it.
+	for (const type of ["dragover", "drop"]) ui.addEventListener(type, (e) => e.preventDefault());
+	drop.addEventListener("dragover", () => drop.classList.add("over"));
+	drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+	drop.addEventListener("drop", (e) => (drop.classList.remove("over"), readFile(e.dataTransfer.files[0])));
+	$(".inj-save").addEventListener("click", () => {
+		const name = $(".inj-name").value.trim() || injectable.name;
+		const preset = { name, code: injectable.code };
+		const same = presets.findIndex((p) => p.name === name);
+		if (same >= 0) presets[same] = preset;
+		else presets.push(preset);
+		savePresets();
+		render();
+		load(preset);
+		status(`Saved "${name}".`);
+	});
+	$(".inj-go").addEventListener("click", () => {
+		const name = $(".inj-name").value.trim() || injectable.name;
+		try {
+			w.eval(`${injectable.code}\n//# sourceURL=${encodeURIComponent(name)}.js`);
+			status(`Ran "${name}".`);
+			w.console.info(`Ran ${name}`);
+		} catch (err) {
+			status(`${name}: ${err.message || err}`, true);
+			w.console.error(err);
+		}
+	});
+	return el;
+}
+
+// Editing in Elements, like Chrome's: double-click an attribute's value or name, or a text node, to
+// change it in place (Enter saves, Esc cancels); double-click a tag to edit the element as HTML; and
+// double-click "element.style" or a value in Attributes to change them.
+const EDIT_CSS = `[contenteditable=plaintext-only]{outline:1px solid var(--accent);background:var(--darker-background);color:var(--select-foreground);white-space:pre-wrap;cursor:text}
+.flux-edit{position:absolute;inset:0;z-index:1000;display:flex;flex-direction:column;background:var(--background)}
+.flux-edit-head{display:flex;justify-content:space-between;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border);font-size:12px;color:var(--foreground)}
+.flux-edit-head b{color:var(--select-foreground);font-weight:500}
+.flux-edit-head .bad{color:var(--console-error-foreground)}
+.flux-edit textarea{flex:1;margin:0;padding:10px 12px;border:0;outline:0;resize:none;background:var(--background);color:var(--select-foreground);font:12px/1.6 ui-monospace,Consolas,monospace;tab-size:2;white-space:pre}`;
+
+function addEditing(w, ui) {
+	const root = ui.body.firstChild.shadowRoot;
+	const elements = w.eruda.get("elements");
+	const refresh = () => root.querySelector(".eruda-detail .eruda-refresh")?.click();
+	root.addEventListener("dblclick", (e) => {
+		// The selected row's highlight lies over its text, so look under it for what was double-clicked.
+		const hit = root.elementsFromPoint(e.clientX, e.clientY).find((el) => !el.matches(".luna-dom-viewer-selection")) || e.target;
+		const at = (s) => hit.closest?.(s);
+		const node = elements._curNode;
+		if (at("[contenteditable=plaintext-only]") || at(".flux-edit")) return;
+		if (at(".luna-dom-viewer")) {
+			if (!node) return;
+			e.preventDefault();
+			const attr = at(".luna-dom-viewer-attribute");
+			const name = attr?.querySelector(".luna-dom-viewer-attribute-name")?.textContent;
+			if (at(".luna-dom-viewer-attribute-value")) {
+				return editInline(ui, at(".luna-dom-viewer-attribute-value"), node.getAttribute(name), (v) => node.setAttribute(name, v));
+			}
+			if (attr) {
+				return editInline(ui, attr, `${name}="${node.getAttribute(name)}"`, (text) => {
+					node.removeAttribute(name);
+					for (const [, n, v] of text.matchAll(/([^\s="]+)(?:\s*=\s*"([^"]*)")?/g)) node.setAttribute(n, v ?? "");
+				});
+			}
+			if (node.nodeType === Node.TEXT_NODE) {
+				const line = at(".luna-dom-viewer-text-node") || at(".luna-dom-viewer-tree-item");
+				return editInline(ui, line, node.nodeValue, (v) => (node.nodeValue = v));
+			}
+			if (node.nodeType === Node.ELEMENT_NODE) {
+				return editModal(root, ui, `Edit <${node.localName}> as HTML`, node.outerHTML, (html) => {
+					const tpl = w.document.createElement("template");
+					tpl.innerHTML = html;
+					const nodes = [...tpl.content.childNodes];
+					node.replaceWith(...nodes);
+					elements.select(nodes.find((n) => n.nodeType === Node.ELEMENT_NODE) || node.parentNode || w.document.body);
+				});
+			}
+		}
+		const rules = at(".eruda-style-rules");
+		if (rules && node?.nodeType === Node.ELEMENT_NODE && rules === root.querySelector(".eruda-style-rules")) {
+			const style = (node.getAttribute("style") || "").split(";").map((s) => s.trim()).filter(Boolean).join(";\n");
+			return editModal(root, ui, "Edit element.style", style && `${style};`, (css) => {
+				node.setAttribute("style", css.replace(/\s*\n\s*/g, " ").trim());
+				refresh();
+			});
+		}
+		const cell = at(".eruda-attributes td");
+		if (cell && cell.cellIndex === 1 && node?.nodeType === Node.ELEMENT_NODE) {
+			const name = cell.parentElement.cells[0].textContent;
+			return editInline(ui, cell, node.getAttribute(name), (v) => (node.setAttribute(name, v), refresh()));
+		}
+	});
+}
+
+// Turns el into an editable box holding text; save(newText) runs on Enter or leaving it, Esc puts it back.
+function editInline(ui, el, text, save) {
+	const before = el.innerHTML;
+	el.textContent = text ?? "";
+	el.contentEditable = "plaintext-only";
+	el.focus();
+	const range = ui.createRange();
+	range.selectNodeContents(el);
+	ui.getSelection().removeAllRanges();
+	ui.getSelection().addRange(range);
+	let done = false;
+	const finish = (keep) => {
+		if (done) return;
+		done = true;
+		el.removeAttribute("contenteditable");
+		const value = el.textContent;
+		el.innerHTML = before; // Eruda redraws the line itself once the page changes
+		if (keep && value !== text) {
+			try {
+				save(value);
+			} catch {
+				// Not valid there (a bad attribute name, say): nothing changes.
+			}
+		}
+	};
+	el.addEventListener("keydown", (e) => {
+		e.stopPropagation(); // Eruda's tree uses arrows, Delete and Enter itself
+		if (e.key === "Enter" && !e.shiftKey) (e.preventDefault(), finish(true));
+		if (e.key === "Escape") finish(false);
+	});
+	el.addEventListener("blur", () => finish(true), { once: true });
+}
+
+// A full-panel editor for bigger edits (an element's HTML, element.style). Ctrl+Enter saves, Esc cancels.
+function editModal(root, ui, title, text, save) {
+	const box = ui.createElement("div");
+	box.className = "flux-edit";
+	box.innerHTML = `<div class="flux-edit-head"><b></b><span>Ctrl+Enter to save, Esc to cancel</span></div><textarea spellcheck="false"></textarea>`;
+	box.querySelector("b").textContent = title;
+	const area = box.querySelector("textarea");
+	area.value = text;
+	(root.querySelector(".eruda-dev-tools") || root.firstElementChild).append(box);
+	area.focus();
+	area.addEventListener("keydown", (e) => {
+		e.stopPropagation();
+		if (e.key === "Escape") box.remove();
+		if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+			e.preventDefault();
+			try {
+				save(area.value);
+				box.remove();
+			} catch (err) {
+				const hint = box.querySelector(".flux-edit-head span");
+				hint.textContent = err.message || String(err);
+				hint.className = "bad";
+			}
+		}
+		if (e.key === "Tab") {
+			e.preventDefault();
+			area.setRangeText("\t", area.selectionStart, area.selectionEnd, "end");
+		}
+	});
+}
+
+// Console input, like Chrome's: right after the last log; clicking the empty space below types there.
+// Enter runs, Shift+Enter adds a line, Up/Down go through what ran before.
+let consoleEditor;
+const ranCode = [];
+function addPrompt(w, ui) {
+	const log = w.eruda.get("console")._$el.find(".luna-console").get(0); // the log's scrolling box
+	if (!log || log.querySelector(".flux-prompt")) return consoleEditor?.focus();
+	const prompt = ui.createElement("div");
+	prompt.className = "flux-prompt";
+	prompt.append(Object.assign(ui.createElement("iframe"), { title: "Console input", src: new URL("monaco/editor.html?console", location.href).href }));
+	log.append(prompt);
+	log.addEventListener("click", (e) => (e.target === log || e.target === prompt) && consoleEditor?.focus());
+}
+// Runs code in the page from the Console, echoing it the way Chrome does; a long script shows as its
+// first lines and a count, so pasting one doesn't flood the log.
+function runInPage(w, code) {
+	const logger = w?.eruda?.get("console")._logger;
+	if (!logger) return;
+	const lines = code.split("\n");
+	const echo = lines.length > 12 || code.length > 2000 ? `${lines.slice(0, 6).join("\n").slice(0, 600)}\n… (${lines.length} lines, ${size(code.length)})` : code;
+	logger.insert({ type: "input", args: [echo], ignoreFilter: true });
+	try {
+		logger.output(logger.evalJs(code));
+	} catch (err) {
+		logger.insert({ type: "error", args: [err], ignoreFilter: true });
+	}
+}
+const size = (n) => (n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1048576).toFixed(1)} MB`);
+
+function fluxConsoleReady(editor, monaco) {
+	consoleEditor = editor;
+	let at = ranCode.length;
+	const frame = editor.getContainerDomNode().ownerDocument.defaultView.frameElement;
+	const w = devPane.doc?.defaultView;
+	const recall = (code) => (editor.setValue(code), editor.setPosition(editor.getModel().getFullModelRange().getEndPosition()));
+	editor.addCommand(monaco.KeyCode.Enter, () => {
+		const code = editor.getValue();
+		if (!code.trim()) return;
+		if (ranCode.at(-1) !== code) ranCode.push(code);
+		at = ranCode.length;
+		editor.setValue("");
+		runInPage(w, code);
+	}, "!suggestWidgetVisible");
+	editor.addCommand(monaco.KeyMod.Shift | monaco.KeyCode.Enter, () => editor.trigger("console", "type", { text: "\n" }));
+	editor.addCommand(monaco.KeyCode.UpArrow, () => {
+		if (editor.getPosition().lineNumber > 1 || !at) return editor.trigger("console", "cursorUp");
+		recall(ranCode[--at]);
+	}, "!suggestWidgetVisible");
+	editor.addCommand(monaco.KeyCode.DownArrow, () => {
+		if (editor.getPosition().lineNumber < editor.getModel().getLineCount() || at >= ranCode.length) return editor.trigger("console", "cursorDown");
+		recall(ranCode[++at] ?? "");
+	}, "!suggestWidgetVisible");
+	// Long pasted scripts: the input stops growing at half the panel and scrolls, and a huge one isn't
+	// wrapped (wrapping a minified megabyte freezes the editor).
+	const fit = () => (frame.style.height = `${Math.min(editor.getContentHeight(), frame.ownerDocument.defaultView.innerHeight / 2)}px`);
+	editor.onDidContentSizeChange(fit);
+	editor.onDidChangeModelContent(() => editor.updateOptions({ wordWrap: editor.getModel().getValueLength() > 50000 ? "off" : "on" }));
+	fit();
+	editor.focus();
+}
+
+// Eruda scrolls what it selects into view, and the browser also scrolls Flux's own (overflow: hidden)
+// layout to get there, pushing the sidebar and toolbar off screen. Flux's layout never scrolls, so undo it.
+document.addEventListener("scroll", (e) => {
+	const t = e.target === document ? document.scrollingElement : e.target;
+	if (!devPane.hidden && t?.contains(devPane)) t.scrollTop = t.scrollLeft = 0;
+}, true);
+
+// Dragging the panel's left edge resizes it.
+const devResize = $("devtools-resize");
+devPane.style.width = `${settings.devtoolsWidth}px`;
+devResize.addEventListener("pointerdown", (e) => {
+	devResize.setPointerCapture(e.pointerId); // keeps the drag when the pointer is over a frame
+	devPane.classList.add("resizing");
+	const right = devPane.getBoundingClientRect().right;
+	const move = (e) => (devPane.style.width = `${Math.min(Math.max(right - e.clientX, 240), right - 200)}px`);
+	devResize.addEventListener("pointermove", move);
+	devResize.addEventListener("lostpointercapture", () => {
+		devResize.removeEventListener("pointermove", move);
+		devPane.classList.remove("resizing");
+		settings.devtoolsWidth = devPane.offsetWidth;
+		saveSettings();
+	}, { once: true });
+});
+$("browser-devtools").addEventListener("click", () => {
+	devPane.hidden = !devPane.hidden;
+	$("browser-devtools").classList.toggle("on", !devPane.hidden);
+	syncDevtools();
+});
 
 $("browser-newtab").addEventListener("click", () => {
 	if (active?.url) window.open(active.el.src, "_blank", "noopener");

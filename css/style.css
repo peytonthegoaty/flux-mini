@@ -245,7 +245,8 @@ body::after {
 	height: 28px;
 	border-radius: var(--r-xs);
 }
-.icon-btn:hover {
+.icon-btn:hover,
+.icon-btn.on {
 	background: var(--surface-2);
 	color: var(--fg);
 }
@@ -934,10 +935,56 @@ html:not(.perf) .intro .hero > svg {
 	width: 28px;
 	height: 28px;
 }
+.browser-body {
+	display: flex;
+	flex: 1;
+	min-height: 0;
+}
 .frames {
 	position: relative;
 	flex: 1;
 	min-height: 0;
+	min-width: 0;
+}
+/* Devtools (js/app.js): Eruda's Elements and Console, docked right of the page. */
+.devtools-pane {
+	flex: none;
+	max-width: calc(100% - 200px);
+	flex-direction: column;
+	position: relative;
+	border-left: 1px solid var(--border);
+	background: var(--bg2);
+}
+.devtools-resize {
+	position: absolute;
+	z-index: 1;
+	top: 0;
+	bottom: 0;
+	left: -3px;
+	width: 6px;
+	cursor: col-resize;
+	touch-action: none;
+}
+.devtools-resize:hover,
+.devtools-resize:active {
+	background: var(--border-2);
+}
+.devtools-pane:not([hidden]) {
+	display: flex;
+}
+.devtools-pane.resizing iframe {
+	pointer-events: none;
+}
+.devtools-frame {
+	flex: 1;
+	min-height: 0;
+	width: 100%;
+	border: 0;
+}
+.devtools-empty {
+	margin: auto;
+	color: var(--fg-d);
+	font-size: 13px;
 }
 .frames .frame {
 	position: absolute;

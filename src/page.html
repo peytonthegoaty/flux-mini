@@ -158,10 +158,12 @@
 							<input id="address-input" type="text" aria-label="Address" spellcheck="false" placeholder="Search or enter URL" />
 						</form>
 						<span class="badge" id="engine-badge"></span>
+						<button class="icon-btn" id="browser-devtools" type="button" aria-label="Devtools (Elements and Console)" title="Devtools"><svg class="i"><use href="#i-code" /></svg></button>
 						<button class="icon-btn" id="browser-newtab" type="button" aria-label="Open in a real tab"><svg class="i"><use href="#i-external" /></svg></button>
 					</div>
 				</div>
 				<p class="status" id="status" role="status" hidden></p>
+				<div class="browser-body">
 				<div class="frames" id="frames">
 					<div class="tv-load" id="page-load" role="status" aria-live="polite" hidden>
 						<svg class="i tv-load-icon"><use href="#i-globe" /></svg>
@@ -172,6 +174,8 @@
 						<svg class="newtab-logo"><use href="#logo" /></svg>
 						<p>Type a URL or search in the bar above.</p>
 					</div>
+				</div>
+				<aside class="devtools-pane" id="devtools-pane" aria-label="Devtools" hidden><div class="devtools-resize" id="devtools-resize"></div><p class="devtools-empty" id="devtools-empty">Open a page to inspect it.</p></aside>
 				</div>
 			</section>
 			<section class="view html" id="view-html" hidden>

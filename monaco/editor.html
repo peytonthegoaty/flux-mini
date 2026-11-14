@@ -18,6 +18,9 @@ require.config({ paths: { vs: new URL("vs", location.href).href } }); // full ad
 // Start workers straight from their file, not from a blob: wrapper. On S3 the bucket only serves files
 // asked for by the site's own pages, and a blob: worker's requests don't count as that.
 window.MonacoEnvironment = { getWorkerUrl: () => new URL("vs/base/worker/workerMain.js", location.href).href };
+// editor.html?console is the browser devtools' Console input (js/app.js): one growing line of JavaScript.
+const consoleMode = location.search === "?console";
+if (consoleMode) document.documentElement.style.background = document.body.style.background = "#16161b";
 require(["vs/editor/editor.main"], function () {
 	// Flux's colours (css/style.css tokens): near-black, grey text, white accent.
 	monaco.editor.defineTheme("flux", {
@@ -34,7 +37,7 @@ require(["vs/editor/editor.main"], function () {
 			{ token: "number", foreground: "e0c08b" },
 		],
 		colors: {
-			"editor.background": "#141418",
+			"editor.background": consoleMode ? "#16161b" : "#141418",
 			"editor.foreground": "#f5f6f8",
 			"editorLineNumber.foreground": "#4a4a52",
 			"editorLineNumber.activeForeground": "#f5f6f8",
@@ -65,8 +68,25 @@ require(["vs/editor/editor.main"], function () {
 		minimap: { enabled: false }, // the preview sits beside the editor now
 		fontFamily: "'Cascadia Code', Consolas, ui-monospace, monospace",
 		padding: { top: 10 },
+		...(consoleMode && {
+			language: "javascript",
+			fontSize: 12,
+			lineHeight: 20,
+			padding: { top: 0 },
+			lineNumbers: "off",
+			glyphMargin: false,
+			folding: false,
+			lineDecorationsWidth: 0,
+			renderLineHighlight: "none",
+			wordWrap: "on",
+			overviewRulerLanes: 0,
+			hideCursorInOverviewRuler: true,
+			scrollbar: { vertical: "auto", horizontal: "hidden", useShadows: false },
+			bracketPairColorization: { enabled: false },
+		}),
 	});
-	parent.fluxMonacoReady?.(editor);
+	if (consoleMode) parent.fluxConsoleReady?.(editor, monaco);
+	else parent.fluxMonacoReady?.(editor);
 });
 </script>
 </body>

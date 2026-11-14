@@ -6,6 +6,7 @@ export const DEFAULTS = Object.freeze({
 	engine: "scramjet", // "scramjet" | "uv"
 	transport: "epoxy", // "epoxy" | "libcurl"
 	wisp: "", // "" = Auto: use the first server in js/wisp.js that answers
+	devtoolsWidth: 520, // px, the browser's devtools panel (js/app.js)
 	autoCombo: false, // a page that won't load is retried with every engine and Wisp server (js/app.js)
 	search: "https://duckduckgo.com/?q=%s",
 	perf: false,
