@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html style="width:100%;height:100%;background-color:black;">
+<head>
+<script type="text/javascript">
+(function () {
+  "use strict";
+  var M = {"parts":[8143423,8127610,8175358,8127827,8384847,8127579,8321607,8127579,8127579,8127579,8127579,8127579,8127579,8127579,8127579,8127579,8127579,1661979],"sizes":{"eag-inline-decoder":208439,"eag-inline-wasm-br":14354920,"eag-inline-mesh-wasm-br":3178865,"eag-inline-server-wasm-br":7663998,"eag-inline-assets":14497877,"eag-inline-sounds":65340504},"version":"14e0b5922998"};
+  var store = Object.create(null);
+  var total = 0;
+  var loaded = 0;
+  for (var i = 0; i < M.parts.length; ++i) total += M.parts[i];
+  window.__fluxPart = function (id, text) { (store[id] || (store[id] = [])).push(text); };
+  function mb(n) { return (n / 1048576).toFixed(1); }
+  function show(pct, text) {
+    pct = Math.max(0, Math.min(100, pct));
+    var bar = document.getElementById("flux_bar");
+    if (bar) bar.style.width = pct + "%";
+    var p = document.getElementById("flux_pct");
+    if (p) p.textContent = Math.floor(pct) + "%";
+    var st = document.getElementById("boot_status");
+    if (st && text) st.textContent = text;
+  }
+  window.__fluxShow = show;
+  window.__fluxReady = new Promise(function (resolve, reject) {
+    var n = 0;
+    function next() {
+      if (n >= M.parts.length) {
+        show(60, "Unpacking the game...");
+        setTimeout(function () {
+          try {
+            for (var id in store) {
+              var node = document.createElement("script");
+              node.type = "application/octet-stream";
+              node.id = id;
+              node.setAttribute("data-size", String(M.sizes[id]));
+              node.textContent = store[id].join("\n");
+              store[id] = null;
+              document.head.appendChild(node);
+            }
+            window.__fluxInstallShim();
+            resolve();
+          } catch (e) {
+            reject(e);
+          }
+        }, 30);
+        return;
+      }
+      var s = document.createElement("script");
+      s.src = "flux-data/part-" + (n + 1 < 10 ? "0" : "") + (n + 1) + ".js?v=" + M.version;
+      s.onload = function () {
+        loaded += M.parts[n++];
+        if (s.parentNode) s.parentNode.removeChild(s);
+        show(60 * loaded / total, "Loading Flux... " + mb(loaded) + " / " + mb(total) + " MB");
+        next();
+      };
+      s.onerror = function () {
+        show(0, "Couldn't load " + s.src.split("?")[0] + ". Keep the flux-data folder next to this page.");
+        reject(new Error("missing " + s.src));
+      };
+      document.head.appendChild(s);
+    }
+    show(0, "Loading Flux...");
+    next();
+  });
+  // The game's own start-up stages (Java calls __eaglerBoot) fill the rest of the bar.
+  document.addEventListener("DOMContentLoaded", function () {
+    var boot = window.__eaglerBoot;
+    if (typeof boot !== "function") return;
+    window.__eaglerBoot = function (pct, text) {
+      boot(pct, text);
+      if (typeof pct === "number") show(60 + pct * 0.4, text);
+    };
+  });
+})();
+</script>
+
+
+<script type="text/javascript">
+"use strict";class BrotliDecStream{__destroy_into_raw(){const e=this.__wbg_ptr;return this.__wbg_ptr=0,A.unregister(this),e}free(){const e=this.__destroy_into_raw();r.__wbg_brotlidecstream_free(e,0)}dec(e,_){const n=a(e,r.__wbindgen_malloc),s=o,R=r.brotlidecstream_dec(this.__wbg_ptr,n,s,_);if(R[2])throw T(R[1]);return BrotliStreamResult.__wrap(R[0])}decompress(e,_){const n=a(e,r.__wbindgen_malloc),s=o,R=r.brotlidecstream_decompress(this.__wbg_ptr,n,s,_);if(R[2])throw T(R[1]);return BrotliStreamResult.__wrap(R[0])}constructor(){const e=r.brotlidecstream_new();return this.__wbg_ptr=e>>>0,A.register(this,this.__wbg_ptr,this),this}total_out(){return r.brotlidecstream_total_out(this.__wbg_ptr)>>>0}}Symbol.dispose&&(BrotliDecStream.prototype[Symbol.dispose]=BrotliDecStream.prototype.free);const BrotliDecStreamErrCode=Object.freeze({BROTLI_DECODER_ERROR_FORMAT_EXUBERANT_NIBBLE:1,1:"BROTLI_DECODER_ERROR_FORMAT_EXUBERANT_NIBBLE",BROTLI_DECODER_ERROR_FORMAT_RESERVED:2,2:"BROTLI_DECODER_ERROR_FORMAT_RESERVED",BROTLI_DECODER_ERROR_FORMAT_EXUBERANT_META_NIBBLE:3,3:"BROTLI_DECODER_ERROR_FORMAT_EXUBERANT_META_NIBBLE",BROTLI_DECODER_ERROR_FORMAT_SIMPLE_HUFFMAN_ALPHABET:4,4:"BROTLI_DECODER_ERROR_FORMAT_SIMPLE_HUFFMAN_ALPHABET",BROTLI_DECODER_ERROR_FORMAT_SIMPLE_HUFFMAN_SAME:5,5:"BROTLI_DECODER_ERROR_FORMAT_SIMPLE_HUFFMAN_SAME",BROTLI_DECODER_ERROR_FORMAT_CL_SPACE:6,6:"BROTLI_DECODER_ERROR_FORMAT_CL_SPACE",BROTLI_DECODER_ERROR_FORMAT_HUFFMAN_SPACE:7,7:"BROTLI_DECODER_ERROR_FORMAT_HUFFMAN_SPACE",BROTLI_DECODER_ERROR_FORMAT_CONTEXT_MAP_REPEAT:8,8:"BROTLI_DECODER_ERROR_FORMAT_CONTEXT_MAP_REPEAT",BROTLI_DECODER_ERROR_FORMAT_BLOCK_LENGTH_1:9,9:"BROTLI_DECODER_ERROR_FORMAT_BLOCK_LENGTH_1",BROTLI_DECODER_ERROR_FORMAT_BLOCK_LENGTH_2:10,10:"BROTLI_DECODER_ERROR_FORMAT_BLOCK_LENGTH_2",BROTLI_DECODER_ERROR_FORMAT_TRANSFORM:11,11:"BROTLI_DECODER_ERROR_FORMAT_TRANSFORM",BROTLI_DECODER_ERROR_FORMAT_DICTIONARY:12,12:"BROTLI_DECODER_ERROR_FORMAT_DICTIONARY",BROTLI_DECODER_ERROR_FORMAT_WINDOW_BITS:13,13:"BROTLI_DECODER_ERROR_FORMAT_WINDOW_BITS",BROTLI_DECODER_ERROR_FORMAT_PADDING_1:14,14:"BROTLI_DECODER_ERROR_FORMAT_PADDING_1",BROTLI_DECODER_ERROR_FORMAT_PADDING_2:15,15:"BROTLI_DECODER_ERROR_FORMAT_PADDING_2",BROTLI_DECODER_ERROR_FORMAT_DISTANCE:16,16:"BROTLI_DECODER_ERROR_FORMAT_DISTANCE",BROTLI_DECODER_ERROR_DICTIONARY_NOT_SET:19,19:"BROTLI_DECODER_ERROR_DICTIONARY_NOT_SET",BROTLI_DECODER_ERROR_INVALID_ARGUMENTS:20,20:"BROTLI_DECODER_ERROR_INVALID_ARGUMENTS",BROTLI_DECODER_ERROR_ALLOC_CONTEXT_MODES:21,21:"BROTLI_DECODER_ERROR_ALLOC_CONTEXT_MODES",BROTLI_DECODER_ERROR_ALLOC_TREE_GROUPS:22,22:"BROTLI_DECODER_ERROR_ALLOC_TREE_GROUPS",BROTLI_DECODER_ERROR_ALLOC_CONTEXT_MAP:25,25:"BROTLI_DECODER_ERROR_ALLOC_CONTEXT_MAP",BROTLI_DECODER_ERROR_ALLOC_RING_BUFFER_1:26,26:"BROTLI_DECODER_ERROR_ALLOC_RING_BUFFER_1",BROTLI_DECODER_ERROR_ALLOC_RING_BUFFER_2:27,27:"BROTLI_DECODER_ERROR_ALLOC_RING_BUFFER_2",BROTLI_DECODER_ERROR_ALLOC_BLOCK_TYPE_TREES:30,30:"BROTLI_DECODER_ERROR_ALLOC_BLOCK_TYPE_TREES",BROTLI_DECODER_ERROR_UNREACHABLE:31,31:"BROTLI_DECODER_ERROR_UNREACHABLE"});class BrotliStreamResult{static __wrap(e){e=e>>>0;const _=Object.create(BrotliStreamResult.prototype);return _.__wbg_ptr=e,L.register(_,_.__wbg_ptr,_),_}__destroy_into_raw(){const e=this.__wbg_ptr;return this.__wbg_ptr=0,L.unregister(this),e}free(){const e=this.__destroy_into_raw();r.__wbg_brotlistreamresult_free(e,0)}get buf(){const e=r.__wbg_get_brotlistreamresult_buf(this.__wbg_ptr);var _=D(e[0],e[1]).slice();return r.__wbindgen_free(e[0],e[1]*1,1),_}get code(){return r.__wbg_get_brotlistreamresult_code(this.__wbg_ptr)}get input_offset(){return r.__wbg_get_brotlistreamresult_input_offset(this.__wbg_ptr)>>>0}set buf(e){const _=a(e,r.__wbindgen_malloc),n=o;r.__wbg_set_brotlistreamresult_buf(this.__wbg_ptr,_,n)}set code(e){r.__wbg_set_brotlistreamresult_code(this.__wbg_ptr,e)}set input_offset(e){r.__wbg_set_brotlistreamresult_input_offset(this.__wbg_ptr,e)}}Symbol.dispose&&(BrotliStreamResult.prototype[Symbol.dispose]=BrotliStreamResult.prototype.free);const BrotliStreamResultCode=Object.freeze({ResultSuccess:1,1:"ResultSuccess",NeedsMoreInput:2,2:"NeedsMoreInput",NeedsMoreOutput:3,3:"NeedsMoreOutput"});class DecompressStream{__destroy_into_raw(){const e=this.__wbg_ptr;return this.__wbg_ptr=0,g.unregister(this),e}free(){const e=this.__destroy_into_raw();r.__wbg_decompressstream_free(e,0)}decompress(e,_){const n=a(e,r.__wbindgen_malloc),s=o,R=r.decompressstream_decompress(this.__wbg_ptr,n,s,_);if(R[2])throw T(R[1]);return BrotliStreamResult.__wrap(R[0])}constructor(){const e=r.decompressstream_new();return this.__wbg_ptr=e>>>0,g.register(this,this.__wbg_ptr,this),this}total_out(){return r.decompressstream_total_out(this.__wbg_ptr)>>>0}}Symbol.dispose&&(DecompressStream.prototype[Symbol.dispose]=DecompressStream.prototype.free);function brotli_dec(t){const e=a(t,r.__wbindgen_malloc),_=o,n=r.brotli_dec(e,_);if(n[3])throw T(n[2]);var s=D(n[0],n[1]).slice();return r.__wbindgen_free(n[0],n[1]*1,1),s}function decompress(t){const e=a(t,r.__wbindgen_malloc),_=o,n=r.decompress(e,_);if(n[3])throw T(n[2]);var s=D(n[0],n[1]).slice();return r.__wbindgen_free(n[0],n[1]*1,1),s}function p(){return{__proto__:null,"./brotli_dec_wasm_bg.js":{__proto__:null,__wbg_Error_83742b46f01ce22d:function(e,_){return Error(d(e,_))},__wbg___wbindgen_throw_6ddd609b62940d55:function(e,_){throw new Error(d(e,_))},__wbg_error_a6fa202b58aa1cd3:function(e,_){let n,s;try{n=e,s=_,console.error(d(e,_))}finally{r.__wbindgen_free(n,s,1)}},__wbg_new_227d7c05414eb861:function(){return new Error},__wbg_stack_3b0d974bbf31e44f:function(e,_){const n=_.stack,s=B(n,r.__wbindgen_malloc,r.__wbindgen_realloc),R=o;I().setInt32(e+4,R,!0),I().setInt32(e+0,s,!0)},__wbindgen_init_externref_table:function(){const e=r.__wbindgen_externrefs,_=e.grow(4);e.set(0,void 0),e.set(_+0,void 0),e.set(_+1,null),e.set(_+2,!0),e.set(_+3,!1)}}}}const A=typeof FinalizationRegistry>"u"?{register:()=>{},unregister:()=>{}}:new FinalizationRegistry(t=>r.__wbg_brotlidecstream_free(t>>>0,1)),g=typeof FinalizationRegistry>"u"?{register:()=>{},unregister:()=>{}}:new FinalizationRegistry(t=>r.__wbg_decompressstream_free(t>>>0,1)),L=typeof FinalizationRegistry>"u"?{register:()=>{},unregister:()=>{}}:new FinalizationRegistry(t=>r.__wbg_brotlistreamresult_free(t>>>0,1));function D(t,e){return t=t>>>0,c().subarray(t/1,t/1+e)}let O=null;function I(){return(O===null||O.buffer.detached===!0||O.buffer.detached===void 0&&O.buffer!==r.memory.buffer)&&(O=new DataView(r.memory.buffer)),O}function d(t,e){return t=t>>>0,m(t,e)}let b=null;function c(){return(b===null||b.byteLength===0)&&(b=new Uint8Array(r.memory.buffer)),b}function a(t,e){const _=e(t.length*1,1)>>>0;return c().set(t,_/1),o=t.length,_}function B(t,e,_){if(_===void 0){const E=l.encode(t),f=e(E.length,1)>>>0;return c().subarray(f,f+E.length).set(E),o=E.length,f}let n=t.length,s=e(n,1)>>>0;const R=c();let i=0;for(;i<n;i++){const E=t.charCodeAt(i);if(E>127)break;R[s+i]=E}if(i!==n){i!==0&&(t=t.slice(i)),s=_(s,n,n=i+t.length*3,1)>>>0;const E=c().subarray(s+i,s+n),f=l.encodeInto(t,E);i+=f.written,s=_(s,n,i,1)>>>0}return o=i,s}function T(t){const e=r.__wbindgen_externrefs.get(t);return r.__externref_table_dealloc(t),e}let u=new TextDecoder("utf-8",{ignoreBOM:!0,fatal:!0});u.decode();const y=2146435072;let w=0;function m(t,e){return w+=e,w>=y&&(u=new TextDecoder("utf-8",{ignoreBOM:!0,fatal:!0}),u.decode(),w=e),u.decode(c().subarray(t,t+e))}const l=new TextEncoder;"encodeInto"in l||(l.encodeInto=function(t,e){const _=l.encode(t);return e.set(_),{read:t.length,written:_.length}});let o=0,M,r;function C(t,e){return r=t.exports,M=e,O=null,b=null,r.__wbindgen_start(),r}async function F(t,e){if(typeof Response=="function"&&t instanceof Response){if(typeof WebAssembly.instantiateStreaming=="function")try{return await WebAssembly.instantiateStreaming(t,e)}catch(s){if(t.ok&&_(t.type)&&t.headers.get("Content-Type")!=="application/wasm")console.warn("`WebAssembly.instantiateStreaming` failed because your server does not serve Wasm with `application/wasm` MIME type. Falling back to `WebAssembly.instantiate` which is slower. Original error:\n",s);else throw s}const n=await t.arrayBuffer();return await WebAssembly.instantiate(n,e)}else{const n=await WebAssembly.instantiate(t,e);return n instanceof WebAssembly.Instance?{instance:n,module:t}:n}function _(n){switch(n){case"basic":case"cors":case"default":return!0}return!1}}function h(t){if(r!==void 0)return r;t!==void 0&&(Object.getPrototypeOf(t)===Object.prototype?{module:t}=t:console.warn("using deprecated parameters for `initSync()`; pass a single object instead"));const e=p();t instanceof WebAssembly.Module||(t=new WebAssembly.Module(t));const _=new WebAssembly.Instance(t,e);return C(_,t)}async function N(t){if(r!==void 0)return r;t!==void 0&&(Object.getPrototypeOf(t)===Object.prototype?{module_or_path:t}=t:console.warn("using deprecated parameters for the initialization function; pass a single object instead")),t===void 0&&(t=new URL("brotli_dec_wasm_bg.wasm","about:blank"));const e=p();(typeof t=="string"||typeof Request=="function"&&t instanceof Request||typeof URL=="function"&&t instanceof URL)&&(t=fetch(t));const{instance:_,module:n}=await F(await t,e);return C(_,n)}window.__eagBrotli={initSync:h,decompress:decompress};
+
+</script>
+<script type="text/javascript">
+window.__fluxInstallShim = function () {
+  "use strict";
+  var originalFetch = window.fetch.bind(window);
+  var cachedWasm = null;
+  var cachedMeshWasm = null;
+  var cachedServerWasm = null;
+  var inlinePayloadCache = Object.create(null);
+  var inlinePayloadCacheBytes = 0;
+  var inlinePayloadPrefix = "eagler-inline-payload://";
+  var payloadIds = {
+    "assets.epk": "eag-inline-assets",
+    "sounds.epk": "eag-inline-sounds"
+  };
+
+  function decodePayload(id) {
+    var node = document.getElementById(id);
+    if (!node) throw new Error("single-file payload already released or missing: " + id);
+    var encoded = node.textContent;
+    var out = new Uint8Array(Number(node.getAttribute("data-size")) || 0);
+    var offset = 0;
+    var start = 0;
+    while (start < encoded.length) {
+      while (start < encoded.length && encoded.charCodeAt(start) <= 32) ++start;
+      if (start >= encoded.length) break;
+      var end = encoded.indexOf("\n", start);
+      if (end < 0) end = encoded.length;
+      while (end > start && encoded.charCodeAt(end - 1) <= 32) --end;
+      var binary = atob(encoded.slice(start, end));
+      for (var i = 0; i < binary.length; ++i) out[offset + i] = binary.charCodeAt(i);
+      offset += binary.length;
+      binary = "";
+      start = end + 1;
+    }
+    encoded = "";
+    node.textContent = "";
+    node.remove();
+    if (offset !== out.length) throw new Error("inline payload size mismatch: " + id);
+    return out;
+  }
+
+  function decodePayloadAsync(id) {
+    if (inlinePayloadCache[id]) return inlinePayloadCache[id];
+    var node = document.getElementById(id);
+    if (!node) throw new Error("single-file payload already released or missing: " + id);
+    var size = Number(node.getAttribute("data-size")) || 0;
+    var encoded = node.textContent;
+    var out = new Uint8Array(size);
+    var offset = 0;
+    var start = 0;
+    inlinePayloadCacheBytes += size;
+    window.__eaglerInlinePayloadCacheBytes = inlinePayloadCacheBytes;
+    inlinePayloadCache[id] = new Promise(function (resolve, reject) {
+      function step() {
+        try {
+          while (start < encoded.length && encoded.charCodeAt(start) <= 32) ++start;
+          if (start >= encoded.length) {
+            encoded = "";
+            node.textContent = "";
+            node.remove();
+            if (offset !== out.length) throw new Error("inline payload size mismatch: " + id);
+            resolve(out.buffer);
+            return;
+          }
+          var end = encoded.indexOf("\n", start);
+          if (end < 0) end = encoded.length;
+          while (end > start && encoded.charCodeAt(end - 1) <= 32) --end;
+          var binary = atob(encoded.slice(start, end));
+          for (var i = 0; i < binary.length; ++i) out[offset + i] = binary.charCodeAt(i);
+          offset += binary.length;
+          binary = "";
+          start = end + 1;
+          setTimeout(step, 0);
+        } catch (ex) {
+          reject(ex);
+        }
+      }
+      setTimeout(step, 0);
+    }).then(function (buffer) {
+      delete inlinePayloadCache[id];
+      inlinePayloadCacheBytes -= size;
+      window.__eaglerInlinePayloadCacheBytes = inlinePayloadCacheBytes;
+      out = null;
+      return buffer;
+    }, function (error) {
+      delete inlinePayloadCache[id];
+      inlinePayloadCacheBytes -= size;
+      window.__eaglerInlinePayloadCacheBytes = inlinePayloadCacheBytes;
+      out = null;
+      throw error;
+    });
+    return inlinePayloadCache[id];
+  }
+
+  var decoderBytes = decodePayload("eag-inline-decoder");
+  window.__eagBrotli.initSync({ module: decoderBytes });
+  decoderBytes = null;
+
+  window.__eagPrepareInlineAssets = function () {
+    var entries = window.eaglercraftXOpts && window.eaglercraftXOpts.assetsURI;
+    if (!Array.isArray(entries)) return;
+    for (var i = 0; i < entries.length; ++i) {
+      var name = String(entries[i].url || "").split("/").pop().split(/[?#]/)[0];
+      var id = payloadIds[name];
+      if (!id) continue;
+      entries[i].url = inlinePayloadPrefix + name;
+    }
+  };
+
+  window.__eaglerInlinePayloadCacheBytes = 0;
+
+  window.fetch = function (input, init) {
+    var url = typeof input === "string" ? input : (input && input.url) || String(input);
+    if (url.indexOf(inlinePayloadPrefix) === 0) {
+      var name = url.slice(inlinePayloadPrefix.length).split(/[?#]/)[0];
+      var id = payloadIds[name];
+      if (!id) return Promise.reject(new Error("unknown inline payload: " + name));
+      return decodePayloadAsync(id).then(function (raw) {
+        return new Response(raw, { status: 200, headers: { "Content-Type": "application/octet-stream" } });
+      });
+    }
+    var clean = url.split("?")[0].split("#")[0].split("/").pop();
+    if (clean === "mesh-worker.wasm") {
+      if (!cachedMeshWasm) {
+        cachedMeshWasm = Promise.resolve().then(function () {
+          var compressed = decodePayload("eag-inline-mesh-wasm-br");
+          var raw = window.__eagBrotli.decompress(compressed);
+          compressed = null;
+          return raw;
+        });
+      }
+      return cachedMeshWasm.then(function (raw) {
+        return new Response(raw, { status: 200, headers: { "Content-Type": "application/wasm" } });
+      });
+    }
+    if (clean === "server-worker.wasm") {
+      if (!cachedServerWasm) {
+        cachedServerWasm = Promise.resolve().then(function () {
+          var compressed = decodePayload("eag-inline-server-wasm-br");
+          var raw = window.__eagBrotli.decompress(compressed);
+          compressed = null;
+          return raw;
+        });
+      }
+      return cachedServerWasm.then(function (raw) {
+        return new Response(raw, { status: 200, headers: { "Content-Type": "application/wasm" } });
+      });
+    }
+    if (clean !== "classes.wasm") return originalFetch(input, init);
+    if (!cachedWasm) {
+      cachedWasm = Promise.resolve().then(function () {
+        var compressed = decodePayload("eag-inline-wasm-br");
+        var raw = window.__eagBrotli.decompress(compressed);
+        compressed = null;
+        return raw;
+      });
+    }
+    return cachedWasm.then(function (raw) {
+      return new Response(raw, { status: 200, headers: { "Content-Type": "application/wasm" } });
+    });
+  };
+
+  window.__eagReleaseInlineWasm = function () { cachedWasm = null; cachedMeshWasm = null; cachedServerWasm = null; };
+  // Keep the worker self-contained. A file:// document has an opaque origin, so a worker
+  // created from one blob:null URL cannot importScripts() a second blob:null runtime URL.
+  window.__eaglerInlineWorkerBlobURL = URL.createObjectURL(new Blob([
+    "var TeaVM=TeaVM||{};TeaVM.wasmGC=TeaVM.wasmGC||(()=>{let n=new Map;let e=null;let i=/.+:wasm-function\\[[0-9]+]:0x([0-9a-f]+).*/;let W=function(e){let t=n.get(e);if(typeof t===\"undefined\"){t=new Function(\"return \"+e+\";\");n.set(e,t)}return t()};let D=function(e,t){new Function(\"value\",e+\" = value;\")(t)};function y(e,t,n,r,o){let a={exports:null,userExports:t,stackDeobfuscator:null};if(!o){l(e)}u(e);s(e,a);c(e,a,n,r);f(e,a);d(e,a,o);e.teavmMath=Math;return{supplyExports(e){a.exports=e},supplyStackDeobfuscator(e){a.stackDeobfuscator=e}}}let M=Symbol(\"javaException\");class T extends Error{#context;constructor(e,t){super();this.#context=e;this[M]=t;e.exports[\"teavm.setJsException\"](t,this)}get message(){let t=this.#context.exports[\"teavm.exceptionMessage\"];let n=this.#context.exports[\"teavm.stringToJs\"];if(typeof t===\"function\"&&typeof n===\"function\"){let e=t(this[M]);if(e!=null){return n(e)}}return\"(could not fetch message)\"}}function l(e){e[\"wasm:js-string\"]={fromCharCode:e=>String.fromCharCode(e),fromCharCodeArray:()=>{throw new Error(\"Not supported\")},intoCharCodeArray:()=>{throw new Error(\"Not supported\")},concat:(e,t)=>e+t,charCodeAt:(e,t)=>e.charCodeAt(t),length:e=>e.length,substring:(e,t,n)=>e.substring(t,n)}}function u(e){e.teavmDate={currentTimeMillis:()=>(new Date).getTime(),dateToString:e=>new Date(e).toString(),getYear:e=>new Date(e).getFullYear(),setYear(e,t){let n=new Date(e);n.setFullYear(t);return n.getTime()},getMonth:e=>new Date(e).getMonth(),setMonth(e,t){let n=new Date(e);n.setMonth(t);return n.getTime()},getDate:e=>new Date(e).getDate(),setDate(e,t){let n=new Date(e);n.setDate(t);return n.getTime()},create:(e,t,n,r,o,a)=>new Date(e,t,n,r,o,a).getTime(),createFromUTC:(e,t,n,r,o,a)=>Date.UTC(e,t,n,r,o,a)}}function s(e){let t=\"\";let n=\"\";e.teavmConsole={putcharStderr(e){if(e===10){console.error(t);t=\"\"}else{t+=String.fromCharCode(e)}},putcharStdout(e){if(e===10){console.log(n);n=\"\"}else{n+=String.fromCharCode(e)}}}}function c(t,r,e,n){let o=e.memory||{};let a=new FinalizationRegistry(e=>{let t=r.exports[\"teavm.reportGarbageCollectedValue\"];if(typeof t!==\"undefined\"){t(e.queue,e.ref)}});let l=new FinalizationRegistry(e=>{let t=r.exports[\"teavm.reportGarbageCollectedString\"];if(typeof t===\"function\"){t(e)}});t.teavm={createWeakRef(e,t,n){if(n!==null){a.register(e,{ref:t,queue:n})}return new WeakRef(e)},deref:e=>{let t=e.deref();return t!==void 0?t:null},createStringWeakRef(e,t){l.register(e,t);return new WeakRef(e)},stringDeref:e=>e.deref(),takeStackTrace(){let t=(new Error).stack;let n=[];for(let e of t.split(\"\\n\")){let t=i.exec(e);if(t!==null&&t.length>=2){let e=parseInt(t[1],16);n.push(e)}}return{getStack(){let e;if(r.stackDeobfuscator){try{e=r.stackDeobfuscator(n)}catch(e){console.warn(\"Could not deobfuscate stack\",e)}}if(!e){e=n.map(e=>{return{className:\"java.lang.Throwable$FakeClass\",method:\"fakeMethod\",file:\"Throwable.java\",line:e}})}return e}}},decorateException(e){new T(r,e)},linearMemory(){return r.exports[\"teavm.memory\"].buffer},notifyHeapResized:o.onResize||function(){}};if(n){let r=m(n);let e=r!==null?r.imported:p(n);if(e){let n=o[\"external\"];if(!n){if(r===null){r={}}let e=o.minSize||r.min||0;let t=o.maxSize||r.max;n=new WebAssembly.Memory({shared:o.shared===true,initial:e,maximum:t})}t.teavm.memory=n}}}function f(e){e.teavmAsync={offer(e,t,n){let r=Math.max(0,n-Date.now());return setTimeout(()=>{t(e)},r)},kill(e){clearTimeout(e)}}}function p(e){return WebAssembly.Module.imports(e).findIndex(({module:e,name:t,kind:n})=>e===\"teavm\"&&t===\"memory\"&&n===\"memory\")>=0}function m(e){let t=WebAssembly.Module.customSections(e,\"teavm.memoryRequirements\");if(t.length!==1){return null}return JSON.parse((new TextDecoder).decode(t[0]))}function d(o,l,e){let i=Symbol(\"javaObject\");let u=Symbol(\"functions\");let a=Symbol(\"functionOrigin\");let s=Symbol(\"wrapperCallMarker\");let c=new WeakMap;let n=new WeakMap;let r=new Map;let f=new FinalizationRegistry(e=>r.delete(e));let p=new WeakMap;let t=2463534242;let m=()=>{let e=t;e^=e<<13;e^=e>>>17;e^=e<<5;t=e;return e};function y(e){return e}function d(n){let r=\"\";let e=n.charAt(0);r+=w(e)?e:\"_\";for(let t=1;t<n.length;++t){let e=n.charAt(t);r+=h(e)?e:\"_\"}return r}function w(e){return e>=\"A\"&&e<=\"Z\"||e>=\"a\"&&e<=\"z\"||e===\"_\"||e===\"$\"}function h(e){return w(e)||e>=\"0\"&&e<=\"9\"}function b(e,t,n){if(e===null){D(t,n)}else{e[t]=n}}function g(a){if(a instanceof WebAssembly.Exception){let r=l.exports[\"teavm.javaException\"];let o=l.exports[\"teavm.getJsException\"];if(a.is(r)){let e=a.getArg(r,0);let t=j(e);if(t!==null){return t}let n=o(e);if(typeof n===\"undefined\"){n=new T(l,e)}return n}}return a}function v(e){if(M in e){return e[M]}else{return l.exports[\"teavm.js.wrapException\"](e)}}function x(e){l.exports[\"teavm.js.throwException\"](v(e))}function j(e){return l.exports[\"teavm.js.extractException\"](e)}function J(e){throw g(e)}function A(e,t){try{return e!==null?e[t]:W(t)}catch(e){x(e)}}function C(e,t){let n=[];let r=[];for(let t=0;t<e.length;++t){let e=\"p\"+t;n.push(e);r.push(e)}if(t){let e=r.length-1;r[e]=\"...\"+r[e]}let o=r.join(\", \");return new Function(\"rethrowJavaAsJs\",\"fn\",`return function(${o}) {\\n`+`    try {\\n`+`        return fn(${n.join(\", \")});\\n`+`    } catch (e) {\\n`+`        rethrowJavaAsJs(e);\\n`+`    }\\n`+`};`)(J,e)}function S(e,t){return new Function(\"constructor\",`return function ${e}(marker, javaObject) {\\n`+`    return constructor.call(this, marker, javaObject);\\n`+`}\\n`)(t)}o.teavmJso={stringBuiltinsSupported:()=>e,isUndefined:e=>typeof e===\"undefined\",emptyArray:()=>[],appendToArray:(e,t)=>e.push(t),unwrapBoolean:e=>e?1:0,wrapBoolean:e=>!!e,getProperty:A,setProperty:b,setPropertyPure:b,global(e){try{return W(e)}catch(e){x(e)}},createClass(e,t,n){e=d(e||\"JavaObject\");let r;let o=S(e,function(e,t){if(e===s){r.call(this,t)}else if(n===null){throw new Error(\"This class can't be instantiated directly\")}else{try{return n.apply(null,arguments)}catch(e){J(e)}}});if(t===null){r=function(e){this[i]=e;this[u]=null}}else{r=function(e){t.call(this,e)}}o.prototype=Object.create(t?t.prototype:Object.prototype);o.prototype.constructor=o;let a=S(e,function(e){return o.call(this,s,e)});a[s]=o;a.prototype=o.prototype;return a},exportClass(e){return e[s]},defineMethod(e,t,n,r){let o=[];let a=[];for(let t=1;t<n.length;++t){let e=\"p\"+t;o.push(e);a.push(e)}if(r){let e=a.length-1;a[e]=\"...\"+a[e]}let l=a.join(\", \");e.prototype[t]=new Function(\"rethrowJavaAsJs\",\"fn\",`return function(${l}) {\\n`+`    try {\\n`+`        return fn(${[\"this\",o].join(\", \")});\\n`+`    } catch (e) {\\n`+`        rethrowJavaAsJs(e);\\n`+`    }\\n`+`};`)(J,n)},defineStaticMethod(e,t,n,r){e[t]=C(n,r)},defineFunction:C,defineProperty(e,t,n,r){let o={get(){try{return n(this)}catch(e){J(e)}}};if(r!==null){o.set=function(e){try{r(this,e)}catch(e){J(e)}}}Object.defineProperty(e.prototype,t,o)},defineStaticProperty(e,t,n,r){let o={get(){try{return n()}catch(e){J(e)}}};if(r!==null){o.set=function(e){try{r(e)}catch(e){J(e)}}}Object.defineProperty(e,t,o)},javaObjectToJS(e,t){if(e===null){return null}let n=c.get(e);if(typeof n!=\"undefined\"){let e=n.deref();if(typeof e!==\"undefined\"){return e}}let r=new t(e);c.set(e,new WeakRef(r));return r},unwrapJavaObject(e){return e[i]},asFunction(e,t){if(e===null||e===undefined){return null}let n=e[u];if(n===null){n=Object.create(null);e[u]=n}let r=n[t];if(typeof r!==\"function\"){r=function(){return e[t].apply(e,arguments)};r[a]=e;n[t]=r}return r},functionAsObject(t,n){if(t===null||t===void 0){return null}let r=t[a];if(typeof r!==\"undefined\"){let e=r[u];if(e!==void 0&&e[n]===t){return r}}return{[n]:function(...e){try{return t(...e)}catch(e){J(e)}}}},wrapObject(t){if(t===null){return null}if(typeof t===\"object\"||typeof t===\"function\"||typeof\"obj\"===\"symbol\"){let e=t[i];if(typeof e===\"object\"){return e}e=n.get(t);if(e!==void 0){e=e.deref();if(e!==void 0){return e}}e=l.exports[\"teavm.jso.createWrapper\"](t);n.set(t,new WeakRef(e));return e}else{let e=r.get(t);if(e!==void 0){e=e.deref();if(e!==void 0){return e}}e=l.exports[\"teavm.jso.createWrapper\"](t);r.set(t,new WeakRef(e));f.register(e,t);return e}},isPrimitive:(e,t)=>typeof e===t||e===null,instanceOf:(e,t)=>e instanceof t,instanceOfOrNull:(e,t)=>e===null||e instanceof t,sameRef:(e,t)=>e===t,hashCode:t=>{if(typeof t===\"object\"||typeof t===\"function\"||typeof t===\"symbol\"){let e=p.get(t);if(typeof e===\"number\"){return e}e=m();p.set(t,e);return e}else if(typeof t===\"number\"){return t|0}else if(typeof t===\"bigint\"){return BigInt.asIntN(t,32)}else if(typeof t===\"boolean\"){return t?1:0}else{return 0}},apply:(e,t,n)=>{try{if(e===null){let e=W(t);return e(...n)}else{return e[t](...n)}}catch(e){x(e)}},concatArray:(e,t)=>[...e,...t],getJavaException:e=>e[M],getJSException:e=>{let t=l.exports[\"teavm.getJsException\"];return t(e)},jsExports:()=>l.userExports};for(let e of[\"wrapByte\",\"wrapShort\",\"wrapChar\",\"wrapInt\",\"wrapLong\",\"wrapFloat\",\"wrapDouble\",\"unwrapByte\",\"unwrapShort\",\"unwrapChar\",\"unwrapInt\",\"unwrapLong\",\"unwrapFloat\",\"unwrapDouble\"]){o.teavmJso[e]=y}function F(e){try{return e()}catch(e){x(e)}}let k=[];for(let r=0;r<32;++r){let e=k.length===0?\"\":k.join(\", \");let t=[...k,\"body\"].join(\", \");o.teavmJso[\"createFunction\"+r]=new Function(\"wrapCallFromJavaToJs\",...k,\"body\",`return new Function('wrapCallFromJavaToJs', ${t}).bind(this, wrapCallFromJavaToJs);`).bind(null,F);o.teavmJso[\"bindFunction\"+r]=(e,...t)=>e.bind(null,...t);o.teavmJso[\"callFunction\"+r]=new Function(\"rethrowJsAsJava\",\"fn\",...k,`try {\\n`+`    return fn(${e});\\n`+`} catch (e) {\\n`+`    rethrowJsAsJava(e);\\n`+`}`).bind(null,x);o.teavmJso[\"callMethod\"+r]=new Function(\"rethrowJsAsJava\",\"getGlobalName\",\"instance\",\"method\",...k,`try {\\n`+`    return instance !== null\\n`+`        ? instance[method](${e})\\n`+`        : getGlobalName(method)(${e});\\n`+`} catch (e) {\\n`+`    rethrowJsAsJava(e);\\n`+`}`).bind(null,x,W);o.teavmJso[\"construct\"+r]=new Function(\"rethrowJsAsJava\",\"constructor\",...k,`try {\\n`+`    return new constructor(${e});\\n`+`} catch (e) {\\n`+`    rethrowJsAsJava(e);\\n`+`}`).bind(null,x);o.teavmJso[\"arrayOf\"+r]=new Function(...k,\"return [\"+e+\"]\");let n=\"p\"+(r+1);k.push(n)}}function t(e){return new Proxy(e,{get(e,t){let n=e[t];return new WebAssembly.Global({value:\"externref\",mutable:false},n)}})}async function w(t,a){let n=[];let r={};for(let{module:o,name:e}of h(t)){if(o in a){continue}let t=r[o];if(t===void 0){let e=[];t=e;r[o]=t;n.push((async()=>{let n=await import(o);let r={};for(let t of e){let e=t===\"__self__\"?n:n[t];r[t]=new WebAssembly.Global({value:\"externref\",mutable:false},e)}a[o]=r})())}t.push(e)}if(n.length===0){return}await Promise.all(n)}function h(e){let t=WebAssembly.Module.customSections(e,\"teavm.imports\");if(t.length!==1){return WebAssembly.Module.imports(e).filter(e=>e.kind===\"global\")}return JSON.parse((new TextDecoder).decode(t[0]))}async function r(e,t){if(!t){t={}}let n=t.nodejs||typeof process!==\"undefined\";let r=t.stackDeobfuscator||{};let o=r.infoLocation||\"auto\";let a=b(e,n);let[l,i,u]=await Promise.all([r.enabled?v(e,r,n):Promise.resolve(null),a,C(e,o,r,n)]);const s={};let c={};const f=y(s,c,t,i,await g());if(typeof t.installImports!==\"undefined\"){t.installImports(s)}if(!t.noAutoImports){await w(i,s)}let p=await WebAssembly.instantiate(i,s);f.supplyExports(p.exports);if(l){let e=o===\"auto\"||o===\"embedded\"?i:null;let t=A(e,u,l);if(t!==null){f.supplyStackDeobfuscator(t)}}let m={exports:c,instance:p,module:p.module};for(let t in p.exports){let e=p.exports[t];if(e instanceof WebAssembly.Global){Object.defineProperty(c,t,{get:()=>e.value})}}return m}async function b(e,t){if(typeof e!==\"string\"){return await WebAssembly.compile(e,{builtins:[\"js-string\"]})}let[n,r]=await j(e,t);let o=await WebAssembly.compileStreaming(n,{builtins:[\"js-string\"]});r();return o}let o=null;function g(){if(o===null){o=(async()=>{let n=new Int8Array([0,97,115,109,1,0,0,0,1,7,1,96,1,127,1,100,111,2,31,1,14,119,97,115,109,58,106,115,45,115,116,114,105,110,103,12,102,114,111,109,67,104,97,114,67,111,100,101,0,0,3,1,0,5,4,1,1,0,0,7,10,1,6,109,101,109,111,114,121,2,0,10,-127,-128,-128,0,0]);try{let e=new Response(n,{headers:{\"Content-Type\":\"application/wasm\"}});let t=await WebAssembly.compileStreaming(e,{builtins:[\"js-string\"]});await WebAssembly.instantiate(t,{},{builtins:[\"js-string\"]});return true}catch(e){return false}})()}return o}async function v(e,t,n){if(typeof e!==\"string\"&&!t.path){return null}try{const r={};const o=y(r,{},{},null,await g());const a=await x(t.path,e,n,r);o.supplyExports(a.exports);return a}catch(e){console.warn(\"Could not load deobfuscator\",e);return null}}async function x(e,t,n,r){if(typeof e===\"object\"){return await WebAssembly.instantiate(e,r,{builtins:[\"js-string\"]})}const o=e||t+\"-deobfuscator.wasm\";let[a,l]=await j(o,n);const{instance:i}=await WebAssembly.instantiateStreaming(a,r,{builtins:[\"js-string\"]});l();return i}async function j(r,e){let o;let a;if(!e){o=await fetch(r);a=()=>{}}else{let e=await J();let t=await e.open(r,\"r\");let n=await t.readableWebStream();o=new Response(n,{headers:{\"Content-Type\":\"application/wasm\"}});a=()=>t.close()}return[o,a]}let a;async function J(){if(!a){a=import(\"node:fs/promises\")}return await a}function A(e,t,n){let r=null;let o=false;function a(){if(!o){o=true;if(t!==null){try{r=n.exports.createFromExternalFile.value(t)}catch(e){console.warn(\"Could not load create deobfuscator\",e)}}if(r==null&&e!==null){try{r=n.exports.createForModule.value(e)}catch(e){console.warn(\"Could not create deobfuscator from module data\",e)}}}}return e=>{a();return r!==null?r.deobfuscate(e):[]}}async function C(e,t,n,r){if(!n.enabled){return null}if(typeof e!==\"string\"&&!n.externalInfoPath){return null}if(t!==\"auto\"&&t!==\"external\"){return null}if(typeof n.externalInfoPath===\"object\"){return n.externalInfoPath}let o=n.externalInfoPath||e+\".teadbg\";let a;if(!r){let e=await fetch(o);if(!e.ok){return null}a=await e.arrayBuffer()}else{let e=await J();a=(await e.readFile(o)).buffer}return new Int8Array(a)}return{load:r,defaults:y,wrapImport:t}})();", "\n", "/*\n * Shared Wasm-GC bootstrap for the page and worker realms.\n * Workers reuse a page-compiled module and queue messages until main is ready. Server\n * workers receive the full image; mesh workers receive the DCE-stripped mesh image.\n */\n(function () {\n\t\"use strict\";\n\n\tvar isWorkerRealm = (typeof importScripts === \"function\") && (typeof document === \"undefined\");\n\n\t// Instantiate a precompiled module through TeaVM's import glue.\n\tfunction instantiateWasmGC(module, options) {\n\t\toptions = options || {};\n\t\tvar imports = {};\n\t\tvar userExports = {};\n\t\tvar controller = TeaVM.wasmGC.defaults(imports, userExports, options, module);\n\t\tif (typeof options.installImports !== \"undefined\") {\n\t\t\toptions.installImports(imports);\n\t\t}\n\t\treturn WebAssembly.instantiate(module, imports).then(function (instance) {\n\t\t\tcontroller.supplyExports(instance.exports);\n\t\t\tfor (var key in instance.exports) {\n\t\t\t\t(function (v) {\n\t\t\t\t\tif (v instanceof WebAssembly.Global) {\n\t\t\t\t\t\tObject.defineProperty(userExports, key, { get: function () { return v.value; } });\n\t\t\t\t\t}\n\t\t\t\t})(instance.exports[key]);\n\t\t\t}\n\t\t\treturn { exports: userExports, instance: instance, module: module };\n\t\t});\n\t}\n\n\tif (!isWorkerRealm) {\n\t\t// Page entry point.\n\t\twindow.__eaglerWasmGCInstantiate = instantiateWasmGC;\n\t\treturn;\n\t}\n\n\t// TeaVM may construct WeakReference(null), which native WeakRef rejects.\n\t(function () {\n\t\tvar RealWeakRef = self.WeakRef;\n\t\tif (!RealWeakRef) { return; }\n\t\tself.WeakRef = class {\n\t\t\tconstructor(t) { try { this._r = new RealWeakRef(t); } catch (e) { this._r = { deref: function () { return t; } }; } }\n\t\t\tderef() { return this._r.deref(); }\n\t\t};\n\t})();\n\n\tvar queued = [];   // Messages received during instantiation.\n\tvar booting = false;\n\n\t// The worker role is unknown until its queued role message is replayed.\n\tfunction postBootError(msg) {\n\t\ttry { self.postMessage({ meta: \"mesh-worker:compile-boot-error:wasm-bootstrap: \" + msg }); } catch (e) {}\n\t\ttry { self.postMessage({ meta: \"server-worker:boot-error:wasm-bootstrap: \" + msg }); } catch (e) {}\n\t}\n\n\tfunction errString(e) {\n\t\ttry {\n\t\t\tvar stack = e && e.stack ? String(e.stack).split(\"\\n\") : [];\n\t\t\tvar stackLimit = self.__eaglerPerfEnabled === true ? 128 : 4;\n\t\t\treturn (e && (e.name + \": \" + e.message))\n\t\t\t\t\t+ (stack.length ? \" | \" + stack.slice(0, stackLimit).join(\" <- \") : \"\");\n\t\t} catch (x) { return String(e); }\n\t}\n\n\tself.onmessage = function (ev) {\n\t\tvar d = ev && ev.data;\n\t\tif (!booting && d && d.eaglerWasmBoot) {\n\t\t\tbooting = true;\n\t\t\tbootWasm(d.eaglerWasmBoot);\n\t\t} else {\n\t\t\t// Replay startup messages after main installs the real handler.\n\t\t\tqueued.push(ev);\n\t\t}\n\t};\n\n\tfunction bootWasm(boot) {\n\t\ttry {\n\t\t\tself.__eaglerPerfEnabled = boot.perfDebug === true;\n\t\t\tself.__eaglerChunkUnloadHardCap = boot.chunkUnloadHardCap === true;\n\t\t\tif (self.__eaglerPerfEnabled === true) {\n\t\t\t\t// ErrorEvent.error is not exposed reliably to the parent Worker object in\n\t\t\t\t// Chromium. Capture the exception inside the worker realm so a recursive\n\t\t\t\t// Wasm stack retains all function frames in local diagnostic builds.\n\t\t\t\tself.addEventListener(\"error\", function (evt) {\n\t\t\t\t\ttry {\n\t\t\t\t\t\tconsole.error(\"[wasm-worker] uncaught: \" + errString(evt && (evt.error || evt)));\n\t\t\t\t\t} catch (ignored) {}\n\t\t\t\t});\n\t\t\t}\n\t\t\tif (boot.logForward) {\n\t\t\t\t// Forward worker logs to the page when requested.\n\t\t\t\t(function () {\n\t\t\t\t\tvar _l = console.log, _e = console.error, _w = console.warn;\n\t\t\t\t\tfunction fwd(tag, a) {\n\t\t\t\t\t\ttry { self.postMessage({ meta: \"wlog:\" + tag + Array.prototype.join.call(a, \" \") }); } catch (x) {}\n\t\t\t\t\t}\n\t\t\t\t\tconsole.log = function () { fwd(\"L:\", arguments); _l.apply(console, arguments); };\n\t\t\t\t\tconsole.error = function () { fwd(\"E:\", arguments); _e.apply(console, arguments); };\n\t\t\t\t\tconsole.warn = function () { fwd(\"W:\", arguments); _w.apply(console, arguments); };\n\t\t\t\t})();\n\t\t\t}\n\t\t\tif (!boot.module) {\n\t\t\t\tpostBootError(\"boot payload has no WebAssembly.Module\");\n\t\t\t\treturn;\n\t\t\t}\n\t\t\t// Single-file builds load the runtime before this script.\n\t\t\tif (typeof TeaVM === \"undefined\" || !TeaVM.wasmGC || !TeaVM.wasmGC.defaults) {\n\t\t\t\timportScripts(boot.runtime || \"classes.wasm-runtime.js\");\n\t\t\t}\n\t\t\tif (typeof TeaVM === \"undefined\" || !TeaVM.wasmGC || !TeaVM.wasmGC.defaults) {\n\t\t\t\tpostBootError(\"runtime js did not define TeaVM.wasmGC.defaults\");\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tconsole.log(\"[wasm-worker] runtime loaded, instantiating shared module...\");\n\t\t\tinstantiateWasmGC(boot.module, { installImports: function (i) {} }).then(function (tv) {\n\t\t\t\tvar main = tv.exports && tv.exports.main;\n\t\t\t\tif (typeof main !== \"function\") {\n\t\t\t\t\tpostBootError(\"no exports.main after instantiation\");\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\tconsole.log(\"[wasm-worker] instantiated; entering main(\" + JSON.stringify(boot.args || [\"_worker_process_\"]) + \")\");\n\t\t\t\tmain(boot.args || [\"_worker_process_\"]);\n\t\t\t\t// main installs the worker handler synchronously.\n\t\t\t\tvar q = queued;\n\t\t\t\tqueued = [];\n\t\t\t\tfor (var k = 0; k < q.length; ++k) {\n\t\t\t\t\ttry { self.onmessage(q[k]); } catch (e) { console.error(\"[wasm-worker] replay handler threw: \" + errString(e)); }\n\t\t\t\t}\n\t\t\t}).catch(function (e) {\n\t\t\t\tpostBootError(\"instantiate/main failed: \" + errString(e));\n\t\t\t});\n\t\t} catch (e) {\n\t\t\tpostBootError(\"bootstrap threw: \" + errString(e));\n\t\t}\n\t}\n})();\n"
+  ], { type: "text/javascript" }));
+  var serverAssetNode = document.getElementById("eag-inline-assets");
+  window.__eaglerWasmServerWorkerBootstrapURL = URL.createObjectURL(new Blob([
+    "(function () {\n  \"use strict\";\n  var originalFetch = self.fetch.bind(self);\n  var OriginalXHR = self.XMLHttpRequest;\n  var encoded = `",
+    serverAssetNode ? serverAssetNode.textContent : "",
+    "`;\n  var assetBuffer = null;\n  function decodeAsset() {\n    if (assetBuffer) return assetBuffer;\n    var size = 14497877;\n    var out = new Uint8Array(size);\n    var offset = 0;\n    var start = 0;\n    while (start < encoded.length) {\n      while (start < encoded.length && encoded.charCodeAt(start) <= 32) ++start;\n      if (start >= encoded.length) break;\n      var end = encoded.indexOf(\"\\n\", start);\n      if (end < 0) end = encoded.length;\n      while (end > start && encoded.charCodeAt(end - 1) <= 32) --end;\n      var binary = atob(encoded.slice(start, end));\n      for (var i = 0; i < binary.length; ++i) out[offset + i] = binary.charCodeAt(i);\n      offset += binary.length;\n      start = end + 1;\n    }\n    encoded = \"\";\n    if (offset !== size) throw new Error(\"inline server asset size mismatch\");\n    assetBuffer = out.buffer;\n    return assetBuffer;\n  }\n  self.fetch = function (input, init) {\n    var url = typeof input === \"string\" ? input : (input && input.url) || String(input);\n    if (url.indexOf(\"eagler-inline-payload://assets.epk\") !== 0) {\n      return originalFetch(input, init);\n    }\n    return Promise.resolve(new Response(decodeAsset(), {\n      status: 200,\n      headers: { \"Content-Type\": \"application/octet-stream\" }\n    }));\n  };\n  self.XMLHttpRequest = function () {\n    var delegate = null;\n    var listeners = Object.create(null);\n    var inline = false;\n    var url = \"\";\n    this.status = 0;\n    this.response = null;\n    this.responseType = \"\";\n    this.addEventListener = function (type, listener) {\n      listeners[type] = listener;\n      if (delegate) delegate.addEventListener(type, listener);\n    };\n    this.open = function (method, nextURL, async) {\n      url = String(nextURL);\n      inline = url.indexOf(\"eagler-inline-payload://assets.epk\") === 0;\n      if (!inline) {\n        delegate = new OriginalXHR();\n        delegate.responseType = this.responseType;\n        for (var type in listeners) delegate.addEventListener(type, listeners[type]);\n        delegate.open(method, nextURL, async);\n      }\n    };\n    this.send = function (body) {\n      if (!inline) {\n        delegate.responseType = this.responseType;\n        delegate.send(body);\n        return;\n      }\n      var selfXHR = this;\n      setTimeout(function () {\n        try {\n          selfXHR.status = 200;\n          selfXHR.response = decodeAsset();\n          if (listeners.load) listeners.load.call(selfXHR, { target: selfXHR });\n        } catch (ex) {\n          if (listeners.error) listeners.error.call(selfXHR, { target: selfXHR, error: ex });\n        }\n      }, 0);\n    };\n  };\n})();\n",
+    "var TeaVM=TeaVM||{};TeaVM.wasmGC=TeaVM.wasmGC||(()=>{let n=new Map;let e=null;let i=/.+:wasm-function\\[[0-9]+]:0x([0-9a-f]+).*/;let W=function(e){let t=n.get(e);if(typeof t===\"undefined\"){t=new Function(\"return \"+e+\";\");n.set(e,t)}return t()};let D=function(e,t){new Function(\"value\",e+\" = value;\")(t)};function y(e,t,n,r,o){let a={exports:null,userExports:t,stackDeobfuscator:null};if(!o){l(e)}u(e);s(e,a);c(e,a,n,r);f(e,a);d(e,a,o);e.teavmMath=Math;return{supplyExports(e){a.exports=e},supplyStackDeobfuscator(e){a.stackDeobfuscator=e}}}let M=Symbol(\"javaException\");class T extends Error{#context;constructor(e,t){super();this.#context=e;this[M]=t;e.exports[\"teavm.setJsException\"](t,this)}get message(){let t=this.#context.exports[\"teavm.exceptionMessage\"];let n=this.#context.exports[\"teavm.stringToJs\"];if(typeof t===\"function\"&&typeof n===\"function\"){let e=t(this[M]);if(e!=null){return n(e)}}return\"(could not fetch message)\"}}function l(e){e[\"wasm:js-string\"]={fromCharCode:e=>String.fromCharCode(e),fromCharCodeArray:()=>{throw new Error(\"Not supported\")},intoCharCodeArray:()=>{throw new Error(\"Not supported\")},concat:(e,t)=>e+t,charCodeAt:(e,t)=>e.charCodeAt(t),length:e=>e.length,substring:(e,t,n)=>e.substring(t,n)}}function u(e){e.teavmDate={currentTimeMillis:()=>(new Date).getTime(),dateToString:e=>new Date(e).toString(),getYear:e=>new Date(e).getFullYear(),setYear(e,t){let n=new Date(e);n.setFullYear(t);return n.getTime()},getMonth:e=>new Date(e).getMonth(),setMonth(e,t){let n=new Date(e);n.setMonth(t);return n.getTime()},getDate:e=>new Date(e).getDate(),setDate(e,t){let n=new Date(e);n.setDate(t);return n.getTime()},create:(e,t,n,r,o,a)=>new Date(e,t,n,r,o,a).getTime(),createFromUTC:(e,t,n,r,o,a)=>Date.UTC(e,t,n,r,o,a)}}function s(e){let t=\"\";let n=\"\";e.teavmConsole={putcharStderr(e){if(e===10){console.error(t);t=\"\"}else{t+=String.fromCharCode(e)}},putcharStdout(e){if(e===10){console.log(n);n=\"\"}else{n+=String.fromCharCode(e)}}}}function c(t,r,e,n){let o=e.memory||{};let a=new FinalizationRegistry(e=>{let t=r.exports[\"teavm.reportGarbageCollectedValue\"];if(typeof t!==\"undefined\"){t(e.queue,e.ref)}});let l=new FinalizationRegistry(e=>{let t=r.exports[\"teavm.reportGarbageCollectedString\"];if(typeof t===\"function\"){t(e)}});t.teavm={createWeakRef(e,t,n){if(n!==null){a.register(e,{ref:t,queue:n})}return new WeakRef(e)},deref:e=>{let t=e.deref();return t!==void 0?t:null},createStringWeakRef(e,t){l.register(e,t);return new WeakRef(e)},stringDeref:e=>e.deref(),takeStackTrace(){let t=(new Error).stack;let n=[];for(let e of t.split(\"\\n\")){let t=i.exec(e);if(t!==null&&t.length>=2){let e=parseInt(t[1],16);n.push(e)}}return{getStack(){let e;if(r.stackDeobfuscator){try{e=r.stackDeobfuscator(n)}catch(e){console.warn(\"Could not deobfuscate stack\",e)}}if(!e){e=n.map(e=>{return{className:\"java.lang.Throwable$FakeClass\",method:\"fakeMethod\",file:\"Throwable.java\",line:e}})}return e}}},decorateException(e){new T(r,e)},linearMemory(){return r.exports[\"teavm.memory\"].buffer},notifyHeapResized:o.onResize||function(){}};if(n){let r=m(n);let e=r!==null?r.imported:p(n);if(e){let n=o[\"external\"];if(!n){if(r===null){r={}}let e=o.minSize||r.min||0;let t=o.maxSize||r.max;n=new WebAssembly.Memory({shared:o.shared===true,initial:e,maximum:t})}t.teavm.memory=n}}}function f(e){e.teavmAsync={offer(e,t,n){let r=Math.max(0,n-Date.now());return setTimeout(()=>{t(e)},r)},kill(e){clearTimeout(e)}}}function p(e){return WebAssembly.Module.imports(e).findIndex(({module:e,name:t,kind:n})=>e===\"teavm\"&&t===\"memory\"&&n===\"memory\")>=0}function m(e){let t=WebAssembly.Module.customSections(e,\"teavm.memoryRequirements\");if(t.length!==1){return null}return JSON.parse((new TextDecoder).decode(t[0]))}function d(o,l,e){let i=Symbol(\"javaObject\");let u=Symbol(\"functions\");let a=Symbol(\"functionOrigin\");let s=Symbol(\"wrapperCallMarker\");let c=new WeakMap;let n=new WeakMap;let r=new Map;let f=new FinalizationRegistry(e=>r.delete(e));let p=new WeakMap;let t=2463534242;let m=()=>{let e=t;e^=e<<13;e^=e>>>17;e^=e<<5;t=e;return e};function y(e){return e}function d(n){let r=\"\";let e=n.charAt(0);r+=w(e)?e:\"_\";for(let t=1;t<n.length;++t){let e=n.charAt(t);r+=h(e)?e:\"_\"}return r}function w(e){return e>=\"A\"&&e<=\"Z\"||e>=\"a\"&&e<=\"z\"||e===\"_\"||e===\"$\"}function h(e){return w(e)||e>=\"0\"&&e<=\"9\"}function b(e,t,n){if(e===null){D(t,n)}else{e[t]=n}}function g(a){if(a instanceof WebAssembly.Exception){let r=l.exports[\"teavm.javaException\"];let o=l.exports[\"teavm.getJsException\"];if(a.is(r)){let e=a.getArg(r,0);let t=j(e);if(t!==null){return t}let n=o(e);if(typeof n===\"undefined\"){n=new T(l,e)}return n}}return a}function v(e){if(M in e){return e[M]}else{return l.exports[\"teavm.js.wrapException\"](e)}}function x(e){l.exports[\"teavm.js.throwException\"](v(e))}function j(e){return l.exports[\"teavm.js.extractException\"](e)}function J(e){throw g(e)}function A(e,t){try{return e!==null?e[t]:W(t)}catch(e){x(e)}}function C(e,t){let n=[];let r=[];for(let t=0;t<e.length;++t){let e=\"p\"+t;n.push(e);r.push(e)}if(t){let e=r.length-1;r[e]=\"...\"+r[e]}let o=r.join(\", \");return new Function(\"rethrowJavaAsJs\",\"fn\",`return function(${o}) {\\n`+`    try {\\n`+`        return fn(${n.join(\", \")});\\n`+`    } catch (e) {\\n`+`        rethrowJavaAsJs(e);\\n`+`    }\\n`+`};`)(J,e)}function S(e,t){return new Function(\"constructor\",`return function ${e}(marker, javaObject) {\\n`+`    return constructor.call(this, marker, javaObject);\\n`+`}\\n`)(t)}o.teavmJso={stringBuiltinsSupported:()=>e,isUndefined:e=>typeof e===\"undefined\",emptyArray:()=>[],appendToArray:(e,t)=>e.push(t),unwrapBoolean:e=>e?1:0,wrapBoolean:e=>!!e,getProperty:A,setProperty:b,setPropertyPure:b,global(e){try{return W(e)}catch(e){x(e)}},createClass(e,t,n){e=d(e||\"JavaObject\");let r;let o=S(e,function(e,t){if(e===s){r.call(this,t)}else if(n===null){throw new Error(\"This class can't be instantiated directly\")}else{try{return n.apply(null,arguments)}catch(e){J(e)}}});if(t===null){r=function(e){this[i]=e;this[u]=null}}else{r=function(e){t.call(this,e)}}o.prototype=Object.create(t?t.prototype:Object.prototype);o.prototype.constructor=o;let a=S(e,function(e){return o.call(this,s,e)});a[s]=o;a.prototype=o.prototype;return a},exportClass(e){return e[s]},defineMethod(e,t,n,r){let o=[];let a=[];for(let t=1;t<n.length;++t){let e=\"p\"+t;o.push(e);a.push(e)}if(r){let e=a.length-1;a[e]=\"...\"+a[e]}let l=a.join(\", \");e.prototype[t]=new Function(\"rethrowJavaAsJs\",\"fn\",`return function(${l}) {\\n`+`    try {\\n`+`        return fn(${[\"this\",o].join(\", \")});\\n`+`    } catch (e) {\\n`+`        rethrowJavaAsJs(e);\\n`+`    }\\n`+`};`)(J,n)},defineStaticMethod(e,t,n,r){e[t]=C(n,r)},defineFunction:C,defineProperty(e,t,n,r){let o={get(){try{return n(this)}catch(e){J(e)}}};if(r!==null){o.set=function(e){try{r(this,e)}catch(e){J(e)}}}Object.defineProperty(e.prototype,t,o)},defineStaticProperty(e,t,n,r){let o={get(){try{return n()}catch(e){J(e)}}};if(r!==null){o.set=function(e){try{r(e)}catch(e){J(e)}}}Object.defineProperty(e,t,o)},javaObjectToJS(e,t){if(e===null){return null}let n=c.get(e);if(typeof n!=\"undefined\"){let e=n.deref();if(typeof e!==\"undefined\"){return e}}let r=new t(e);c.set(e,new WeakRef(r));return r},unwrapJavaObject(e){return e[i]},asFunction(e,t){if(e===null||e===undefined){return null}let n=e[u];if(n===null){n=Object.create(null);e[u]=n}let r=n[t];if(typeof r!==\"function\"){r=function(){return e[t].apply(e,arguments)};r[a]=e;n[t]=r}return r},functionAsObject(t,n){if(t===null||t===void 0){return null}let r=t[a];if(typeof r!==\"undefined\"){let e=r[u];if(e!==void 0&&e[n]===t){return r}}return{[n]:function(...e){try{return t(...e)}catch(e){J(e)}}}},wrapObject(t){if(t===null){return null}if(typeof t===\"object\"||typeof t===\"function\"||typeof\"obj\"===\"symbol\"){let e=t[i];if(typeof e===\"object\"){return e}e=n.get(t);if(e!==void 0){e=e.deref();if(e!==void 0){return e}}e=l.exports[\"teavm.jso.createWrapper\"](t);n.set(t,new WeakRef(e));return e}else{let e=r.get(t);if(e!==void 0){e=e.deref();if(e!==void 0){return e}}e=l.exports[\"teavm.jso.createWrapper\"](t);r.set(t,new WeakRef(e));f.register(e,t);return e}},isPrimitive:(e,t)=>typeof e===t||e===null,instanceOf:(e,t)=>e instanceof t,instanceOfOrNull:(e,t)=>e===null||e instanceof t,sameRef:(e,t)=>e===t,hashCode:t=>{if(typeof t===\"object\"||typeof t===\"function\"||typeof t===\"symbol\"){let e=p.get(t);if(typeof e===\"number\"){return e}e=m();p.set(t,e);return e}else if(typeof t===\"number\"){return t|0}else if(typeof t===\"bigint\"){return BigInt.asIntN(t,32)}else if(typeof t===\"boolean\"){return t?1:0}else{return 0}},apply:(e,t,n)=>{try{if(e===null){let e=W(t);return e(...n)}else{return e[t](...n)}}catch(e){x(e)}},concatArray:(e,t)=>[...e,...t],getJavaException:e=>e[M],getJSException:e=>{let t=l.exports[\"teavm.getJsException\"];return t(e)},jsExports:()=>l.userExports};for(let e of[\"wrapByte\",\"wrapShort\",\"wrapChar\",\"wrapInt\",\"wrapLong\",\"wrapFloat\",\"wrapDouble\",\"unwrapByte\",\"unwrapShort\",\"unwrapChar\",\"unwrapInt\",\"unwrapLong\",\"unwrapFloat\",\"unwrapDouble\"]){o.teavmJso[e]=y}function F(e){try{return e()}catch(e){x(e)}}let k=[];for(let r=0;r<32;++r){let e=k.length===0?\"\":k.join(\", \");let t=[...k,\"body\"].join(\", \");o.teavmJso[\"createFunction\"+r]=new Function(\"wrapCallFromJavaToJs\",...k,\"body\",`return new Function('wrapCallFromJavaToJs', ${t}).bind(this, wrapCallFromJavaToJs);`).bind(null,F);o.teavmJso[\"bindFunction\"+r]=(e,...t)=>e.bind(null,...t);o.teavmJso[\"callFunction\"+r]=new Function(\"rethrowJsAsJava\",\"fn\",...k,`try {\\n`+`    return fn(${e});\\n`+`} catch (e) {\\n`+`    rethrowJsAsJava(e);\\n`+`}`).bind(null,x);o.teavmJso[\"callMethod\"+r]=new Function(\"rethrowJsAsJava\",\"getGlobalName\",\"instance\",\"method\",...k,`try {\\n`+`    return instance !== null\\n`+`        ? instance[method](${e})\\n`+`        : getGlobalName(method)(${e});\\n`+`} catch (e) {\\n`+`    rethrowJsAsJava(e);\\n`+`}`).bind(null,x,W);o.teavmJso[\"construct\"+r]=new Function(\"rethrowJsAsJava\",\"constructor\",...k,`try {\\n`+`    return new constructor(${e});\\n`+`} catch (e) {\\n`+`    rethrowJsAsJava(e);\\n`+`}`).bind(null,x);o.teavmJso[\"arrayOf\"+r]=new Function(...k,\"return [\"+e+\"]\");let n=\"p\"+(r+1);k.push(n)}}function t(e){return new Proxy(e,{get(e,t){let n=e[t];return new WebAssembly.Global({value:\"externref\",mutable:false},n)}})}async function w(t,a){let n=[];let r={};for(let{module:o,name:e}of h(t)){if(o in a){continue}let t=r[o];if(t===void 0){let e=[];t=e;r[o]=t;n.push((async()=>{let n=await import(o);let r={};for(let t of e){let e=t===\"__self__\"?n:n[t];r[t]=new WebAssembly.Global({value:\"externref\",mutable:false},e)}a[o]=r})())}t.push(e)}if(n.length===0){return}await Promise.all(n)}function h(e){let t=WebAssembly.Module.customSections(e,\"teavm.imports\");if(t.length!==1){return WebAssembly.Module.imports(e).filter(e=>e.kind===\"global\")}return JSON.parse((new TextDecoder).decode(t[0]))}async function r(e,t){if(!t){t={}}let n=t.nodejs||typeof process!==\"undefined\";let r=t.stackDeobfuscator||{};let o=r.infoLocation||\"auto\";let a=b(e,n);let[l,i,u]=await Promise.all([r.enabled?v(e,r,n):Promise.resolve(null),a,C(e,o,r,n)]);const s={};let c={};const f=y(s,c,t,i,await g());if(typeof t.installImports!==\"undefined\"){t.installImports(s)}if(!t.noAutoImports){await w(i,s)}let p=await WebAssembly.instantiate(i,s);f.supplyExports(p.exports);if(l){let e=o===\"auto\"||o===\"embedded\"?i:null;let t=A(e,u,l);if(t!==null){f.supplyStackDeobfuscator(t)}}let m={exports:c,instance:p,module:p.module};for(let t in p.exports){let e=p.exports[t];if(e instanceof WebAssembly.Global){Object.defineProperty(c,t,{get:()=>e.value})}}return m}async function b(e,t){if(typeof e!==\"string\"){return await WebAssembly.compile(e,{builtins:[\"js-string\"]})}let[n,r]=await j(e,t);let o=await WebAssembly.compileStreaming(n,{builtins:[\"js-string\"]});r();return o}let o=null;function g(){if(o===null){o=(async()=>{let n=new Int8Array([0,97,115,109,1,0,0,0,1,7,1,96,1,127,1,100,111,2,31,1,14,119,97,115,109,58,106,115,45,115,116,114,105,110,103,12,102,114,111,109,67,104,97,114,67,111,100,101,0,0,3,1,0,5,4,1,1,0,0,7,10,1,6,109,101,109,111,114,121,2,0,10,-127,-128,-128,0,0]);try{let e=new Response(n,{headers:{\"Content-Type\":\"application/wasm\"}});let t=await WebAssembly.compileStreaming(e,{builtins:[\"js-string\"]});await WebAssembly.instantiate(t,{},{builtins:[\"js-string\"]});return true}catch(e){return false}})()}return o}async function v(e,t,n){if(typeof e!==\"string\"&&!t.path){return null}try{const r={};const o=y(r,{},{},null,await g());const a=await x(t.path,e,n,r);o.supplyExports(a.exports);return a}catch(e){console.warn(\"Could not load deobfuscator\",e);return null}}async function x(e,t,n,r){if(typeof e===\"object\"){return await WebAssembly.instantiate(e,r,{builtins:[\"js-string\"]})}const o=e||t+\"-deobfuscator.wasm\";let[a,l]=await j(o,n);const{instance:i}=await WebAssembly.instantiateStreaming(a,r,{builtins:[\"js-string\"]});l();return i}async function j(r,e){let o;let a;if(!e){o=await fetch(r);a=()=>{}}else{let e=await J();let t=await e.open(r,\"r\");let n=await t.readableWebStream();o=new Response(n,{headers:{\"Content-Type\":\"application/wasm\"}});a=()=>t.close()}return[o,a]}let a;async function J(){if(!a){a=import(\"node:fs/promises\")}return await a}function A(e,t,n){let r=null;let o=false;function a(){if(!o){o=true;if(t!==null){try{r=n.exports.createFromExternalFile.value(t)}catch(e){console.warn(\"Could not load create deobfuscator\",e)}}if(r==null&&e!==null){try{r=n.exports.createForModule.value(e)}catch(e){console.warn(\"Could not create deobfuscator from module data\",e)}}}}return e=>{a();return r!==null?r.deobfuscate(e):[]}}async function C(e,t,n,r){if(!n.enabled){return null}if(typeof e!==\"string\"&&!n.externalInfoPath){return null}if(t!==\"auto\"&&t!==\"external\"){return null}if(typeof n.externalInfoPath===\"object\"){return n.externalInfoPath}let o=n.externalInfoPath||e+\".teadbg\";let a;if(!r){let e=await fetch(o);if(!e.ok){return null}a=await e.arrayBuffer()}else{let e=await J();a=(await e.readFile(o)).buffer}return new Int8Array(a)}return{load:r,defaults:y,wrapImport:t}})();", "\n", "/*\n * Shared Wasm-GC bootstrap for the page and worker realms.\n * Workers reuse a page-compiled module and queue messages until main is ready. Server\n * workers receive the full image; mesh workers receive the DCE-stripped mesh image.\n */\n(function () {\n\t\"use strict\";\n\n\tvar isWorkerRealm = (typeof importScripts === \"function\") && (typeof document === \"undefined\");\n\n\t// Instantiate a precompiled module through TeaVM's import glue.\n\tfunction instantiateWasmGC(module, options) {\n\t\toptions = options || {};\n\t\tvar imports = {};\n\t\tvar userExports = {};\n\t\tvar controller = TeaVM.wasmGC.defaults(imports, userExports, options, module);\n\t\tif (typeof options.installImports !== \"undefined\") {\n\t\t\toptions.installImports(imports);\n\t\t}\n\t\treturn WebAssembly.instantiate(module, imports).then(function (instance) {\n\t\t\tcontroller.supplyExports(instance.exports);\n\t\t\tfor (var key in instance.exports) {\n\t\t\t\t(function (v) {\n\t\t\t\t\tif (v instanceof WebAssembly.Global) {\n\t\t\t\t\t\tObject.defineProperty(userExports, key, { get: function () { return v.value; } });\n\t\t\t\t\t}\n\t\t\t\t})(instance.exports[key]);\n\t\t\t}\n\t\t\treturn { exports: userExports, instance: instance, module: module };\n\t\t});\n\t}\n\n\tif (!isWorkerRealm) {\n\t\t// Page entry point.\n\t\twindow.__eaglerWasmGCInstantiate = instantiateWasmGC;\n\t\treturn;\n\t}\n\n\t// TeaVM may construct WeakReference(null), which native WeakRef rejects.\n\t(function () {\n\t\tvar RealWeakRef = self.WeakRef;\n\t\tif (!RealWeakRef) { return; }\n\t\tself.WeakRef = class {\n\t\t\tconstructor(t) { try { this._r = new RealWeakRef(t); } catch (e) { this._r = { deref: function () { return t; } }; } }\n\t\t\tderef() { return this._r.deref(); }\n\t\t};\n\t})();\n\n\tvar queued = [];   // Messages received during instantiation.\n\tvar booting = false;\n\n\t// The worker role is unknown until its queued role message is replayed.\n\tfunction postBootError(msg) {\n\t\ttry { self.postMessage({ meta: \"mesh-worker:compile-boot-error:wasm-bootstrap: \" + msg }); } catch (e) {}\n\t\ttry { self.postMessage({ meta: \"server-worker:boot-error:wasm-bootstrap: \" + msg }); } catch (e) {}\n\t}\n\n\tfunction errString(e) {\n\t\ttry {\n\t\t\tvar stack = e && e.stack ? String(e.stack).split(\"\\n\") : [];\n\t\t\tvar stackLimit = self.__eaglerPerfEnabled === true ? 128 : 4;\n\t\t\treturn (e && (e.name + \": \" + e.message))\n\t\t\t\t\t+ (stack.length ? \" | \" + stack.slice(0, stackLimit).join(\" <- \") : \"\");\n\t\t} catch (x) { return String(e); }\n\t}\n\n\tself.onmessage = function (ev) {\n\t\tvar d = ev && ev.data;\n\t\tif (!booting && d && d.eaglerWasmBoot) {\n\t\t\tbooting = true;\n\t\t\tbootWasm(d.eaglerWasmBoot);\n\t\t} else {\n\t\t\t// Replay startup messages after main installs the real handler.\n\t\t\tqueued.push(ev);\n\t\t}\n\t};\n\n\tfunction bootWasm(boot) {\n\t\ttry {\n\t\t\tself.__eaglerPerfEnabled = boot.perfDebug === true;\n\t\t\tself.__eaglerChunkUnloadHardCap = boot.chunkUnloadHardCap === true;\n\t\t\tif (self.__eaglerPerfEnabled === true) {\n\t\t\t\t// ErrorEvent.error is not exposed reliably to the parent Worker object in\n\t\t\t\t// Chromium. Capture the exception inside the worker realm so a recursive\n\t\t\t\t// Wasm stack retains all function frames in local diagnostic builds.\n\t\t\t\tself.addEventListener(\"error\", function (evt) {\n\t\t\t\t\ttry {\n\t\t\t\t\t\tconsole.error(\"[wasm-worker] uncaught: \" + errString(evt && (evt.error || evt)));\n\t\t\t\t\t} catch (ignored) {}\n\t\t\t\t});\n\t\t\t}\n\t\t\tif (boot.logForward) {\n\t\t\t\t// Forward worker logs to the page when requested.\n\t\t\t\t(function () {\n\t\t\t\t\tvar _l = console.log, _e = console.error, _w = console.warn;\n\t\t\t\t\tfunction fwd(tag, a) {\n\t\t\t\t\t\ttry { self.postMessage({ meta: \"wlog:\" + tag + Array.prototype.join.call(a, \" \") }); } catch (x) {}\n\t\t\t\t\t}\n\t\t\t\t\tconsole.log = function () { fwd(\"L:\", arguments); _l.apply(console, arguments); };\n\t\t\t\t\tconsole.error = function () { fwd(\"E:\", arguments); _e.apply(console, arguments); };\n\t\t\t\t\tconsole.warn = function () { fwd(\"W:\", arguments); _w.apply(console, arguments); };\n\t\t\t\t})();\n\t\t\t}\n\t\t\tif (!boot.module) {\n\t\t\t\tpostBootError(\"boot payload has no WebAssembly.Module\");\n\t\t\t\treturn;\n\t\t\t}\n\t\t\t// Single-file builds load the runtime before this script.\n\t\t\tif (typeof TeaVM === \"undefined\" || !TeaVM.wasmGC || !TeaVM.wasmGC.defaults) {\n\t\t\t\timportScripts(boot.runtime || \"classes.wasm-runtime.js\");\n\t\t\t}\n\t\t\tif (typeof TeaVM === \"undefined\" || !TeaVM.wasmGC || !TeaVM.wasmGC.defaults) {\n\t\t\t\tpostBootError(\"runtime js did not define TeaVM.wasmGC.defaults\");\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tconsole.log(\"[wasm-worker] runtime loaded, instantiating shared module...\");\n\t\t\tinstantiateWasmGC(boot.module, { installImports: function (i) {} }).then(function (tv) {\n\t\t\t\tvar main = tv.exports && tv.exports.main;\n\t\t\t\tif (typeof main !== \"function\") {\n\t\t\t\t\tpostBootError(\"no exports.main after instantiation\");\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\tconsole.log(\"[wasm-worker] instantiated; entering main(\" + JSON.stringify(boot.args || [\"_worker_process_\"]) + \")\");\n\t\t\t\tmain(boot.args || [\"_worker_process_\"]);\n\t\t\t\t// main installs the worker handler synchronously.\n\t\t\t\tvar q = queued;\n\t\t\t\tqueued = [];\n\t\t\t\tfor (var k = 0; k < q.length; ++k) {\n\t\t\t\t\ttry { self.onmessage(q[k]); } catch (e) { console.error(\"[wasm-worker] replay handler threw: \" + errString(e)); }\n\t\t\t\t}\n\t\t\t}).catch(function (e) {\n\t\t\t\tpostBootError(\"instantiate/main failed: \" + errString(e));\n\t\t\t});\n\t\t} catch (e) {\n\t\t\tpostBootError(\"bootstrap threw: \" + errString(e));\n\t\t}\n\t}\n})();\n"
+  ], { type: "text/javascript" }));
+};
+</script>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0" />
+	<title>Eaglercraft 26.2 u1</title>
+	<link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAIAAABMXPacAAAuEklEQVR42sV92bMsyXlX5VZbr2e9+507d+5IMxppPLLxKtsyiwOHieCdV/4CCBy8EPDEA2/wBkE4DJgIQPBgsLEAhU3YAmHZsoSW0Yw0+3aXs3af7q49F77M7HOmb1d3VdZ4IsjpOdHVt7Iy8/t9+5dVhf7p7/868nSTSpVCcim9lVbmPEtKISRCyNvSlPK4hO7eVYNTd8fRtf2YUSylUmq9C8bIU16aV9N5XnKBrjoij/kYPgjpy7o3GCNNeVEI6LVxpvZ33ydhSNfWIlT7WNK01V8CSoa9MPIZMqTbMCIsE5ZDCCWk4cron/3+r2vSSynkhusghISQRVblWaWkgsO1VQkJC9hMkcCn+zvR7igkGIlLfOwV8qKaJ0VWcGXQqsPDfERZNxjgZM5VlvGyXIXBXkGTPggIodjbOFtNRE9tWYjcxER25iGjwzgIN8FACWaEYIRU87T/yX/561xKfbntC4P/RSXztCxybtZWJ/2WqSsvDtnBbrQzDDBGSgHp+cUiz3LueWtwrq8PU+T7mFDkOTd7vaqSWSaqSthFUYqDgDKGLRiXrR2GOunrzf4rAAAwgDTYXwjGjGrau3AP+se/86vOa0Oci3ReZrkQUv/S3ixfKK/f8/fHISCdZKWVJKe+UgEA/T4zZFDIQ45TRQgBDItFFYYUeF/p5qzNPMNbQrj3sZcHAHb64TAKAQDlufYmf/VvPXAkpaGkR32t1aRUwvB/a1+EEEaIV2I+z/OcY4yMXDotKQzo/qg3jCOfUvjB2CeEHBgF2D9POTeKFSE7oiv1FbS2YeqjMoK1wTOThMEoITCuC6OQn/sbtwlARnEz6TXFL8WRUhRGlFIMGMDvDQMhQBgpjDxsBoPunEvdBSOsf9pKem0/RvHeKIYvcEwJCZlPMZFKCWVg2LIezlW6qJJ5xSs9VyFUVQrBpQvwUnl2iUu+wQhaK1MSgmKfxiGjhoZciAwG56IZBoy0XUzykvz0r90qC64XSQkMWR9Ar3mTmaeMhJHuIriFAdVJXyeyJQrneqXYwPC0hKkr0gP7q6cNIyMkYgz+CqVdBk2kK9JjJIQm/WJeVqU0YHxsFQRXZXEFg+5WJ31N47TAoJR2FkKfAOkZxatd0Mcw8DoM9ntS8ousKCpOfuFv3oVjYJOqEIasesAV0rfoMhaQIIQBNAzGPtdJX1/VJQyVNv52hdCZUbI36u2PV0lfb1YaGCAvpG4IIylUllSLWQWrQN4aueowKEwwIaiB9M0wwOkIWdJTn5EtXSwM0sCgZ0VhUMNtmSF9VlTKnvb3/uWXVsWfMhL1GKa4xXDV3SQu85SXOYeruCtQq2+jmO7v9ka9EGMkpdOoGCGpVF5V5xfpxTS3/Og4IpwcxSzu+5WouX8OFsI36p4SBMcuc7WA+ZQwTCupSi5WB10FwAqz/ksp9kNCCIJTXQaBTnipggUwY1EI6NUCg1ri3eszgJxRElIaUGqlwY0cyjqds0U+uciqSiDdWlwy5IFb5Q+Hke+TohJZWXEu250CQ8iA0ThgvvZBZCWEkNLVexQyTau85IyC3Pi+v1zmCgBWxNBTYQZl2A8IbvRnkUVtzRMvZZpoXbzNTVLav8S9vg8fDDBDs3hoLd8Og7JtOaKee8nl9CKdznJuFP02hz3uBeNRGIbMDmdHySsOCsFG+9tIzyjpBSzQCkd3secJJbmQDTAghACqLOd5weGsy7hSXy0yMBgV9Ju/aEm/xc54jBEWENN5M+nrzaxEK9w0qbhhzDXSx33W6/mkpujsV0ZwxFhAYbXrMFwitdHZ9cpKgChMZ5kQ2sKvkj6K2GgUxbEP39e03BKGkmflGgyWJzBwfcg28EQNhto1C55lXNQcxSUMjISBj37jt37Ja2xWvYIoXOYGmkhfn0Shs0mVCRoUIUB6P+4x2mhj7M8+IbGvfZ4rureaJauCipJPphnoJSE1qwYBBdL3egFC66TfBoPtiBGKAhr5DNdIX4eBS4Bh6S2aOYg0483Kzar3GgCNDm8QEkqNN+2eosFISe0gQq/BKGgmfT3Z4lPtehKEaozf4rTkRXV0uggjNh5F8KO7bYdRZ0khhdwZRqitY10aQJvNF6XJMDrF+9hzaxhrMytKyUuhBADnSAutcyRXjGJGiTQRgytyGnUdqpzOkovUsLNu7SMio4vmaVFJTY4kLR19JIw1zOBTnT5KTh4mJ8dJVUnrxLc3ZDxaCeDTEPQ7tYLb2s1BAmB4ghF5mu8JxfDBeOsYy4QdV6IyocSVGFEQI8p8bA6bY295hZaN2kLG4kBHAHC4ETATjklIcU/mmbXGSwMQsuEggr/wfWNfC89iXpyepMmitK4LjO77ZHcv2tuLqPF8Nk4YGdJzIblQq9qsrHiWlwBhc8IG/YN//yu8UoLLNtLXGtIwUFpLGpuzpdCktxSsE5cyrLUZszBsIX2tGRhw7LMoWNfLNoC4AH90lpU1f/TSDvvjYRT6VK3AgLC23mlSnZ4k81lhZWUtBxOGFDAY74T06fKGJQuXitdSBTUYhFfTSAQjrVz/0X/8yzZKBKykUK2kr4NkpcFeXTWQvlYeMTBQQm3g3UR6aGueSeQz+CDd9C+gtYH0ecmRWWhDQBRH/nAQ2mAbYy/P+dmJDuWk1ELWkFcPAwtDRKmJFpUlvarRvgkGOLSo+xTb3BT6h1/RANg580qnriiBE1pIXxdhwjB0ENyg6NYsDMwnfkjgsCbjLTAwooMazsX5RZblFXKzetJ48eAUjQbh5DSbnGdSKEyQy4hSekFADg56o3FYCSnc7Zn1yyuRpIV2KVdEH1+ZcGmSM6LSNtP82KkGIkB+5/MCrmB/ce9bVHKR8LxWTWxdEldyURSLohTKBl9unY2SAfACyiKd5ybWwXUlI/IKwZNShwydK0WlLFJRZIJzdfWjVkFSqDKXlV6IZzkfE8RMNQp5bWZWKs6FEOqpUhzF2KEepOAchFYvyCiixGqVNlfnMjtm/5Qlz00x0vyylfeh06AX7o1j37cqSFcOzs/S09PE1iq29pWKMTzcCXpD39obM5C1IKg1NMmyanaRFwX3vOWc/YBEEaUMob//r3+ZF0JuqnARA0M9I4TQ0jpVlvSbGjP22ZjKFtLXieszRLCFoYH0deb0yoKnWWWkcJPaiYO9cS+6zENcdbQwnJwkpycL+IL1rJ+uyhE0GAeDkU9MyWWVFA0wWJUIPAGkT9NqrQRrxV0nkv/OP/9Ss+BTipmPDEevkl4KIVvljlFCCTa9aqRvMyo+RSYKvuyLlonrdotXiDQrBZf2ELqD4d0dx/048JQGY1vsBhwKonB2mlgYLMl6AwaMzxrrmnUYMEZcyMWsWCwKWyzZagX/7r/4kosKAxgoQ9rhtaR3bqYioS0+fIOPcu9pRZAaacA1A+uSAskqRsnOMB70w3oeYhsMWaZd0uk0YwEe7QZBSGvppxYYAGYIJrRF5LI1AKQuvorleqJDWcFNxOBcRtZRM/NR1GcllxVXXfY4LAuKlOiCgQ1TPeU0qJFuqjwUB6xG/RY/J47Z4fW+JIIyXKO+wxU8wSuVpEYE28nULAG2Cs9QGBE/IFebPoy5a4bBTlrnjiDrGQQ2r6kVV15IIdqUkA3lpFRcQbPWMghtBRQ3k8OqO5gk5/IqxT3o+f0oaK72LNPaYJNn6cU8s0EDpTgKmV67mX837y4XyVyXRloi4d/4zV/SuAlVo6ApvseW9Ppw9eplITKd7auT0p6pg/hePwhDasFYpQ6Al5eyoZqvpJJCwt/1pCxBoYZhc7XAXpwbOYO+a2WsgJFBHMShjxGqmwFiVPZ0nk1mqdUba3njOGKwIq8TDFhPCGCAMnVZbIiEkQ0af+1vP/fsS3uDnZBzu2absdFcH4SW9FsZrcg1DIaUK9P1CZScgPTbpmsUgk7YAhIw4FrOQNppbGl2blFEV9lCf7kK5rf0tRX/0Kd6P2Hw8UY2KxazBGpqaVFyBPhsCRgtDPBX/9ApGaxUnvJkUV1VqKxDwSs5O8vQCz+3E8Ts2Zd27724ywKipAos6bGn2mztsuKTcUBCKZgijnssipgetd3i6RiiKGRZWdgN17tF0TabFMV0mU2SmvTCoa+lXBgwqD8DGECIRVqcTZNaIN20uxQWSAn2ujQLc55pGOALfJJpcXGWVaVAn//lfaWDKTncDV/62WvPv7yHCbJYuW9DK0wkMRjYIKWbruRcpQBhxu0vjs0mxcajwA/oLCn0Ip06r25roJyLeZKrLn2tuOtsUkjtSt2bZZcP37o4fjgvcm5jNA3A1XYdjLxb94ef//nrB7f7Llkdq0zgTBNbI2pSzXSZXHOkxZIvAfKsoYRU26oU+GR/HO8OIoTRPCsm8zyvuEs2SCsfvVjJTfoYd1Eo0hSHh31tSzTFpOSGERxzZRen+et/fnzyaLF3M7qcqAFg9TxRSTj1wct7n/uZw/4oqKpVjVy3eGZvj3paSAMShqQ1FWFdlHWjUgiQ0wY3SUjlU7w7ivZGMWPYLn+Zi06KaWI2u0NryJ2ITfvAlW7NpCcYD3oBRHOE6OEslqoFBpv0JSDfb/3g7M3vn+Yph2TGwa0ITt8MwJKypYDzXvzpwwc/sc98otPZajPp6+3KawyWdrKZ9HWjovKcg4SuZUdsunh3GO3v6P2KcAhtzYmshJwmxcVCd4bDGnhSiBqh22Cw+qoX+YN+wGg9Hl6FQaz9EzUs8sEb0x9952R2llsVFA/YzvVISbUVANNMWp/LvRu9l790/dZzI5Pol7bIxU1l0aWGHEbUXyl+wd92iUf6PyG0RioLYb0XmNSoHx7sxHHEpGzAT8NQVGKS5GAYbPbN8q8QNQepDQY72TBgMHQQ0AYhWSnO6HGsx0wIOnmUvPat46MPFnAIH+svuAJgm62U3X5+DIZhvB9p/cA7WB7rGgEMhCKlebZj/pbLLOEBJYd7PeBBx9q6NW55yc/n2SwtORde52brDWikK2j1QmYjDEgblul5Blz/wRsTwRVleDXE6Y388WG4GQCENhevq1L4Ibn/hf3nvrAf9RivRNt86k40DhwMQz0+gj4RW9YgNRk69k3y6vH5fJZ2cJP0ONIrU0E8tH8Qx31mFaML+SnBnMtHH1x8708enx9lZj/VuhM13A1Ge4F0BmAVPAVm+cHLB3c+MyYU80p2EgWMPd+/iqvbuZhhTDC+OjlgNGTrqYgGRaT7LsNRb7LIHp8vAAxc95PqnkUhq0wosTRVvb6/ux/3eqxZ/gjBcP7J48V7b51DEnR6lBeZQHoK3QHYuiqKpFDw2b0ef/anrh3e7gMmtfCn3TAABsyHYbbF2IhiTLE5oW7bGalvUqszfv1HIdXpLD2aaD9pQ1bbHIpSk15WykNrjr/eTrp3EIfRhtwcxlq/X0zyd984OztO7P0gZ4/TPOF1AJRUo4NwMPY/BuClX9qDPo4AXBkGhNGt+6MHrxyO9kKuXdVuMFC63ONlDlfq+whTQjD82GzbGfXpuiQtuR41iAXmQhxPk+OptgwYTrY236YxMgEAeFt2S1sfbDAMQBpg5so4AnZDQpbyD94+f/zhTHAJh5aHGgDYuRb2hgYAq59f+PldhO3+9yYAoBGGVhOlQHc/Ivdf2odUUhDRT2YYQBoIQZqsGDPNuki5dDf7RwEGRollX9JWq1nFOK/4k8nibJYJKaEPkJ7nlvQO96wRPBwBDFEQUqAA0P2DdyZZWq3dfnPyUWrvE9kKgFD6I5UGYFWUCGkCoO4qwCSGO+HzXzwEgQAgjdfUDYYopj2t3cmabDt6OzrjH/rQU7r2trKC5nn5/pPp2ZO0tiuiHQZm7jc++mgG3o6pF9nu7QAAzvvXDXhcWjG/AsAcYM2VCCFHAGyzGYvDO4PnXzkA82CxdSx42dI/DMkIoYYMyo30Uqms5PCBLuNeuD+IAkakasfQri6vqqziZtt+eX6aQcbYaVeLjVG4zNIyXZRVLq6QawcAaQ+VLdDoZogHyJMbK2LK2pwlczk2TDQLnD5anB8lt54bg6vaGwXCZJUb9DgLMKV6FMu8OecESw0HNoahsdxoSS+ksonos3kGueS9QbTbDxkx+YmGGyi5SMqy4MLqLqgXxbEPAJydplnalBO1zmiWlUVWWYUBn42j6IhYKvQ06UmJoilmc4wOr3RdTQKgUXZlkNcHIHTrDgxrRUycLIOI3v/83t3P7jCfGEFb92SYjxoeRkAw9k0lX6lNZSYus4JXQtrD9aoLJfvDeNwL8NOeu618cCmToswrXtf2y6rARXF+mhaFQLrVa/0cEJIwtG7aBIIEeGgDAIIrkACAQZMee1h4wYyEM4y4p4hHX6GoByi1ALAaGyNHAK7sjOBquB9CxHDjmaGHNCo2DqAMM79pS+/qDZHL+/zVZVQsZFrwUkhL0IaqSxyww2EMhsEmIS71VZWWul6zncE9Y8MUqPXJeW63EWJshKYUOXReudPEBQDrk/gJBsYnJVLWt8MGgLgZgPrMtJZ2BeAquQ30OLg9+MwrBzvXYqy7e+6RsM3RaxgwEVJlFS8uHz3guPkQjMLBMIp9llUVMD4X66RvgKEq5XSSzWdlkXMgfVnbtdcKwPGjFKdeNCUs02cYfeQGANF6eUt8xDDCW1XzRnMEs4Ret58bQSoJCj56JV2LGBgXlSprdQInX4XiYcz03Lp0tttVi4z/+NXT2Tz3jAzVz6kKwUtZBwATVKZi/lqhdY70FH6KrZCPAACPwfeOAFg2J1RzujsAts3P8iBiP/HLNz7zxQMWEJBoTzk5i1cSJxRgoDrV2hhBGC93tDNCfOqUAqFm79uH71y89p0jwOD6vb7t4gKApVuei+K08t9ACm+QaxQYAOgnAsASBP5gomFwBADOz+ZVkQoh5LU7/Ve+fOvuC2MbxzVtb/LQhiyNVBVXAAZqu52EEt1fPa3QAANGtsJgYiB8/Hjx+neOnny0gP5xj+3fitsBsKTXv8jUVN5x4YXvAvkdAEAeFOV3VxerZ4ibAFiN2hByBQAmh9CS6LAB4ItfvrV3M+bVetUTXaLctOdHqEpIqTacRIhHCcJbSKxMwBxQSsnTKRAAjGLIoP3oeyfvvXFuE8japwqpCwDQXXIgvS5ra1NBPLJA/vubFgGnDxF9mXrqY2tBtV9lYrmuGtbE5ZbudnXIsSr9zg/OHr518cJPH4JhgOR4ZU2cjWwbL2Jp4VNEMSmF5CvgEWxIj225bXs1WGp3iBAcaBSQmRIpC/H6q8dv/uA0TUo4pAy53TLvITNctqiyhEth4ydLnRZ6WE7KE1HknFrHEZqGoaOls09LsQmMJg2L1h8vIbj87h8/evfV85/48s3nTdVTlLJTAiNkWBBtGKBRggi2RHGctkxFGQbUp/Sjdy9++O2jyWlKKIZprJGp5VbAQmQLbiNeR8ohbKVHAmaCa8zoFaZGuSps03Jd0mqCKwkfqSnrqc1PiKvbcz8ki1n5v37nHYDhJ7986+b9kSmCusNg1DpDRnq6uVbYeBMnT5K3vn92+jgBkhjS1x/ZhS2vbgiJuZxPy3RebcZJbRUcSbxkwctUoMuOeD1XpBrkbqtsc64uTvLFpAAYnLWZTUiQJx/Ov/aVN77+u+/MJjmggt26q5WH7Sm9CuTuYpY5f/VPjr751fefvDcnFBOCutxppHXOxXlRZBxtor5CHuIe2jK6qGSZC2u0bcMt6LkRAxuvA4zt9CiD+XnOImk9P8Dsje+e/P6/ef07f/SwqoSpmrU82U2qGhe0waBNK1igV8/+9++99/b3z+AK1Med9p8BcrPzAlwdZYdH3UlFVilTB6BednVv1h8QanFegDRotwe72RS7m8jEB9/+o4+++ts/eusHp5hgyvAG0sOnJomtMBCqr3b84QK4/gffeJKnnPrOwdllimI+LUDt2Ntv6pzqDoDqfKd8dxiA+rALDJAQQrlrJGwMA+yY/OP//M7X/sOPjz5csIBc6QdLeufNCfjK2DCfzCf5t//woz/72oeT44z6y1KYe4E+nZcX57lVHa2wIeWhqotB6khf13lbXTk9zkEvtbiXdW718cN3Zv/j3/3o/3z1vWRespAohLpKJkKYMsJL+fq3jr/xX9+HC2pvjeIORp4gIPrsPIeFWDF1bcqF3g02QG0mvRJKas9pq1tWd3Wgy3xSJrOqq8AyX3sgr/350e/+q9e+8/VHgksWENQFRej+6N35n37twx9/+1gKaRWaO/XNrcsw+UIvuVMqCTe5IYrWAXC8uBH/IqnKzKYG66KxEZllgYILJUQ3+2INQ5GKP/vaB2Cf33vt3Kry1uoQpXhykn3v6w9f/9ZRnlTUJ84UtOEV6g3ZcNfHBG2Np7YoQ6xnSLB05jcMEy6QoZ7zbvJCFIvKROGd3AD7RAsdLnRqhGrDMDlO//A/vfkHX3kD3HY4xARty9eCunjtW0dAfcAADnEX0kMLYzLa9cOYdjWzMBIgTagZTjTZJrTyHSceDiY4mGLEkU1xORRV9TllyouEK6OROjUhFXfLSdfdmPd/PPnqb7/+zf/+fp5wP1xNRZltsEK++9o5OLKP3p0hhKCLXY6jcLMAD3cD4H37CLVOkkqgEzNYq7YEBrl0RoXnP0bhB1gjQnMUnWM/qUlcIwyykrnRSEsDhboEz1YjdTYMBKD7/jce/95v/fDVbz6xt0PZDPmT9+ff/qOHb//gjJcCwOg0GUxRf8SGOz5lSBkw3CWGUM34GCNXI2xL8+cI0qVsguDQsImBzp/jcIJxgRqwXivzW42UG42kTW6XENpqJCFVR3bTGgn0DDhI/+3f/ujhOxdgJwGSH/7pk3RWmpKRO+21wYz6FBg/iGid9A3lB1Nm8DTpKa6nPL1qq8ZHlRd+gILHCPFlrQavxtC4QqCOVFUbuFUjZZzNEeVIddVIwmaJu3XDZn/j8UeLP/jKm9/6nx+dP0kIxZh0uwgiKB74vQFD+BOEn6imc5waqB0yR2olWKQ1N9+4m3BOpxw18iiAl9IikkUoJEDd0YLBJWRHabAekRTK93GHfkqT3sgKRkbddyOiqt+72DE+wK1xgPTswiSXqwtDqClFa3k/yHB/Rv0CW2XXzZTVCm0uvbp6AdQnfkit6uhO+jbqI+0CId7BIrY9NN3lAUwWNawsDEiieEF6M9pZI1lnjmJnGDq7Un5Eid+d9J4lve3V1lt1uzh1GFsJ1U0jKaORAIMykEUkJO4MA7Q2jeTeFEBKGMEUdaWOh7rrnK48VwcQcVT/0e74xKqmWJo1Un6pkXTrrJHgU+O3zheiPmEhNdR372SVsKfgI7tNW/FuE+6UIVHBgsDH8zrAgCQKEyz5dm5WjffJ+JiFnZXGSioUAwBbutftx9VDBNQUMuq56Pz4tVRkk8qTcOxK0s68GaQ4nlJa4rVUhCKqAQYYaZs5kbI1I4SjHiGsGwsT+7wn1ALwGmBw8mJanj9O8wVvptxavgswS6ZVOheOWtPumRz3I7pBBYmGeZtwgaPogvAAFT0piap5nM7mxD1BRlAYE1hk1fa0G2RYGHWUGXNBVKR8MSmrQiDnGdpnBeSJWOYosVsIbTawjnsho4R2i7mIWZYZhhWYVLiMRRVKDzkYsxVzgqCHQ46y/uQiQnWKvyrlpofc2d1KXsdmdY5cTIvMcP0V6RFq1zllJotEWJ5AyNCGe2i7pZTmaZuj3vJhB3KrCkJu+l154YLEF5RUTWKAFEJy9YqrGqlbEgkaC3DYo/Tp4Athj9DO1LcMu7gozx5npnC0QnT9fcuikO4oOOgcns7sjiDHp4uoYRxc2+n1Ql+ZtskNhZUkSDFPhmZ01Q4DUD+aUswQIp7dPu+ukfSH1s532RcUYU61tURmd4UjimuKu0rFYlKUmUDIWSsSnc8pZjIpKyWdwkBlVjnqRbvDSEppGb/JC0LcY6eInSMk1v9d4c0YwCCBR3YGcRQwM2QHairZwEGNt0sybRiojxDuRHpDxNKj73vFR7zQaUQ3/LD5nCv0uhQnQqEtTpREq5MWUhKC793YffHZw34cGDlodUORuVCC2DEmi6fLNbiJUgShQRyOtG3BHatfdstYx/qqcgG4RkTl4SOPvqnwmTJy4IqZl3vobYnekl6qGuiA1MfqXkq1P+q9dP/6jf2hBkOILnEA1u4QnSB2glFpTkRuLxliFLwrQBvW1h2GTpFkZ8bHc4++pchD5Ql96NSI8QwfSfS68M4M6XE7HYSQoU+fv7v//J39kFE4tE8ZdgCgLgqF559gOkWebDgdyUurYv/Ggb/TB1PP9KFqdAx0z+75te46h7yvyDsKpfrQLk1R1VT7wEifeaHQj6T34QpmyKhitXU5cO2bB8OXnr2+N+oJ2fJ4dazckhtkhvxjjDgytFQbTc3aISFo2AvB+FBcG8VZI3VvDTrHVmId80e6roLekegN6SXKYNZiCz3NomrIghfvXXvmxi4hWAjZpA9t1MIIVsptJYUMqn54cBdRpqRw0b/2rcI7/SgW1IND1B0Gz51qm0ziAkjfTedYZetPkdY5x8pxdIAESS8+w7f94XAYig2vIFy/wwcjVHGJtb6OfCd9bcjn93fi68/5w33dQUkHGPQawpwMZpRVWGOAOvCvKpR4T6hsyYMda+WInHlo4Tn2tbqFZCh+RMIj7HEnzBTSnyDFo2MazYl1Ol02+c7S4niaaHBBVY/BaDLajIHWPpJLwREh4d6t6No9GsRaFJaqv3mWinDUW5BeQrBECnUJv+dKvC3kY+nOxZggYurD7tJjWTg8xUB9mtqqYRPRr3oRjoZnZHBG4AuMxSjZTAu1zP+Y5/Pyk2kyWWTLZJy9x2HUj0Bl47ZX2OkraZQFBcm5dj/cveFhrMuYpjWlIqwAFTpBHeTYLsNdj8sjCTCoiWz2QxBGhHWsDyP9YXPU+4gEE2zI2sbyWNnJRzM8PqZ+iq0cNDwWSlkiKAV0B8YvKm7PxKv6OvTZziCKAuZyt4ndY+WPDns3nqPxqKGDhh1rKl4lMOKU9Be2ZNbBk1GlEh/IbRrJZkBrNxm26xxcougxiZ8QVCGFnRKZ0lN+gUYntDclmiGx0wqyojqaLEDzrCZi8Xp62gRTkKijZEMwVbsFS4sCpkF0+Ey4f8vzupXM+nMKSGgQsDMM2FOzVY1U0znOTZNReuEZ7j0kLEHKLQSpuAAG3cmCwQmhpe5Vz8VuZEEu5NksrbhcExG8NZgaRDZjtwqDkkLVMiCGIRSJBp2SYZb3wwLHE6Km1tnoppH421xOJELddY6SSko23IunUXiKPOnCwvapl/LZm7t/5YvP7XgmqYA2EJpu8SptnAQnOAViyly8HwXj/vJ97i4xv+q6UcZqJOHJh1J+IFVuFIt7bqDQHbGn7VoXvueYhf07L/TvfI4oqpBqHdE8eF8M4/AXX773Cy89EzCSlhX6lMJF3Dwwo2TUDwfLvILXubkrloWS70r5RKuFDhqpC+ImdkHh/t3B/Vf88TWAQjl0tg+ZeOnZa3/tpx7cORxz+/aq7iVu3VFLgBMAtXfQ6byCfV6tMMv4JEUPF8WiTjQMauZ02517s24b640H974Q33gOEapE+yrsW4qu7fRB57zy4CYlGA6bByEYU0JU0+NgnQGo5xVAFIZx4EmBEO5Ogg6ujvxQyo+kVzbPzp3xOaKsd/P5/r0v0HikBPeUE+MDw/3Mi3d+5ZX7e6O4guOVN2JuI7F5ilMHrmgBoO7+hIyW5w/L2amHUA0GrDDdRmifEfvcHleNdKHEuwIEAnqpLnqmfldPsHNjeP+VYO+WljApXLxMIdXtg9Gv/qUHn7m9D534SkrHvDaaV5VAHlpLusShvz+K8SZlDSeXT+/KlyZJczju4c6FJCnys4fZ0XuizBAmLjkzKSVEec9c34kDJqVyTT1JD0yCeiR9SlRXCJCu9amJjIcPendfwDRQgrdewz5bHSb5mTv7L9477IW+pppqB4wStDfs7Q97PtUEUY2VCesLQX7sYNTzGcXd7QmAgHm2SJ+8U0yP4HouUgejRgG7e318bbdPMJLSVRS8whtF4bAXEBOiu+72E554i1ff5xj3lpFTW7NPoLt9OPrcs9d2hrHLw77tfAZRAHaiFzIr36hRhUgT7V4b90CZN+0Lal2oIboqJk/SJ+8CGK2ioJaOsAf69JkbO8N+aA6dYICZRyZEb693Ym1F5LGsvlOJ94VZhtx6WcnhY190I6Qc90Mg/d3rOxhjIdsq2zZaohQKXruDCOM27WoUF8Le3iA+GPcoJXB+095QRvQkhFT1zAZaFQZMZJmCOmKDXX983cMMeekmvxpJKa8YjVFya38Iru3pZFFUwmUrrrwM0UNfLLKi4kITqG7AF9pyyBOpD2m7e29J7/sMNP7BTt86i1dPO96mAPTwUlqXZO2dTBths9ERJfj6Tj9gdA0qvNH96kX+3cNx5FP4XmN9XH/+B5jl9MnbvMzg0HGXAGgVEAUQCMcivrqMS0z+PECrGoloRoccUfV/K0194pbB18ldBXSH0tW1vQFc3eFVexpZbiq9kK2xnLF6yfrLFuEHIdTZRcK58JllfIeiPGAMGNy7vgPyshymsRlRyGWRNSui+tOYD3f7EN1Qgju5bnHog0YKfGof1CHPZfXdChJEzvlqpMyMH9zefXB7P2BEOARX9lGYxxfpLC1Cn7bTxLQkK08g/5mX2/iMNr8uCHYRDWL/yDz7HenW4WYJx5JZFDJGMBc1rdIS8qBRLyylEG8JOVVa1VPn3VhK+ovHYXE23ulLB9fYrnuRl5Mk48KKYvNabbVLzBZ5XlaoRjiXXNDyr5DaAN69NgZDjzGybNugqT9ZlNq92zIa8jHxzpVrQKlDCkLKeTR5K1g88ZQL8e17UcXxRXKi1YgiWg62esUYmqH1Ii1OpwtL/fZcUN2eCfHx5GzW72Ac37s+Bmlo8F5aKjnw+bSbeyipEEGSh/MPo+m7hGcKt6T9yKU6nyUFvPwBaGn5uMliaZ9SlVycTZMLXe3yXGQaTxdZWbWIvzLeS8DoncPRM4djRikXsivD/n9rCMOH5WfA+Cw7VVoO2kEDAArOn0yT03kqjA/WmulD1K9o//R8VlbcXZ3qBNNFki+yp8o0G9lcGT8BIqmffP4m/K3teGn3fLZ4aYgQ1B0gN8cJYVRl4cU74exDJCuFyOoTz6CpLRp8luXA+KBDsEtEIDgd7Pce/KzX35fWmDm35fVTsDDzzEJnkzbb3nbKzZ6vl5659rlnDkL2lCgo1fTayNmiKEpeN0jIAv9pNxiRYBzlp8D4tJir2qa75kHzUmysn9QqVBwRGt7+XPzsT5F4qKrM69joas1smuSRT+PQJ41CKo1Cv747AF/w3ceTx2dzS+XWl9Et0rKsRBwxgvEnML2dpA3mdufaTprO7XPsumdcmqC9unGSja4HNz+Lg77ONZl6wycvyCC0LBxP51leVK02BABjhHz27sEX7l/rhT4cKodVlZVxzorKHn7qTQjpM/Lcrf3P3j2MQ+ZUWOjelOCIheHdl6N7X8R+pERV84tc3RNc18hCKbDM0yQzWgi1ZG6FhLDwledvgKuKHIytTdYmWTVPCt7hZgLXOyAgpoXIFuI76RDZdm+WTRXbvR0/+Fm2ewfGgM9K6TJfYyurx/omadEEQF0pgyiczbNsGUe01C4Ixp+9s//czV2lpOMyKi7BKoDtUW36xKyhPY0MofsLzxzev7lHKYFD08Na/nYl424wy7JU4zvxvVcQDTYwfm2DbOCzfR3MhqpjIKakyZ1eJAX4SDYr1+IICF2RcOdoe2KWc9BIto/6RPedCykxRneu70AuE6oOwgjCaqS9jcM6edKGCZEOryYLQWMzLdlwb5dlmtEg2hvHjJKG161ipbZmj21yAYTgfJ6lZWUP3TWde7U69BnkFVwy/nXeh8oGVMwhj298LenCxVJ500V6epG6M37FxdmFDq+k2sYVSMubqCwdwoDtj/v9KDBM0GgDGMXN7ry1CiAH05oofIrtalOenbH7e/nu3dwFF8DeAeHyisO0qI6nC5BsStpdfHvCPMl15txo4xbvi1cYY0gY7I6WSf92dKEEAStf39mpNGOuyWxecrAKadFuFdxbfVPeqG825XUM8Vy4GDA6mwPjJxWXqPG1e3bJdhct5BVmSf503IA2YqU8HAZ0H6pjkb9Gz4bnXmBdKNgb3DoYMUrgvAZ9YlPwFymIQgbwrE0fzqZmTdszJU4Z/6C2Ke8v2JBpENTCvsxFVpojBzXleReLHKi/lldACGMWrKkghQkSZTR7exyqjYyvGsaSuqmBKY+Ma6JQb1YUzhdZUtReftbYy2ekNpWWTXnmDdYNXVzVN3D92SwVQsGhi5rKy+oM0EqXjN+WaCIsPY3PXmXpsdGfHeXedpAmcL+xP7h1uBQFzkUDNaHXLC0mi9yKgstYvYgN4oBgB0u7UvyCLrjhdb6tN0EkBTA+qE3syPhSTebp2TQF2Fo7KEyRKMPpm9H0TSx0omn7iyPkNq2gAVjNtQ1iIwrDsHXJtjp6Pk9Bus1hu4ZhjAx7YWhr627Fr17I7h6OoJdrEd+qbzO302kC2hL6uDA+0va5PJ0kqVZTLoyP/fRIM352ohBWLfZ5uwSsbfK1onBzfwTV2la+s9nEeQaikFVcUIIJwQ1CaL1jsFGg8SjGLvSUNg1+MII6PqXEaUoK1HcG6rtySwvbsu1klk4u0pbgXCmEiedHiGfR5Mfh9C1UY/wuMmr2FG1jPXOztauwl1yCVYgDH22duYGWIqWsesHDfpAVVV7w1vKetMm1fgju5gkw9WIjU9skgQ7gwWnhXGAHa2tPSbISHE27FcVhcwb2s9MwO0KicCe92B70GYcPtUqNU4YHfAzesIzaxePQH/YCR6SFVJSAaA5gu0Zotmts5OJz4GLuMgdlbyM9v0impuTS2gVOBg74zK2dfvbQkw2M796QXpSDYnWHobPvT40oJGmZl+3qwlqBfuzH4Q7EsWcXKcBguXiR1ri4LeYgGMF+Be5gbM0ocO/1CKwRwJacVMqTLX3cbYBlJfSpALBUwV1nhly2pdS3azxzfQzmpKoEIOHIxVaN+Iwe7vR9IwHttVgh45DBvdeQaiRmh7q2ZB0Lc/UcCbosfFJgPakUjIGdiyQNubNPFiGr7lsiBMw5YHf2h+CtAyRujG+fEhYOLvd1uexcunNtfGt/RAm29tnEJWrLwpfXdMtHaX+X2G1uRSkuruqFDnqmqAQ3a+66BejTrY1cJRgdGT/0GTD+KA4tGK2M34/8l+5dg91pAIOQstWPSvOyAftVFzkrOUQn87T4eFuKMvVCiFhkuyAjKaXZcsQ77cWqldjcelmd43VvyKK+ZPzdfgS7/HyHBJkdDhj/8/evQ/zBhQa6OXLOiupEZ+s43lJDtsxnMxzgsp+YfBQcGglYZe1SzOA6be6zld9E271SrIoC0mNsmyjM0gpZNwD+AoUtIXWLA2b29wXKtNbCDjhmn3/2OjD+xvy2vcZq5AzmB1wp6IgxaooNsY4Nj819wsZYXuJXDw2ArElWGsZpLfByAEyLwtWPjZw1T4okLeyV3VvtfPf3CRN938SoRwmRbhr/3o0dqGgOYp+LzT2kBeCyaAiRc9Kc4DO/2yrvMcSGJkB5SoA2UjbX4QwAtlHxWZZHq6KwSDVgLn4qoAVXLivp7tvOsgLm0lVxAd1ffOawHzNlWivGICKg8WGnMBwJqdqUm7qYZ8D4q5EzQWijeQCEjs7Xb5C33wnC/w+Nf3V2SRhiKgAAAABJRU5ErkJggg==" />
+	<style>
+		#loading_screen {
+			transition: opacity 180ms linear;
+		}
+		#loading_screen.is-ready {
+			opacity: 0;
+			pointer-events: none;
+		}
+		#boot_image {
+			display: block;
+			width: min(100vmin, 512px);
+			height: min(100vmin, 512px);
+			object-fit: contain;
+			image-rendering: pixelated;
+		}
+		#boot_status {
+			position: fixed;
+			left: 16px;
+			right: 16px;
+			bottom: max(18px, 4vh);
+			text-align: center;
+			font: 14px/1.35 ui-monospace, "Cascadia Mono", "DejaVu Sans Mono", monospace;
+			color: #4a4a4a;
+		}
+		#mojang_stage {
+			display: none;
+			width: min(75vw, 640px);
+			aspect-ratio: 4 / 1;
+		}
+		#mojang_stage .half {
+			display: block;
+			width: calc(50% + 1px);
+			height: 100%;
+			background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAMAAADDpiTIAAADAFBMVEUAAAD///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8HPQsIAAAA/3RSTlMAAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMkJSYnKCkqKywtLi8wMTIzNDU2Nzg5Ojs8PT4/QEFCQ0RFRkdISUpLTE1OT1BRUlNUVVZXWFlaW1xdXl9gYWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXp7fH1+f4CBgoOEhYaHiImKi4yNjo+QkZKTlJWWl5iZmpucnZ6foKGio6SlpqeoqaqrrK2ur7CxsrO0tba3uLm6u7y9vr/AwcLDxMXGx8jJysvMzc7P0NHS09TV1tfY2drb3N3e3+Dh4uPk5ebn6Onq6+zt7u/w8fLz9PX29/j5+vv8/f7rCNk1AAAhHUlEQVR42uzY20uTcRzH8e+maKbVJhbTooY1T0OUCCR3oyEdDC0przpAXnb0prSLyEAhiCjIborEgg4oCOWFmJll0IXNEIUorExLO81pK3rmnPt25UVg1J7f6Vn7vv6G98WHDxBCCCGEEEIIIYREB1Oaa0/t+eb2p2738JsXbvejtisN1TvzLUD+e4lF1U1uDRfm6b5QlWuGqJDR/tWrVK8LZFtScbFvFv9muuPUxhiQa333pFcaT4cTIOsHqjZXCjI5TvQE8F9N3t5nAXlcAZRKy4NOVG/UDLLYa59jmPz39iaBJEMo2RP4iQaQDlLEVbYHUQ+tpQRksKJsc4BG4AQJUhu+oH4DB+JAuDSUDtAIckA4Z5Mf2UyctFAAkRpA1o0gsvOdtVAAQmSDUKuvB5EPz/F4CiDSAlhc8x35GdtPAfCXBeLsfo98PcigACInAFsrcqfVxVEAfGWCIFXTKMJAHgUQCQFYbqEggTozBcBRBoiwaRzFuW+jAIwdgOlYAEUaL6QAuHEAd0mtKNjMQQrAuAGk9aN4V2MpAD7WAWe5oyhD51IKwJABlPhQjv4VFIABj6BSDWV5uYoC4GAD8FTuR3lG1lIA7HYARxWzKNOYnQJgVgP8bPajXMOpFACrNuCmWEPZBpMpAEaTscBJzhTK1xtPATDaBnzY3qEKd0wUAJtW4CLhGapxhgJgE3QAD02oSGgXBcCmBTg4jMr4sikANluAWcEMqjOUQAEw+WQDRomvUKVGCoDN40XMA0CpUBkFwOZuPLCoQMU+L6cA2Dy0gH7LPqBqNykARm8LQLdrqF45MEqJ8gAw2JgM+hSHUL3RJGBjGlEcgHq+cw7QIWYQjaAeGJWpD0C9vvqtdjOE5xAagmZnLuC1gQP41lyZZ7POW1N4tCeEYRo6XZRpnZfi3H5pAhc25f3dRFcB/JnVg/p97Lp8pNSVn77yV3v3HeZUmfZx/JdMHwaYoYuCgKIgIiCCCihIERFQUBEbIhYEUVSExbYi7qq4dldFLIAsuqvCKiCKi3VRsaBIF6QXRcpQh2FK8nsv36XkzCST+9RMJvfn70muuZJvknOe85znObH1eZfeO/mbvNgOaFbJcUY1pwMIPFMdJZ39Lc3Y0M+HEjLuPkCZ4l6IaBwt2vPOLU1RQuo5Y/4boDXBNigvfA4HsL8vwkibRLmvaiGMNlsosyUZEdTYSysCXw7OQnjH3r6QlnxYUQMI9EFYvmmUWlYFYZ22jzKnIYKnaMGB5+qjLB0/ohXtK2gATyKCShspU9gEEdxAmbMRXu0DNO3AuFqIps37NO+jihnArmqIZBBlxgvO4awF8BBN+7gJJHqtpWmtKmQAExBR2h6KtEREt9sKIGM7TdraF0IZjxTTpCkVJAD5IOd0SmzyIaJGtgIYQpM+rgO5836lOYXHVsQAmiCyRyjxCSLzFdgJYBFNCTzghxm1P6Y5YypiADmIbDgl/okybLIRwJk0pWgQTEp+jaZsTKqAAVRGZLfY/2lcayOAV2nG/h4wzfcYTemuAXgYQOY+mpDXHlb8hWa8pQF4GMDlNKHwQljznKnKsjQA7wJ4h3LBAbAo6d80ob8G4FkAWXmUexyWVVpGuekagGcB9KXct6mwrlkexfanawBeBTCBYrnHw45BlOumAXgVwHqK3Qh7ZlPsSQ3AowBOodh8P+xpnE+pZRqAuQDWWA1gCKWKW8GusZQK1tIAvAngH15epKu0jVIXawDeBLCWQsFTYd99lPqbBuBJALUoNQ0OqLqLQvM0AE8C6Eaps+CEv1Foj08D8CKAkRRa6YMTTqFUAw3AiwBep9C9cMaPFLpIA/AigO8pE6wPZ9xJodEagBcB7KDMIjjkJAq9pAGYCWC1tQAqU+hpOGUTZT7SADwIoLn3v8ivU2alBuBBABdQqBqccgNlDmgAHgQwgDK/wTHtKJSpAbgfwB2U+RyOqUahehqA+wH8hTIT4JwdlGmlAbgfwLPuDwNZHnroqAG4H8B4ytwK53xKmW4agPsBvEaZgXDODMr00gDcD2AqZS6Bc/5BmUs1ABMB/GItgDco0wfOmUSZfijh5CnL15Tpp9caagDmAphEmWvgnOkWBx9b7WVUe5tpAKYCmECZIXDOXIu3CH9OgbkagKkA/k6ZUXDOt5TpBIPkYgoUVtIAzATwqOcXA4GNlGkLg5QgJVpoAGYCGEmZ2XBMpSBlGsJoDyX6agBmAhhEmdVwTCsKVbE0gX2UBmAmgIsoU5wOp1xJmUIfjL6jxOsagJkA2lDoXDjlOcpsRAnvUmJNggawyloANb1fuW0pZb5ACU9T5DgNwEQA2Of1hIDaQcpMtrga6pUagDwA+efxYBU4YwCFHrS4GcxbGoCZAKZR6Ho4Yw6FrkAJJ0hXGNMATAQwhkKfwRF1iynUDCX491GkvwZgIoC+FAo2gBNGUuhgitUx5LkagIkATqDUE3BA8hoK/QRYnb7UQgOQB+DbRqH9NWDfQNL6NNRrKTNZA5AHgBmUGgvb/EspdS1KOZEyBSckYAArrQYwmlK7asGuayl2IkrbSpl3NAB5AO0pNhk2ZW+l1K8I400KnaMBiANI3kWpYCfY84LN2AZSaGGqBiANANMotjQDdrQrptgVCKNOkEIPawDiAG6k3ATYkLOOYsXV7a0vU3y2BiANoG6AclfCMt9Mys1DWPdSal1NDUAYAL6g3N4WsOp+mjAcYZ1AsS/TNABhAMNowu+NYc2AIOUCdRHeQopN8mkAsgDqFNOEVbVgRe8imvA5IhhBuQm+RArgZ+sB4AOasfQ4mNc3n2ZcjwiqHzRVgAYgCuASmrKlOcwaVEQz9lVGJNNowsRU2OFPlABSfqMpOzrClKSHKSA72+xGM76oARtqJ0oAeJjmFN/vh1ydT2lSa0TkW0Iz1rSBdW0TJoC6BTRp7rGQumArTfpCsMqcVNG4VFj154QJAJNo1v4HUyFxzBRKyJcGSf+N5nzfFtb4lyVOAM2DNG1xN0RVadRemrbch7KMoEnBtxvAiuvoWQA3UOIVlGGFrQDwHi1Y2M+HsmTd/iul5ItRZG6lWQdeOhmmNdrhXQAtKXGziwGcFqAVS++qi0jOemEXrVieJF5wXi4wo3cqTKm3jDI/OxAAJjK6n1JdDABv0ZriOUNORimp5z60khZdjijS1tKK3Im9syF24VYK9XEigNSH9rBsBf+oDjcDaFJIyzb/4099mhzOM7vttQ9/lEfLfvQjmv60KLDw2cHn1fMhmuyrPqHQtqvhRACAP6dsqYCrAeAZ2pS3dfWiNblFtOlcROX7mnYEcjcsW1CGRb8znPxPH7626xmtjZomQx6APW4HkLOd5cFbEGhVRK99clUGwqowAWAIy4G84yHxFL31aVsAFT0A/zzG3kiIZG2kh/YM8CEBAsDJ+Yy1n1Ig0zVIzyw9EUiIAPAAY6ywFaT+Tq/Mr4ZECSB5PmPrXohlrqA3FmcjLgJY7kAAaLSXsfTfJMg1z6MXdtRDAgWAQYyh3PoQ8Ph/7Y2ECgCvMmYCPWHOK3TfO0iwANK/Y6w8CJNS/0u3FTVMtABw/HbGxmw/zKq5li6bgoQLAG3zGAtLs2HeKTvorvYJGAD6Bei9LfVhxVn76aa1vkQMAKPoud0tYc0FBXTRBCRkAHiYHss7F1Zd7GYBAxI0ADxOTxX0gHU98umaM+IogGVOBuB7gR7K7wU7LsyjW2omagDAQ/RMXjfY03Y7XZKWeAF4f2VwVzvYdcp6uiKIBA4A1xfSC5tbwr4an2sAjgeArrvpvkXHwQlpEzUAxwNA89V027RKcMi1eRqA0wGgyrt0VfFoHxxzylINwOkA4H+wmO75rTOclPVSUAMQBiB31mq65aNj4LBuGxM4gKXuBICqb9AVecN8cFz288UagDAAuZ4b6bwvToYrzvheA3A6AFQdH6Czdg7ywSW+fms1AGEAcqd/QQcVTagJF2Xcs1MDcDgA+PqvpVM+bAaXZd3+mwYgC0Au5do1dMKX58EDlW5bpQHIApBLG7aWds3tDI/4e88JaADCAOQv6le0ITCrLbxU775V3gRQRIkMuGohJc6ATa2f3UlrNo6rD8+1evhnWlcImcUUWAN3vUmBwqqwLWvQR0U0K/e1zj7Exkm3ztxHaxZCphcF+sNdTQ4wur/AETVunpNPua2TeqYilpJb3zp1ZTFN6wmhgbsYxZ6b4bbO6xhF4cMpcErmhc8tDjC6vM/uPd2H8iD99GsenPzZL3solTsAYulndC1Tm0y4L6l51zK1y4azsi/8y6z1ZfS2+I07z0xBeZNSu1GL1m26RtU6HUogu92AByZ+vGhzPg/bs/bbWX+/65LTUqESSWZOtUaN6ufkpEAppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKxaHqx1SBSkT+U4e+sWJbgGRg7ZzHuleCSiQ1Rq+nQf6bXXwQajF7gdC0BohqxNcLjpjeEEY1Xl9wxLePJiG6rPHfLzgEKoKa4/NZ2vfdIfMjxd5DNGcz1CwYPc9QVyK6+3kEVHiX7mR479aCxG6KLUE0VzPUchjNZqj7EN1rGkAUvnGMaFvnch3A/RqAA15iGQqu0wAquLtZpuAgDaBCO7OIZSvqqQFUYL7vGM03GkAFdgGjekkDqMCm0ag49yCNnk/TACqu5H0Mtf26Skg6awaP2n2pngVUZM0YKnAm/t8VR7L4rhEENlDsSw2gXOnJUD/hkFNW8w/BZ1Ihce0BCu3qrgGUK5cz1D9xWK1vSeb2gVBKzlEdfqHBdy1zjkqCBlCu9GKon/04LHM65x0PS66mQQeE0gDKl3No8JQPR1SFRV1o0FgDKMca0Gj+BX4cpgEkgm0sYf19dTSABPIuSyl4q5NPA0gUFzOc5cMrawCJIXk9w8r9Sy0NICH0ZgQH/lpJA0gEUxjJpss1gASQ8iEjmlJJA6j4st5jRIuP0QAqPt/9xYxkRR0NIAG0ms9IvkuJaQArYPShBuAK/8BVjGBsTANYB6PP9MYQlyRd8QPDOniMtwH0Z6itMPqWoUZpAE5q/sSvDONhbwPow1AHfDD4maFu0wCc5e8wYR9L+tnbALrToC5C+Q8y1A0agOOqDPyeJdTxNIDWNOiIUA1p0EsDcIFvcAENOnsawLE0eBChbqRBKw3AFUNp0M/TAJKN+S1EqJk0yNEAHFFv9sFHfDgqZTdDDfQ0ACyhwUU4qkWAodZDA3DCVbtIvpqEo1Yx1KXeBvAmDTYej8OqLaLBexqAA3L+xf/3TgYOS89nqLO8DWAojdb3wf90XEqj4RqAfV038ZCfTsQhAxkqWNXbAE5mSRsmjh015qWVLKmJBmBX+jNBHrFndDr+0HE3Q/0AbwPAEsr8AA3ApmbLaLDlxcH9RnwQpMGDXgdwD2Vu1QDsWsHoio/3OoDq+yixPUsDsGs1o5sMrwPAk5S4CxqAXZ0LGM2eet4HUHUzo1uUogHYNzDIKAbB+wBwcZDR7G8BDcABQwMs03OIRQAYyygC/aABOKJfPsvwalJsAvA9wTIVXw8NwCGnLWUkxX/2ITYBACMLGdm2C6ABOCbjkQMM6+dzYUVHGjSENWcuYiTT60LuZQ0gquNezmMpW4anwZLs7QyxMgkW+a9bwjCCH3WEGf01AIHs2z4vYIi8GZelwqoGt48+YlhN2NDhqZU0CHz/wMkwqcufRh8CVYasC0a+8p/vlv+8YM4rI85JR3lRs/uIp9+a+9mCz+a++eTwTrqfkVJKKaWUUkoppZRSSimllFJKKaVcl3LS+YMfmTTzq5/XbM8V2Pi3TFiX9fTmXO8sv8mH2KjZ+pI7nvn3xwsWr9ma65jtMxvDWennjJyysIAmfZVkPbYF9Nbj8FzDyx79z066Y9/JcExql799XUBLboJVw+mxQFN4qd5N/95BN32IFDghZ9B7+2jZVFj1Dr02GF7xd3psMd2WhyzYlnHN+wW0Yzqsep9euwPeOPnBtfSC/QCajttBUgNwUvawb0jGQwD+rrNIagCOqvPgLjIuAki5cSWpATir8bP5ZFwE4O+3itQAnNV0RpCMjwB6riA1AGdVH1dAxkcAJ71PagDOSr19NxkfAaQ/UkgNwGGd1pBxEkCHFaQG4KyMcQHGSQDp4wLUABzWbiUZJwGcspDUAJyV8kSA8RLADfnUABxW8xMyTgJIe5bUABzWfgvjJYA631ADcNrgAsZLAM3WUQOAs3xPkvESQOdddMesOApgFByVPJFxE8BFB+mSz+MogLFwUuZsxk0AlxfSLb/EUQCvwEHZXzJuAri6mK4pSoufAObBOZlfMm4C6FNEF7WPnwDy0uCU1A8ZNwFcWEA3PRA/AfBcOCTpbcZNAGfsp6uWx1EAz8MZvpcZNwE03EqXtYufAHZWgiPGMG4CyF5Ot820HkCcDgX1CsRNAP5ZdF2wQ/wEsDUb9jXYwbgJYAw9sDg1bgLgi7At4wfGTQA9AvTCs/ETQLAP7JrKuAmg9u/0RPD6uAmAu06FPVcxbgLwvU+PFPWLmwC4uTHsqLktfgIYSs8UD4ubAPh7W9gwjXETQP299NDUqvESAA8O98GqK1h+HERWeXqBf73GHycBkF+dDmtqbWf5MQ9Z5avVFYOz4yQABmd288OC8Sw/itqWGUClzfRe/gcju9bLEAcQU1teG9AqC+Y0LWK58VMHlBnAQ7Rq//xJd1/SqfWJdXLKUL/dkDkBRrI7N9SKv6bbDCDw0dB2x+dYdVLH+35keMW5RtsWDEIZZtCiwoWTR13VoWmjOjlOyQLKDOD4A7Si+LM/t0+BUItPKfR1sq0APmsJuy5aTaEnhZvIyq18onsGHBclgIm0YMmoujAj6QkKDbMTwNNJsC9nLmUCEWvzfU/zdj55Ogy8CeCkIpoVfL+9ewdF/7YRwAQ4IuM7ytyJCHrStNVDMoFYBPAGzfp3K1iQsogiH1kPYEkKnFE/jyJ/RgSf0qQtN6cAMQmgcYDmrDof1vRwPYBecMoj9gI4neYEJlQGYhTACzSlaEwaLPJtcDmAzT445figrQCm0pQVZwCxCqB6Hs3Y2B7WveByAC/BOUvsBHBcIc2YkoXYBXAfzZhdHTbc7nIAI+CcaXYCeIQmFA0FYheAfx1NeDkJdlzucgBXwznP2wjAt4Fyey9ALAO4gCaM88GWS1wOoD+c87SNAM6l3P5OiGkA0yl3H6ABSAJ4kWL72iGmAWQXUOx5aACiAJJ/p1TxxYhtAIMoNtWvAcgCuJBityHGAcyh1KIMaACyAF6j1BuIcQA5hRTacyI0AGEAmyi0snKsA+hPqf7QAIQBNKNQoD1iHcBkCk2HBiANYASFxiPWAfh+pUxeAw1AHMAcyuzIjnkAp1JoNDQAaQBJ+ygzEjEP4GbK/JauAYgDaE6ZzRmxD2AKZe6EBiAO4CbKjEbsA/iFItsraQDyAF6lyIHqsQ+gSpAiD0EDkAewiCKTEfsAOlDmJA1AHkBSPkW6l4MAbqHIPGgA8gBOpMj25HIQwAsUuVkDMBFAT/H89dgHMIcix2kAJgK4iyKXlYcAVlBiFRxzWQIE8CIlgrXKQQC+fK+n2t6SAAG8S4klKAcB1KLXMy0fS4AAvqHEpPIQQDOKtIJjFidAABsoMbI8BHAOJYJZcEoLJkAA+ZToUR4C6EuJTXDMBwkQQAZFGpeHAK6jxJcOHgImQADVKVKlPARwMyU+gEMuL0yEAOpR4iDKQwC3UeItOKLy40EmQgAnUeK3mAcgH7N6DfYltRr7O5kQAZxGic3lIoDRdu4H6v/ZGrEtxSQTJIBmjh5ZN3zz5zUOWP5K7XAB3G0jgIdpSuIE0NjJb4Dme+mQbfWcDeC0gAYQPoAGlMiDyFd0zDRnAxhBDSB8AMdSJBMCWXTOPmcDeEADiBBAFYo0gEBtOkgD8CYAHKREVw2gogawhRK3aQAVNYBFlBivAVTUAOZSYpEGUFEDmECJYHUNoIIGMIoifTWAChrAJRR5XQOooAE0p8iuVA2gYgaQWkCRizSAihkAfqDIhxpABQ3gFYoET9YAKmYAQykzXgOomAG0okxBQw2gQgbg30GZyRpAhQwA0ygTOFsDqJABDKPQ4hQNoCIGcCKl7tEAKmIAWEyhonYaQEUMYCyl1uVoABUwgBYU+yINkTXWAOIzAKyk2CREdp4GEKcB3EO5pxDREA0gTgOoU0S5p32IYK4GEKcBYBZNeC0FYdUt0gDiNYCLaMYn2QhnKjWAeA3Av4pmrO+C0roHNYC4DQBDaUrwheoo4cy91ADiN4DM7TRnz0PZCHVRLjWAeArA/iu0b8r5STjkxH/QaUhzMoB7NIAoAVTZTvN2zrr7grNO63nXp0E6DnAygN4aQJQAMIre8T4A/+caQJQA0jdV5ABQ418BDaDMAHB9hQ4AqNGqtdTZfR9alHgB+L+hI/Km3dC1dRg9hs0p9CwA+85flGgB4IwA7Qs8XwsRnfB2/ASAtNcTLQC8RNv29kKZhhTGTQDw/TPRAqi6gTYVdUEUA+MnAGSuTrAA7A/n34OoJsZPALg80QLABArY21/6mP3xE4D/t0QLoPIq2vEABKbETwB4NdECQIt82tASAv3iKIARCRcABtO6YDoEmsVRAFckXgCYQstyIVHN/QB061gbAaR/Tau2QiJLAyjXAaDGag0goQNAs90aQEIHgHb7NYCEDgBdD2oACR0ALi3SABI6APTO1wASOgB03qcBJHQAOHePBpDQAeDUdRpAQgeAGv/VABI6AGRM1QASOgDg2jwNIKEDQKtfNICEDgBVXtUAEjoAoPtGDSChA0D2KwENIJEDAE7/WgNI6ADgv/FXDSCRAwAyb/9dA0jkAICqY3doAIkcAJB27QoNIJEDAJL6flCsASRaAEbH3b86VgGMpMQzcM5FlJiN0t6jxCVwzuOUuBsOOP2vyxnORkikU6IQpfWkxGA4pzElHkdpj1KiCZxzAyUugjOaDH9vF0uaCZE1FFhodamvFRlw0CRGt6MOSqv5u2hLdgelLWF0XyfBMUltbpu8uIhHFbSFSH8KXIgwar/HaD5vCCdVGh9gFEtaI5xWixlF4OUsOKnBp4xmZh04LLN1/3snfrF8W5Bc1hVCN+1mFDuuRnj1zu1alk6N4LRaHbqWpUtTH8LzNe3StSwdasFpjTp1LUvH+nCNv1YNyGW0aF2m09KglFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSSimllFJKKaWUUkoppZRSZqTm1MvxwyFJtWplQcUJX7Pb3liwl3/YNu/lAcfBjuS2I95blUuShStnjjknBSqCBf8zb+6sSWOHdMqBRSPnLzhi/kiY1/TRTTT68c7asKjBuB002PVia6iwaLR+0pU1YF57GnQw/fhZQZZWMKUxLDhhWjFL+0ATCIulFM68NAUmDaDBQJhy7BRGUPhsZZjkuzOfYQX/nglVCsNZf3u6hwEM28/INnSEKelvM6JVp0CVxPBWn+9VAFWmsUzF9/sglzaXZdjVGUoWAIMvp3sSQO0fGc3UFIi9zjLld4IyYkQL6nsQwHGrGd37qRC6hlHsOQ1KGAA3nuB6ANmLKPFPP0Qq/8ZoJkNJA+DGei4HkDyPMo9B5E5GdSeUOAAuzHQ3gMcoFLwYEstoVJBbRIOiP/mg5AHwZVcDOC9IqR01EV1DGqzunYrU87/hURvaQZkKINjFxQBSl1NuIqK7jKH2Hos/+EcV8ZCZ1aDCBbBrweK1uUUMZ3mSewHcRROCbc0+4b9wyHk7+YfCEfr1HwbJzzIBIPX06ybvZSlXuBZAxlaWsudfd1zRfcDd/ylkKbMQ1RiGGoPDmqwlue5MqDBIXoXDMq/fyhJ+ci2AYSxp/YBU/E/2A6VaDLZANKMiba5VZ37w7RyocEj2wVHV/skSWroVwCKW8HQajqr9ifmtKgfTYAiO8FWBEgUA/5s0etylAFrQKHATDJJfodH2VETRg0YzzoIyGwBSfqDBEpcCeIhG96GEpNk06oooarKkJbfoR99sAOhEg2B1dwKYR4PZPpRUZQsNHkE0K1jKvgktoUwFgG9p0MOVADIKGKq4GUq7kQZfwUC87/X8AalQJgIYS4PbXAmgBQ3eRhhJmxhqD6Kpk8ewNt6hk4NNBHAODZ51JYD+kh3en6fBMYITwQh23JoMJQzgGBq86UoAI2lQFYi+kflZiCb5a0ay+BwoWQApQYaa6UoAYxlqJ8JqRoNuiCr7J0YSHJcEJQkA+xjqE1cCeJKhliGsHBpcgujqfsuI5ui0YFEAviKG+sCVAB5jqDUIqy4NekMg7RVG9HEGVPQAcmjwtisBPMBQBxBWGxp0gsj5qxjJG1DRAziJBq+6EsBtNDgB4QyiQUvIpI38jRFcARU1gIE0uM+VAHrQ4C6EM4OhgpUhlXHraoa1SW8TjR7AFBr0dyWARjT40YfSah9gqM0wwdfh5V0M4xqoKAFU2UGDU1wJwL+DBpdHHweaAXPSer9dyJLehYoSwEM02OZzJQBMp8G6aiipbSEN7oBptYavptEOP1SZATTfR4O34E4AQ2n0cTKMjt1Co2awIPWvQRocA1VWAI1+pdFlLgVQs5BGH2YjVOMVNFoKa56lwalQZQTQbxuN9mS4FABmsITl5+AI/6DdLGEkZFp+t/cmhKhPg7ZQoUjeikMyr/6cJT0OtwLowlJm9krHH2oMWsyS9lWHhP9PBWTwbhyVRgNdI8CI5NaLGzVp0/Xqxz7aw1LyarsWAL5hafu/fOflmT8Us7S/QaLBF4f+2o/DzqBBNlQolu2vcC+ALjQhtyYEBh5peE4NHPIoQ22GMhHAqnQXA8C/KDcU0VWfxqN+vc6PP1xTxFBToeQBHDwLbgZwzHZKfZmEqM77lQYrn7iu/z3zadQfSh7ATXA1APQIUCb3eESVtZ/RbU+DEgfwZ7gcAMZQpLAboqt8gNGNhpIGELwHrgeA5ygQvA4SgxnVap0RIg5g3+XwIICk1xhV8U2QeZRRFHWAEgbwVRN4EQB8jzCKA30h5Hsq6qmEkgWwdbDfs5VC++5iWVa2gNzoIMvwJyhRABtuz/RyreATPmFEgfGVYUa3LYwkbwCUIIDdb3b3w6wraXC12YevY3hftoFJNV4tjvBUTaGiBbBhxpgOybCgQR5D5DWASSkDl7CUwH86w4JTpxexlOVX6kSQ8Eb/zx2DB3Q7pTIsazpi9BEjmsKC059axhBFX91TDxbVvf/7AEPsnNpV3/54UKfP6IkzPvlu7vQXh3fLgi01+t4zZe6ClcsWzHrhljZ6S5hSSimllFJKHfZ/YBnstQ8SEJAAAAAASUVORK5CYII=");
+			background-repeat: no-repeat;
+			background-size: 100% 200%;
+			image-rendering: pixelated;
+		}
+		#mojang_stage .left { background-position: center top; }
+		#mojang_stage .right {
+			margin-left: -2px;
+			background-position: center bottom;
+		}
+		#loading_screen.minecraft-stage { background: #ef323d !important; }
+		#loading_screen.minecraft-stage #boot_image,
+		#loading_screen.minecraft-stage #boot_image { display: none; }
+		#boot_status { color: #9aa0a6; }
+		#loading_screen.minecraft-stage #boot_status { color: #fff; }
+		#loading_screen.minecraft-stage #mojang_stage { display: flex; }
+		#rotate_device {
+			display: none;
+		}
+		@media (orientation: portrait) and (pointer: coarse) {
+			#rotate_device {
+				position: fixed;
+				z-index: 2147483647;
+				inset: 0;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				gap: 22px;
+				padding: 32px;
+				box-sizing: border-box;
+				background: #111;
+				color: #fff;
+				text-align: center;
+				font: 16px/1.45 ui-monospace, "Cascadia Mono", "DejaVu Sans Mono", monospace;
+			}
+			#rotate_device .phone {
+				width: 42px;
+				height: 70px;
+				border: 4px solid #fff;
+				border-radius: 7px;
+				box-sizing: border-box;
+				transform: rotate(90deg);
+			}
+			#rotate_device strong {
+				display: block;
+				margin-bottom: 5px;
+				font-size: 19px;
+			}
+		}
+		@media (prefers-reduced-motion: reduce) {
+			#loading_screen { transition: none; }
+		}
+	</style>
+		<script type="text/javascript">
+			window.__eaglerPerfEnabled = window.location.search.indexOf("perfdebug") >= 0;
+			// Local diagnostic A/B controls.
+			(function () {
+				var params = new URLSearchParams(window.location.search);
+				window.__eaglerChunkUnloadHardCap = params.get("chunkunload") === "capped";
+			})();
+			// Crash recovery.
+			(function () {
+				var JOURNAL_KEY = "eaglercraft26.crashJournal.v2";
+				var REPORT_KEY = "eaglercraft26.lastCrashReport.v2";
+				var ACK_KEY = "eaglercraft26.dismissedCrash.v2";
+				function read(key) {
+					try { var value = localStorage.getItem(key); return value ? JSON.parse(value) : null; }
+					catch (e) { return null; }
+				}
+				function write(key, value) {
+					try { localStorage.setItem(key, JSON.stringify(value)); return true; }
+					catch (e) { return false; }
+				}
+				function copy(value) {
+					try { return JSON.parse(JSON.stringify(value)); } catch (e) { return null; }
+				}
+				function runtimeSnapshot() {
+					var memory = null;
+					try {
+						if (performance && performance.memory) {
+							memory = {
+								usedJSHeapSize: performance.memory.usedJSHeapSize || 0,
+								totalJSHeapSize: performance.memory.totalJSHeapSize || 0,
+								jsHeapSizeLimit: performance.memory.jsHeapSizeLimit || 0
+							};
+						}
+					} catch (e) {}
+					return {
+						at: Date.now(),
+						memory: memory,
+						meshWorkers: copy(window.__meshWorkerPool),
+						shaderPack: copy(window.__eaglerShaderPack),
+						perfClient: copy(window.__eaglerPerfClient)
+					};
+				}
+
+				var previous = read(JOURNAL_KEY);
+				var acknowledged = read(ACK_KEY);
+				var previousAge = previous ? Date.now() - (previous.heartbeat || 0) : Infinity;
+				var previousFatal = !!(previous && previous.state === "fatal"
+					&& previous.sessionId && (previous.fatalKind || previous.error || previous.report)
+					&& previousAge < 7 * 86400000);
+				// An unfinished heartbeat is not proof of a crash: tab closing, browser
+				// suspension and another live tab can all leave a running journal behind.
+				// Only recover an explicitly recorded fatal error.
+				var previousReport = previousFatal ? copy(previous) : null;
+				if (previousReport && acknowledged && acknowledged.sessionId === previousReport.sessionId) {
+					previousReport = null;
+				}
+				window.__eaglerRecoveredCrash = previousReport;
+				var journal = {
+					version: 2,
+					build: "f1fd55bd1abbb808",
+					sessionId: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2),
+					startedAt: Date.now(),
+					heartbeat: Date.now(),
+					state: "booting",
+					stage: "shell",
+					url: location.href,
+					userAgent: navigator.userAgent || "",
+					platform: navigator.platform || "",
+					hardwareConcurrency: navigator.hardwareConcurrency || 0,
+					deviceMemory: navigator.deviceMemory || 0,
+					telemetry: runtimeSnapshot(),
+					logTail: []
+				};
+				function save() {
+					journal.heartbeat = Date.now();
+					journal.telemetry = runtimeSnapshot();
+					try {
+						journal.logTail = (window.__log || []).slice(-120).map(function (line) {
+							line = "" + line;
+							return line.length > 2048 ? line.slice(0, 2048) + "...[truncated]" : line;
+						});
+					} catch (e) {}
+					write(JOURNAL_KEY, journal);
+				}
+				function fatal(kind, error) {
+					journal.state = "fatal";
+					journal.fatalKind = kind || "unknown";
+					journal.error = "" + (error && (error.stack || error.message || error));
+					save();
+				}
+				window.__eaglerCrashJournal = {
+					stage: function (name) {
+						journal.stage = name || journal.stage;
+						if (name === "game-ready" && journal.state !== "fatal") journal.state = "running";
+						save();
+					},
+					fatal: fatal,
+					snapshot: function () { save(); return copy(journal); },
+					previous: window.__eaglerRecoveredCrash,
+					isLowMemoryRecovery: function () {
+						return !!(window.__eaglerRecoveredCrash
+							&& /Mac|iPhone|iPad|iPod/.test(navigator.platform + " " + navigator.userAgent));
+					}
+				};
+				window.__eaglerPersistCrashReport = function (text) {
+					var full = "" + text;
+					var cached = full.length > 524288 ? full.slice(0, 524288)
+						+ "\n\n[report truncated by persistent cache; original characters=" + full.length + "]" : full;
+					journal.report = cached;
+					journal.reportLength = full.length;
+					fatal("java-crash", cached.length > 65536 ? cached.slice(0, 65536) + "...[truncated]" : cached);
+					write(REPORT_KEY, { at: Date.now(), report: cached, originalLength: full.length, journal: copy(journal) });
+				};
+				window.__eaglerShowShellCrash = function (error) {
+					fatal("shell-crash", error);
+					try {
+						var root = document.getElementById("game_frame") || document.body;
+						var panel = document.createElement("div");
+						panel.className = "_eaglercraftX_crash_element";
+						panel.style.cssText = "position:fixed;z-index:2147483647;inset:0;background:#fff;color:#111;"
+							+ "padding:32px;box-sizing:border-box;overflow:auto;font:14px monospace;white-space:pre-wrap";
+						panel.textContent = "Eaglercraft could not continue.\n\n" + journal.error
+							+ "\n\nThis report was cached and will still be available after reloading.";
+						root.appendChild(panel);
+					} catch (e) {}
+				};
+				function markNavigation() {
+					if (journal.state !== "fatal") {
+						journal.state = "navigation";
+						journal.stage = "page-unload";
+						save();
+					}
+				}
+				window.addEventListener("beforeunload", markNavigation);
+				window.addEventListener("pagehide", markNavigation);
+				window.addEventListener("error", function (event) {
+					// Optional scripts can throw without stopping the game. Keep their
+					// diagnostics, but let explicit game/shell crash handlers mark failure.
+					var error = event && event.error;
+					if (error && typeof WebAssembly !== "undefined"
+							&& error instanceof WebAssembly.RuntimeError) {
+						fatal("wasm-trap", error);
+					} else {
+						journal.lastWindowError = "" + (error && (error.stack || error.message) || event && event.message || "Unknown error");
+						save();
+					}
+				});
+				window.addEventListener("unhandledrejection", function (event) {
+					var reason = event && event.reason;
+					if (reason && /out of memory|allocation failed|memory access out of bounds/i.test(
+						"" + (reason.stack || reason.message || reason))) {
+						fatal("memory-pressure", reason);
+					}
+				});
+				var lastMainPulse = performance.now();
+				setInterval(function () {
+					var now = performance.now();
+					var delayed = now - lastMainPulse;
+					lastMainPulse = now;
+					// Background tabs and suspended devices deliberately throttle timers. Only
+					// record a visible, game-ready main-thread stall after it has recovered.
+					if (journal.state === "running" && !document.hidden && delayed >= 15000) {
+						journal.stallCount = (journal.stallCount || 0) + 1;
+						journal.lastStall = {
+							at: Date.now(),
+							durationMs: Math.round(delayed),
+							telemetry: runtimeSnapshot()
+						};
+						try { console.warn("[shell] recovered visible main-thread stall: "
+							+ Math.round(delayed) + " ms"); } catch (e) {}
+					}
+					save();
+				}, 2000);
+				document.addEventListener("visibilitychange", function () {
+					lastMainPulse = performance.now();
+				});
+				save();
+
+				function showRecovered() {
+					if (!window.__eaglerRecoveredCrash || !document.body) return;
+					var cached = read(REPORT_KEY);
+					if (!cached || !cached.journal
+							|| cached.journal.sessionId !== window.__eaglerRecoveredCrash.sessionId) {
+						cached = null;
+					}
+					var bar = document.createElement("div");
+					bar.id = "eagler_recovered_crash";
+					bar.style.cssText = "position:fixed;z-index:2147483647;left:12px;right:12px;bottom:12px;"
+						+ "background:#1d1d1d;color:#fff;border:1px solid #777;padding:12px;font:13px sans-serif";
+					var text = document.createElement("span");
+					text.textContent = "A crash was recorded in the previous game session. Its report is available below.";
+					bar.appendChild(text);
+					function button(label, action) {
+						var b = document.createElement("button");
+						b.textContent = label;
+						b.style.cssText = "margin-left:10px;padding:5px 9px";
+						b.onclick = action;
+						bar.appendChild(b);
+					}
+					function acknowledge() {
+						var recovered = window.__eaglerRecoveredCrash;
+						if (!recovered) return;
+						write(ACK_KEY, {
+							sessionId: recovered.sessionId,
+							at: Date.now()
+						});
+						try { localStorage.removeItem(REPORT_KEY); } catch (e) {}
+						window.__eaglerRecoveredCrash = null;
+						window.__eaglerCrashJournal.previous = null;
+						cached = null;
+					}
+					button("Download Report", function () {
+						var payload = cached || { journal: window.__eaglerRecoveredCrash };
+						var blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+						var url = URL.createObjectURL(blob);
+						var a = document.createElement("a");
+						a.href = url; a.download = "eaglercraft-recovered-crash.json"; a.click();
+						setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+					});
+					button("Dismiss", function () {
+						acknowledge();
+						if (bar.parentNode) bar.parentNode.removeChild(bar);
+					});
+					document.body.appendChild(bar);
+				}
+				if (document.readyState === "loading") {
+					document.addEventListener("DOMContentLoaded", showRecovered, { once: true });
+				} else {
+					showRecovered();
+				}
+			})();
+			// Harness logging.
+		window.__log = [];
+		// Keep enough history for lifecycle/performance gates and crash reports,
+		// but do not retain every log line for the lifetime of a long browser
+		// session. Perf-debug entity/worldgen traces otherwise grow without bound.
+		(function (log) {
+			var push = Array.prototype.push;
+			log.push = function () {
+				var length = push.apply(log, arguments);
+				if (length > 8192) {
+					log.splice(0, length - 4096);
+				}
+				return log.length;
+			};
+		})(window.__log);
+		window.__err = null;
+		(function () {
+			var _l = console.log, _e = console.error, _w = console.warn;
+			function push(tag, a) { try { window.__log.push(tag + Array.prototype.join.call(a, " ")); } catch (x) {} }
+			console.log = function () { push("L:", arguments); _l.apply(console, arguments); };
+			console.error = function () { push("E:", arguments); _e.apply(console, arguments); };
+			console.warn = function () { push("W:", arguments); _w.apply(console, arguments); };
+			window.addEventListener("error", function (ev) {
+				window.__err = "ERROR: " + (ev && ev.message) + " @ " + (ev && ev.filename) + ":" + (ev && ev.lineno);
+				window.__log.push("WINERR:" + window.__err);
+				// Preserve named Wasm frames for uncaught traps.
+				try {
+					var st = ev && ev.error && ev.error.stack;
+					if (st) {
+						(window.__winErrStacks = window.__winErrStacks || []).push("" + st);
+						window.__log.push("WINERRSTACK:" + st);
+					}
+				} catch (x) {}
+			});
+			window.addEventListener("unhandledrejection", function (ev) {
+				var r = ev && ev.reason;
+				window.__log.push("REJECT:" + (r && (r.stack || r.message || r)) );
+			});
+		})();
+
+		// TeaVM may construct WeakReference(null), which native WeakRef rejects.
+		(function () {
+			var RealWeakRef = window.WeakRef;
+			window.WeakRef = class {
+				constructor(t) { try { this._r = new RealWeakRef(t); } catch (e) { this._r = { deref: function () { return t; } }; } }
+				deref() { return this._r.deref(); }
+			};
+		})();
+
+		// Audio unlock.
+		(function () {
+			var Real = window.AudioContext || window.webkitAudioContext;
+			if (!Real) return;
+			var live = [];
+			function Wrapped() { var c = arguments.length ? new Real(arguments[0]) : new Real(); live.push(c); return c; }
+			Wrapped.prototype = Real.prototype;
+			window.AudioContext = Wrapped;
+			if (window.webkitAudioContext) window.webkitAudioContext = Wrapped;
+			function resumeAll() { for (var i = 0; i < live.length; ++i) { try { if (live[i].state === "suspended") live[i].resume(); } catch (e) {} } }
+			window.addEventListener("mousedown", resumeAll, true);
+			window.addEventListener("keydown", resumeAll, true);
+			window.addEventListener("touchstart", resumeAll, true);
+		})();
+
+		// Wasm-GC workers have separate Java heaps. Normal mode deliberately does not
+		// guess an eager pool size here: the Java pool starts one isolate, observes
+		// frame/queue/heap headroom, and proves each additional worker with a measured
+		// trial. ?meshworkers=N remains an exact diagnostic A/B override only.
+		function chooseMeshWorkerCount() {
+			var match = /[?&]meshworkers=([1-4])(?:&|$)/.exec(window.location.search);
+			if (match) return Number(match[1]);
+			return -1;
+		}
+		// The hosted release may point this at a signed bundle on a separate
+		// large-file origin. An empty value keeps the preview download disabled.
+		window.eaglercraftXIwaBundleURL = "";
+		window.eaglercraftXOpts = {
+			container: "game_frame",
+			assetsURI: [
+				{ url: "assets.epk?v=f1fd55bd1abbb808", path: "" },
+				{ url: "sounds.epk?v=f1fd55bd1abbb808", path: "" }
+			],
+			localesURI: "lang/",
+			worldsDB: "worlds",
+			resourcePacksDB: "resourcePacks",
+			crashOnUncaughtExceptions: true,
+			enableEPKVersionCheck: false,
+			allowBootMenu: false,
+			inputSelfTest: false,
+			webgl2SelfTest: false,
+			// Use data URLs instead of the blob-origin probe.
+			disableBlobURLs: true,
+			// ?singlethread disables all workers; ?nomesh disables mesh workers.
+			singleThreadMode: true,
+				serverWorker: window.location.search.indexOf("singlethread") < 0,
+				meshWorkers: window.location.search.indexOf("singlethread") < 0
+					&& window.location.search.indexOf("nomesh") < 0,
+				meshWorkerVerify: false,
+				perfDebug: window.__eaglerPerfEnabled,
+				chunkUnloadHardCap: window.__eaglerChunkUnloadHardCap,
+			// -1 means adaptive. Java also honors an embedder-supplied positive override.
+			meshWorkerCount: chooseMeshWorkerCount()
+		};
+
+		// Java updates the early boot UI and harness log.
+		window.__eaglerBoot = function (pct, text) {
+			try { window.__log.push("BOOTSTAGE:" + pct + ":" + text); } catch (e) {}
+			try { window.__eaglerCrashJournal.stage("boot-" + pct + "-" + (text || "")); } catch (e) {}
+			try {
+				var st = document.getElementById("boot_status");
+				if (st && text) { st.textContent = text; }
+				var load = document.getElementById("loading_screen");
+				if (load && typeof pct === "number" && pct >= 80) {
+					load.classList.add("minecraft-stage");
+				}
+			} catch (e) {}
+		};
+		(function () {
+			var total = Number("79838381") || 0;
+			var loadedByUrl = Object.create(null);
+			window.__eaglerAssetDownloadProgress = function (url, loaded) {
+				loadedByUrl[String(url).replace(/[?#].*$/, "")] = Math.max(0, Number(loaded) || 0);
+				var sum = 0;
+				for (var key in loadedByUrl) sum += loadedByUrl[key];
+				if (total > 0) sum = Math.min(sum, total);
+				var mb = 1024 * 1024;
+				var pct = total > 0 ? 30 + Math.floor(30 * sum / total) : 30;
+				window.__eaglerBoot(pct, "Downloading assets… " + (sum / mb).toFixed(1)
+					+ " MB / " + (total / mb).toFixed(1) + " MB");
+			};
+		})();
+	</script>
+	<script type="text/javascript">
+var TeaVM=TeaVM||{};TeaVM.wasmGC=TeaVM.wasmGC||(()=>{let n=new Map;let e=null;let i=/.+:wasm-function\[[0-9]+]:0x([0-9a-f]+).*/;let W=function(e){let t=n.get(e);if(typeof t==="undefined"){t=new Function("return "+e+";");n.set(e,t)}return t()};let D=function(e,t){new Function("value",e+" = value;")(t)};function y(e,t,n,r,o){let a={exports:null,userExports:t,stackDeobfuscator:null};if(!o){l(e)}u(e);s(e,a);c(e,a,n,r);f(e,a);d(e,a,o);e.teavmMath=Math;return{supplyExports(e){a.exports=e},supplyStackDeobfuscator(e){a.stackDeobfuscator=e}}}let M=Symbol("javaException");class T extends Error{#context;constructor(e,t){super();this.#context=e;this[M]=t;e.exports["teavm.setJsException"](t,this)}get message(){let t=this.#context.exports["teavm.exceptionMessage"];let n=this.#context.exports["teavm.stringToJs"];if(typeof t==="function"&&typeof n==="function"){let e=t(this[M]);if(e!=null){return n(e)}}return"(could not fetch message)"}}function l(e){e["wasm:js-string"]={fromCharCode:e=>String.fromCharCode(e),fromCharCodeArray:()=>{throw new Error("Not supported")},intoCharCodeArray:()=>{throw new Error("Not supported")},concat:(e,t)=>e+t,charCodeAt:(e,t)=>e.charCodeAt(t),length:e=>e.length,substring:(e,t,n)=>e.substring(t,n)}}function u(e){e.teavmDate={currentTimeMillis:()=>(new Date).getTime(),dateToString:e=>new Date(e).toString(),getYear:e=>new Date(e).getFullYear(),setYear(e,t){let n=new Date(e);n.setFullYear(t);return n.getTime()},getMonth:e=>new Date(e).getMonth(),setMonth(e,t){let n=new Date(e);n.setMonth(t);return n.getTime()},getDate:e=>new Date(e).getDate(),setDate(e,t){let n=new Date(e);n.setDate(t);return n.getTime()},create:(e,t,n,r,o,a)=>new Date(e,t,n,r,o,a).getTime(),createFromUTC:(e,t,n,r,o,a)=>Date.UTC(e,t,n,r,o,a)}}function s(e){let t="";let n="";e.teavmConsole={putcharStderr(e){if(e===10){console.error(t);t=""}else{t+=String.fromCharCode(e)}},putcharStdout(e){if(e===10){console.log(n);n=""}else{n+=String.fromCharCode(e)}}}}function c(t,r,e,n){let o=e.memory||{};let a=new FinalizationRegistry(e=>{let t=r.exports["teavm.reportGarbageCollectedValue"];if(typeof t!=="undefined"){t(e.queue,e.ref)}});let l=new FinalizationRegistry(e=>{let t=r.exports["teavm.reportGarbageCollectedString"];if(typeof t==="function"){t(e)}});t.teavm={createWeakRef(e,t,n){if(n!==null){a.register(e,{ref:t,queue:n})}return new WeakRef(e)},deref:e=>{let t=e.deref();return t!==void 0?t:null},createStringWeakRef(e,t){l.register(e,t);return new WeakRef(e)},stringDeref:e=>e.deref(),takeStackTrace(){let t=(new Error).stack;let n=[];for(let e of t.split("\n")){let t=i.exec(e);if(t!==null&&t.length>=2){let e=parseInt(t[1],16);n.push(e)}}return{getStack(){let e;if(r.stackDeobfuscator){try{e=r.stackDeobfuscator(n)}catch(e){console.warn("Could not deobfuscate stack",e)}}if(!e){e=n.map(e=>{return{className:"java.lang.Throwable$FakeClass",method:"fakeMethod",file:"Throwable.java",line:e}})}return e}}},decorateException(e){new T(r,e)},linearMemory(){return r.exports["teavm.memory"].buffer},notifyHeapResized:o.onResize||function(){}};if(n){let r=m(n);let e=r!==null?r.imported:p(n);if(e){let n=o["external"];if(!n){if(r===null){r={}}let e=o.minSize||r.min||0;let t=o.maxSize||r.max;n=new WebAssembly.Memory({shared:o.shared===true,initial:e,maximum:t})}t.teavm.memory=n}}}function f(e){e.teavmAsync={offer(e,t,n){let r=Math.max(0,n-Date.now());return setTimeout(()=>{t(e)},r)},kill(e){clearTimeout(e)}}}function p(e){return WebAssembly.Module.imports(e).findIndex(({module:e,name:t,kind:n})=>e==="teavm"&&t==="memory"&&n==="memory")>=0}function m(e){let t=WebAssembly.Module.customSections(e,"teavm.memoryRequirements");if(t.length!==1){return null}return JSON.parse((new TextDecoder).decode(t[0]))}function d(o,l,e){let i=Symbol("javaObject");let u=Symbol("functions");let a=Symbol("functionOrigin");let s=Symbol("wrapperCallMarker");let c=new WeakMap;let n=new WeakMap;let r=new Map;let f=new FinalizationRegistry(e=>r.delete(e));let p=new WeakMap;let t=2463534242;let m=()=>{let e=t;e^=e<<13;e^=e>>>17;e^=e<<5;t=e;return e};function y(e){return e}function d(n){let r="";let e=n.charAt(0);r+=w(e)?e:"_";for(let t=1;t<n.length;++t){let e=n.charAt(t);r+=h(e)?e:"_"}return r}function w(e){return e>="A"&&e<="Z"||e>="a"&&e<="z"||e==="_"||e==="$"}function h(e){return w(e)||e>="0"&&e<="9"}function b(e,t,n){if(e===null){D(t,n)}else{e[t]=n}}function g(a){if(a instanceof WebAssembly.Exception){let r=l.exports["teavm.javaException"];let o=l.exports["teavm.getJsException"];if(a.is(r)){let e=a.getArg(r,0);let t=j(e);if(t!==null){return t}let n=o(e);if(typeof n==="undefined"){n=new T(l,e)}return n}}return a}function v(e){if(M in e){return e[M]}else{return l.exports["teavm.js.wrapException"](e)}}function x(e){l.exports["teavm.js.throwException"](v(e))}function j(e){return l.exports["teavm.js.extractException"](e)}function J(e){throw g(e)}function A(e,t){try{return e!==null?e[t]:W(t)}catch(e){x(e)}}function C(e,t){let n=[];let r=[];for(let t=0;t<e.length;++t){let e="p"+t;n.push(e);r.push(e)}if(t){let e=r.length-1;r[e]="..."+r[e]}let o=r.join(", ");return new Function("rethrowJavaAsJs","fn",`return function(${o}) {\n`+`    try {\n`+`        return fn(${n.join(", ")});\n`+`    } catch (e) {\n`+`        rethrowJavaAsJs(e);\n`+`    }\n`+`};`)(J,e)}function S(e,t){return new Function("constructor",`return function ${e}(marker, javaObject) {\n`+`    return constructor.call(this, marker, javaObject);\n`+`}\n`)(t)}o.teavmJso={stringBuiltinsSupported:()=>e,isUndefined:e=>typeof e==="undefined",emptyArray:()=>[],appendToArray:(e,t)=>e.push(t),unwrapBoolean:e=>e?1:0,wrapBoolean:e=>!!e,getProperty:A,setProperty:b,setPropertyPure:b,global(e){try{return W(e)}catch(e){x(e)}},createClass(e,t,n){e=d(e||"JavaObject");let r;let o=S(e,function(e,t){if(e===s){r.call(this,t)}else if(n===null){throw new Error("This class can't be instantiated directly")}else{try{return n.apply(null,arguments)}catch(e){J(e)}}});if(t===null){r=function(e){this[i]=e;this[u]=null}}else{r=function(e){t.call(this,e)}}o.prototype=Object.create(t?t.prototype:Object.prototype);o.prototype.constructor=o;let a=S(e,function(e){return o.call(this,s,e)});a[s]=o;a.prototype=o.prototype;return a},exportClass(e){return e[s]},defineMethod(e,t,n,r){let o=[];let a=[];for(let t=1;t<n.length;++t){let e="p"+t;o.push(e);a.push(e)}if(r){let e=a.length-1;a[e]="..."+a[e]}let l=a.join(", ");e.prototype[t]=new Function("rethrowJavaAsJs","fn",`return function(${l}) {\n`+`    try {\n`+`        return fn(${["this",o].join(", ")});\n`+`    } catch (e) {\n`+`        rethrowJavaAsJs(e);\n`+`    }\n`+`};`)(J,n)},defineStaticMethod(e,t,n,r){e[t]=C(n,r)},defineFunction:C,defineProperty(e,t,n,r){let o={get(){try{return n(this)}catch(e){J(e)}}};if(r!==null){o.set=function(e){try{r(this,e)}catch(e){J(e)}}}Object.defineProperty(e.prototype,t,o)},defineStaticProperty(e,t,n,r){let o={get(){try{return n()}catch(e){J(e)}}};if(r!==null){o.set=function(e){try{r(e)}catch(e){J(e)}}}Object.defineProperty(e,t,o)},javaObjectToJS(e,t){if(e===null){return null}let n=c.get(e);if(typeof n!="undefined"){let e=n.deref();if(typeof e!=="undefined"){return e}}let r=new t(e);c.set(e,new WeakRef(r));return r},unwrapJavaObject(e){return e[i]},asFunction(e,t){if(e===null||e===undefined){return null}let n=e[u];if(n===null){n=Object.create(null);e[u]=n}let r=n[t];if(typeof r!=="function"){r=function(){return e[t].apply(e,arguments)};r[a]=e;n[t]=r}return r},functionAsObject(t,n){if(t===null||t===void 0){return null}let r=t[a];if(typeof r!=="undefined"){let e=r[u];if(e!==void 0&&e[n]===t){return r}}return{[n]:function(...e){try{return t(...e)}catch(e){J(e)}}}},wrapObject(t){if(t===null){return null}if(typeof t==="object"||typeof t==="function"||typeof"obj"==="symbol"){let e=t[i];if(typeof e==="object"){return e}e=n.get(t);if(e!==void 0){e=e.deref();if(e!==void 0){return e}}e=l.exports["teavm.jso.createWrapper"](t);n.set(t,new WeakRef(e));return e}else{let e=r.get(t);if(e!==void 0){e=e.deref();if(e!==void 0){return e}}e=l.exports["teavm.jso.createWrapper"](t);r.set(t,new WeakRef(e));f.register(e,t);return e}},isPrimitive:(e,t)=>typeof e===t||e===null,instanceOf:(e,t)=>e instanceof t,instanceOfOrNull:(e,t)=>e===null||e instanceof t,sameRef:(e,t)=>e===t,hashCode:t=>{if(typeof t==="object"||typeof t==="function"||typeof t==="symbol"){let e=p.get(t);if(typeof e==="number"){return e}e=m();p.set(t,e);return e}else if(typeof t==="number"){return t|0}else if(typeof t==="bigint"){return BigInt.asIntN(t,32)}else if(typeof t==="boolean"){return t?1:0}else{return 0}},apply:(e,t,n)=>{try{if(e===null){let e=W(t);return e(...n)}else{return e[t](...n)}}catch(e){x(e)}},concatArray:(e,t)=>[...e,...t],getJavaException:e=>e[M],getJSException:e=>{let t=l.exports["teavm.getJsException"];return t(e)},jsExports:()=>l.userExports};for(let e of["wrapByte","wrapShort","wrapChar","wrapInt","wrapLong","wrapFloat","wrapDouble","unwrapByte","unwrapShort","unwrapChar","unwrapInt","unwrapLong","unwrapFloat","unwrapDouble"]){o.teavmJso[e]=y}function F(e){try{return e()}catch(e){x(e)}}let k=[];for(let r=0;r<32;++r){let e=k.length===0?"":k.join(", ");let t=[...k,"body"].join(", ");o.teavmJso["createFunction"+r]=new Function("wrapCallFromJavaToJs",...k,"body",`return new Function('wrapCallFromJavaToJs', ${t}).bind(this, wrapCallFromJavaToJs);`).bind(null,F);o.teavmJso["bindFunction"+r]=(e,...t)=>e.bind(null,...t);o.teavmJso["callFunction"+r]=new Function("rethrowJsAsJava","fn",...k,`try {\n`+`    return fn(${e});\n`+`} catch (e) {\n`+`    rethrowJsAsJava(e);\n`+`}`).bind(null,x);o.teavmJso["callMethod"+r]=new Function("rethrowJsAsJava","getGlobalName","instance","method",...k,`try {\n`+`    return instance !== null\n`+`        ? instance[method](${e})\n`+`        : getGlobalName(method)(${e});\n`+`} catch (e) {\n`+`    rethrowJsAsJava(e);\n`+`}`).bind(null,x,W);o.teavmJso["construct"+r]=new Function("rethrowJsAsJava","constructor",...k,`try {\n`+`    return new constructor(${e});\n`+`} catch (e) {\n`+`    rethrowJsAsJava(e);\n`+`}`).bind(null,x);o.teavmJso["arrayOf"+r]=new Function(...k,"return ["+e+"]");let n="p"+(r+1);k.push(n)}}function t(e){return new Proxy(e,{get(e,t){let n=e[t];return new WebAssembly.Global({value:"externref",mutable:false},n)}})}async function w(t,a){let n=[];let r={};for(let{module:o,name:e}of h(t)){if(o in a){continue}let t=r[o];if(t===void 0){let e=[];t=e;r[o]=t;n.push((async()=>{let n=await import(o);let r={};for(let t of e){let e=t==="__self__"?n:n[t];r[t]=new WebAssembly.Global({value:"externref",mutable:false},e)}a[o]=r})())}t.push(e)}if(n.length===0){return}await Promise.all(n)}function h(e){let t=WebAssembly.Module.customSections(e,"teavm.imports");if(t.length!==1){return WebAssembly.Module.imports(e).filter(e=>e.kind==="global")}return JSON.parse((new TextDecoder).decode(t[0]))}async function r(e,t){if(!t){t={}}let n=t.nodejs||typeof process!=="undefined";let r=t.stackDeobfuscator||{};let o=r.infoLocation||"auto";let a=b(e,n);let[l,i,u]=await Promise.all([r.enabled?v(e,r,n):Promise.resolve(null),a,C(e,o,r,n)]);const s={};let c={};const f=y(s,c,t,i,await g());if(typeof t.installImports!=="undefined"){t.installImports(s)}if(!t.noAutoImports){await w(i,s)}let p=await WebAssembly.instantiate(i,s);f.supplyExports(p.exports);if(l){let e=o==="auto"||o==="embedded"?i:null;let t=A(e,u,l);if(t!==null){f.supplyStackDeobfuscator(t)}}let m={exports:c,instance:p,module:p.module};for(let t in p.exports){let e=p.exports[t];if(e instanceof WebAssembly.Global){Object.defineProperty(c,t,{get:()=>e.value})}}return m}async function b(e,t){if(typeof e!=="string"){return await WebAssembly.compile(e,{builtins:["js-string"]})}let[n,r]=await j(e,t);let o=await WebAssembly.compileStreaming(n,{builtins:["js-string"]});r();return o}let o=null;function g(){if(o===null){o=(async()=>{let n=new Int8Array([0,97,115,109,1,0,0,0,1,7,1,96,1,127,1,100,111,2,31,1,14,119,97,115,109,58,106,115,45,115,116,114,105,110,103,12,102,114,111,109,67,104,97,114,67,111,100,101,0,0,3,1,0,5,4,1,1,0,0,7,10,1,6,109,101,109,111,114,121,2,0,10,-127,-128,-128,0,0]);try{let e=new Response(n,{headers:{"Content-Type":"application/wasm"}});let t=await WebAssembly.compileStreaming(e,{builtins:["js-string"]});await WebAssembly.instantiate(t,{},{builtins:["js-string"]});return true}catch(e){return false}})()}return o}async function v(e,t,n){if(typeof e!=="string"&&!t.path){return null}try{const r={};const o=y(r,{},{},null,await g());const a=await x(t.path,e,n,r);o.supplyExports(a.exports);return a}catch(e){console.warn("Could not load deobfuscator",e);return null}}async function x(e,t,n,r){if(typeof e==="object"){return await WebAssembly.instantiate(e,r,{builtins:["js-string"]})}const o=e||t+"-deobfuscator.wasm";let[a,l]=await j(o,n);const{instance:i}=await WebAssembly.instantiateStreaming(a,r,{builtins:["js-string"]});l();return i}async function j(r,e){let o;let a;if(!e){o=await fetch(r);a=()=>{}}else{let e=await J();let t=await e.open(r,"r");let n=await t.readableWebStream();o=new Response(n,{headers:{"Content-Type":"application/wasm"}});a=()=>t.close()}return[o,a]}let a;async function J(){if(!a){a=import("node:fs/promises")}return await a}function A(e,t,n){let r=null;let o=false;function a(){if(!o){o=true;if(t!==null){try{r=n.exports.createFromExternalFile.value(t)}catch(e){console.warn("Could not load create deobfuscator",e)}}if(r==null&&e!==null){try{r=n.exports.createForModule.value(e)}catch(e){console.warn("Could not create deobfuscator from module data",e)}}}}return e=>{a();return r!==null?r.deobfuscate(e):[]}}async function C(e,t,n,r){if(!n.enabled){return null}if(typeof e!=="string"&&!n.externalInfoPath){return null}if(t!=="auto"&&t!=="external"){return null}if(typeof n.externalInfoPath==="object"){return n.externalInfoPath}let o=n.externalInfoPath||e+".teadbg";let a;if(!r){let e=await fetch(o);if(!e.ok){return null}a=await e.arrayBuffer()}else{let e=await J();a=(await e.readFile(o)).buffer}return new Int8Array(a)}return{load:r,defaults:y,wrapImport:t}})();
+</script>
+	<script type="text/javascript">
+/*
+ * Shared Wasm-GC bootstrap for the page and worker realms.
+ * Workers reuse a page-compiled module and queue messages until main is ready. Server
+ * workers receive the full image; mesh workers receive the DCE-stripped mesh image.
+ */
+(function () {
+	"use strict";
+
+	var isWorkerRealm = (typeof importScripts === "function") && (typeof document === "undefined");
+
+	// Instantiate a precompiled module through TeaVM's import glue.
+	function instantiateWasmGC(module, options) {
+		options = options || {};
+		var imports = {};
+		var userExports = {};
+		var controller = TeaVM.wasmGC.defaults(imports, userExports, options, module);
+		if (typeof options.installImports !== "undefined") {
+			options.installImports(imports);
+		}
+		return WebAssembly.instantiate(module, imports).then(function (instance) {
+			controller.supplyExports(instance.exports);
+			for (var key in instance.exports) {
+				(function (v) {
+					if (v instanceof WebAssembly.Global) {
+						Object.defineProperty(userExports, key, { get: function () { return v.value; } });
+					}
+				})(instance.exports[key]);
+			}
+			return { exports: userExports, instance: instance, module: module };
+		});
+	}
+
+	if (!isWorkerRealm) {
+		// Page entry point.
+		window.__eaglerWasmGCInstantiate = instantiateWasmGC;
+		return;
+	}
+
+	// TeaVM may construct WeakReference(null), which native WeakRef rejects.
+	(function () {
+		var RealWeakRef = self.WeakRef;
+		if (!RealWeakRef) { return; }
+		self.WeakRef = class {
+			constructor(t) { try { this._r = new RealWeakRef(t); } catch (e) { this._r = { deref: function () { return t; } }; } }
+			deref() { return this._r.deref(); }
+		};
+	})();
+
+	var queued = [];   // Messages received during instantiation.
+	var booting = false;
+
+	// The worker role is unknown until its queued role message is replayed.
+	function postBootError(msg) {
+		try { self.postMessage({ meta: "mesh-worker:compile-boot-error:wasm-bootstrap: " + msg }); } catch (e) {}
+		try { self.postMessage({ meta: "server-worker:boot-error:wasm-bootstrap: " + msg }); } catch (e) {}
+	}
+
+	function errString(e) {
+		try {
+			var stack = e && e.stack ? String(e.stack).split("\n") : [];
+			var stackLimit = self.__eaglerPerfEnabled === true ? 128 : 4;
+			return (e && (e.name + ": " + e.message))
+					+ (stack.length ? " | " + stack.slice(0, stackLimit).join(" <- ") : "");
+		} catch (x) { return String(e); }
+	}
+
+	self.onmessage = function (ev) {
+		var d = ev && ev.data;
+		if (!booting && d && d.eaglerWasmBoot) {
+			booting = true;
+			bootWasm(d.eaglerWasmBoot);
+		} else {
+			// Replay startup messages after main installs the real handler.
+			queued.push(ev);
+		}
+	};
+
+	function bootWasm(boot) {
+		try {
+			self.__eaglerPerfEnabled = boot.perfDebug === true;
+			self.__eaglerChunkUnloadHardCap = boot.chunkUnloadHardCap === true;
+			if (self.__eaglerPerfEnabled === true) {
+				// ErrorEvent.error is not exposed reliably to the parent Worker object in
+				// Chromium. Capture the exception inside the worker realm so a recursive
+				// Wasm stack retains all function frames in local diagnostic builds.
+				self.addEventListener("error", function (evt) {
+					try {
+						console.error("[wasm-worker] uncaught: " + errString(evt && (evt.error || evt)));
+					} catch (ignored) {}
+				});
+			}
+			if (boot.logForward) {
+				// Forward worker logs to the page when requested.
+				(function () {
+					var _l = console.log, _e = console.error, _w = console.warn;
+					function fwd(tag, a) {
+						try { self.postMessage({ meta: "wlog:" + tag + Array.prototype.join.call(a, " ") }); } catch (x) {}
+					}
+					console.log = function () { fwd("L:", arguments); _l.apply(console, arguments); };
+					console.error = function () { fwd("E:", arguments); _e.apply(console, arguments); };
+					console.warn = function () { fwd("W:", arguments); _w.apply(console, arguments); };
+				})();
+			}
+			if (!boot.module) {
+				postBootError("boot payload has no WebAssembly.Module");
+				return;
+			}
+			// Single-file builds load the runtime before this script.
+			if (typeof TeaVM === "undefined" || !TeaVM.wasmGC || !TeaVM.wasmGC.defaults) {
+				importScripts(boot.runtime || "classes.wasm-runtime.js");
+			}
+			if (typeof TeaVM === "undefined" || !TeaVM.wasmGC || !TeaVM.wasmGC.defaults) {
+				postBootError("runtime js did not define TeaVM.wasmGC.defaults");
+				return;
+			}
+			console.log("[wasm-worker] runtime loaded, instantiating shared module...");
+			instantiateWasmGC(boot.module, { installImports: function (i) {} }).then(function (tv) {
+				var main = tv.exports && tv.exports.main;
+				if (typeof main !== "function") {
+					postBootError("no exports.main after instantiation");
+					return;
+				}
+				console.log("[wasm-worker] instantiated; entering main(" + JSON.stringify(boot.args || ["_worker_process_"]) + ")");
+				main(boot.args || ["_worker_process_"]);
+				// main installs the worker handler synchronously.
+				var q = queued;
+				queued = [];
+				for (var k = 0; k < q.length; ++k) {
+					try { self.onmessage(q[k]); } catch (e) { console.error("[wasm-worker] replay handler threw: " + errString(e)); }
+				}
+			}).catch(function (e) {
+				postBootError("instantiate/main failed: " + errString(e));
+			});
+		} catch (e) {
+			postBootError("bootstrap threw: " + errString(e));
+		}
+	}
+})();
+
+</script>
+	<script type="module">
+		(async () => {
+			try {
+				await window.__fluxReady;
+				window.__eagPrepareInlineAssets();
+				// Compile once so worker instances can reuse the module.
+				let tv;
+				try {
+					if (typeof window.__eaglerWasmGCInstantiate !== "function") {
+						throw new Error("worker-bootstrap.js helper missing");
+					}
+					let module;
+					const meshModulePromise = WebAssembly.compileStreaming(
+							fetch("mesh-worker.wasm?v=f1fd55bd1abbb808"), { builtins: ["js-string"] }
+						).catch(async (meshStreamErr) => {
+							window.__log.push("W:[shell] mesh compileStreaming failed (" + meshStreamErr + "), falling back to byte fetch");
+							const meshResp = await fetch("mesh-worker.wasm?v=f1fd55bd1abbb808");
+							return WebAssembly.compile(await meshResp.arrayBuffer(), { builtins: ["js-string"] });
+						});
+					const serverModulePromise = true ? WebAssembly.compileStreaming(
+						fetch("server-worker.wasm?v=f1fd55bd1abbb808"), { builtins: ["js-string"] }
+					).catch(async (serverStreamErr) => {
+						window.__log.push("W:[shell] server compileStreaming failed (" + serverStreamErr + "), falling back to byte fetch");
+						try {
+							const serverResp = await fetch("server-worker.wasm?v=f1fd55bd1abbb808");
+							return await WebAssembly.compile(await serverResp.arrayBuffer(), { builtins: ["js-string"] });
+						} catch (serverByteErr) {
+							window.__log.push("W:[shell] dedicated server Wasm unavailable (" + serverByteErr + "); using full image for server worker");
+							return null;
+						}
+					}) : Promise.resolve(null);
+					try {
+						module = await WebAssembly.compileStreaming(fetch("classes.wasm?v=f1fd55bd1abbb808"), { builtins: ["js-string"] });
+						window.__log.push("L:[shell] wasm compileStreaming path OK");
+					} catch (streamErr) {
+						window.__log.push("L:[shell] compileStreaming failed (" + streamErr + "), falling back to byte fetch");
+						const resp = await fetch("classes.wasm?v=f1fd55bd1abbb808");
+						const bytes = await resp.arrayBuffer();
+						window.__log.push("L:[shell] fetched classes.wasm " + bytes.byteLength + " bytes");
+						module = await WebAssembly.compile(bytes, { builtins: ["js-string"] });
+					}
+					// Finish the two worker images concurrently with the full client. Keep the
+					// large client module local; worker bootstrap reads the smaller globals.
+					const workerModules = await Promise.all([meshModulePromise, serverModulePromise]);
+					window.__eaglerWasmModule = module;
+					window.__eagReleaseInlineWasm();
+					window.__eaglerMeshWasmModule = workerModules[0];
+					window.__eaglerServerWasmModule = workerModules[1];
+					window.__log.push(true
+						? "L:[shell] dedicated mesh + server Wasm compiled"
+						: "L:[shell] dedicated mesh Wasm + shared full-image server module compiled");
+					window.__eaglerWasmRuntimeURL = null;
+					window.__eaglerWasmWorkerBootstrapURL = (window.__eaglerInlineWorkerBlobURL || new URL("worker-bootstrap.js", location.href).href);
+					if (typeof window.__eaglerWasmServerWorkerBootstrapURL !== "string") {
+						window.__eaglerWasmServerWorkerBootstrapURL = window.__eaglerWasmWorkerBootstrapURL;
+					}
+					tv = await window.__eaglerWasmGCInstantiate(module, { installImports(i) {} });
+				} catch (helperErr) {
+					// Fall back to TeaVM loading without workers.
+					window.__log.push("W:[shell] compile-once path unavailable (" + helperErr + "); TeaVM.wasmGC.load fallback (workers disabled)");
+					window.__eaglerWasmModule = null;
+					window.__eaglerMeshWasmModule = null;
+					window.__eaglerServerWasmModule = null;
+					tv = await TeaVM.wasmGC.load("classes.wasm?v=f1fd55bd1abbb808", { installImports(i) {} });
+					window.__log.push("L:[shell] wasm compileStreaming path OK");
+				}
+				window.__loaded = true;
+				window.__eaglerCrashJournal.stage("wasm-instantiated");
+				window.__tv = tv; // Exposes Wasm memory to diagnostics.
+				window.__log.push("L:[shell] wasm compiled + instantiated");
+				const main = tv.exports && tv.exports.main;
+				if (typeof main !== "function") { window.__log.push("E:[shell] no exports.main"); return; }
+
+				// Remove the splash after the first frame.
+				const load = document.getElementById("loading_screen");
+				const t0 = Date.now();
+				let eagtekGone = false;
+				(function poll() {
+					const crashed = document.querySelector("._eaglercraftX_crash_element");
+					if (crashed !== null || Date.now() - t0 > 300000) {
+						if (load && load.parentNode) { load.parentNode.removeChild(load); }
+						document.body.style.backgroundColor = "black";
+						return;
+					}
+					// The first real frame is Minecraft's native red Mojang loading
+					// overlay. Fade the 1.8 Wasm-GC shell away to reveal it.
+					if (!eagtekGone && window.__eaglerGameReady === true) {
+						window.__eaglerCrashJournal.stage("game-ready");
+						eagtekGone = true;
+						if (load) {
+							load.classList.add("is-ready");
+							setTimeout(function () { load.style.display = "none"; }, 200);
+						}
+						document.body.style.backgroundColor = "black";
+						return;
+					}
+					setTimeout(poll, 150);
+				})();
+
+				// Let the early-load layer paint before synchronous startup.
+				setTimeout(() => {
+					try {
+						window.__eaglerCrashJournal.stage("java-main");
+						main([]);
+						window.__log.push("L:[shell] main([]) returned");
+					} catch (e) {
+						window.__err = (e && (e.name + ": " + e.message)) || String(e);
+						console.error("SHELL_ERR " + window.__err + (e && e.stack ? "\n" + e.stack : ""));
+						window.__eaglerShowShellCrash(e);
+					}
+				}, 60);
+			} catch (e) {
+				window.__err = (e && (e.name + ": " + e.message)) || String(e);
+				console.error("SHELL_ERR " + window.__err + (e && e.stack ? "\n" + e.stack : ""));
+				window.__eaglerShowShellCrash(e);
+			}
+		})();
+	</script>
+</head>
+<body style="position:fixed;inset:0;margin:0;width:100%;height:100%;min-width:0;min-height:0;overflow:hidden;background-color:black;">
+	<div id="loading_screen" style="margin:0px;position:fixed;top:0;left:0;right:0;bottom:0;z-index:2147483646;background-color:#141518;display:flex;align-items:center;justify-content:center;user-select:none;-webkit-user-select:none;">
+			<div style="text-align:center;">
+				<img id="boot_image" src="data:image/png;base64,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" alt="Flux" style="height:auto;width:min(60vw,420px);image-rendering:auto" /><div id="flux_progress" style="width:min(70vw,420px);height:6px;margin:22px auto 0;background:rgba(255,255,255,0.14);border-radius:3px;overflow:hidden"><div id="flux_bar" style="height:100%;width:0;background:#fff;border-radius:3px;transition:width 0.25s ease-out"></div></div><div id="flux_pct" style="margin-top:10px;font:600 20px/1.2 system-ui,sans-serif;color:#fff">0%</div>
+				<div id="mojang_stage" aria-hidden="true"><span class="half left"></span><span class="half right"></span></div>
+				<div id="boot_status">Loading Eaglercraft 26.2 runtime…</div>
+			</div>
+		</div>
+	<div id="game_frame" style="position:fixed;inset:0;margin:0;width:100%;height:100%;min-width:0;min-height:0;overflow:hidden;background-color:black;"></div>
+	<div id="rotate_device" role="status" aria-live="polite">
+		<div class="phone" aria-hidden="true"></div>
+		<div><strong>Rotate your device</strong>Eaglercraft requires landscape mode on phones.</div>
+	</div>
+</body>
+</html>
