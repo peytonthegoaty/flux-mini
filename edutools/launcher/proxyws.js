@@ -29,31 +29,38 @@ export async function startProxy(wisp) {
 	await client;
 }
 
-// Can this Wisp server reach a WebSocket (like an Eaglercraft relay)? Opens its own connection and
-// does the WebSocket handshake; true only if the server at the far end accepts it.
-// shortcut: a probe that times out keeps its Wisp socket until the page closes; fine for one launch.
-export function reaches(wisp, url, ms = 8000) {
+// Sends one HTTPS request through a Wisp client and resolves with the response's status line, or "" after ms.
+// shortcut: a request that times out keeps its Wisp socket until the page closes; fine for one launch.
+function ask(client, url, headers, ms) {
 	const u = new URL(url);
-	const probe = (async () => {
-		const c = await newClient(wisp);
-		const io = await c.connect_tls(`wss://${u.hostname}:${u.port || 443}`);
+	const request = (async () => {
+		const io = await (await client).connect_tls(`wss://${u.hostname}:${u.port || 443}`);
 		const writer = io.write.getWriter();
 		const reader = io.read.getReader();
-		const key = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))));
-		await writer.write(
-			enc.encode(`GET ${u.pathname}${u.search} HTTP/1.1\r\nHost: ${u.host}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n` +
-				`Sec-WebSocket-Key: ${key}\r\nSec-WebSocket-Version: 13\r\nOrigin: ${location.origin}\r\n\r\n`)
-		);
+		await writer.write(enc.encode(`GET ${u.pathname}${u.search} HTTP/1.1\r\nHost: ${u.host}\r\n${headers}\r\n`));
 		let head = "";
-		while (!head.includes("\r\n\r\n")) {
+		while (!head.includes("\r\n")) {
 			const { value, done } = await reader.read();
 			if (done) break;
 			head += dec.decode(value);
 		}
 		writer.close().catch(() => {});
-		return /^HTTP\/1\.1 101/.test(head);
+		return head.split("\r\n")[0];
 	})();
-	return Promise.race([probe.catch(() => false), new Promise((r) => setTimeout(() => r(false), ms))]);
+	return Promise.race([request.catch(() => ""), new Promise((r) => setTimeout(() => r(""), ms))]);
+}
+
+// Tests one Wisp server: can it open the WebSocket at `relay` (an Eaglercraft relay), and, when `api`
+// is given, load that address within apiMs? One connection to the server does both.
+export async function checkServer(wisp, relay, api = "", apiMs = 3000) {
+	const client = newClient(wisp);
+	client.catch(() => {});
+	const key = btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(16))));
+	const [ws, http] = await Promise.all([
+		ask(client, relay, `Upgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: ${key}\r\nSec-WebSocket-Version: 13\r\nOrigin: ${location.origin}\r\n`, 8000),
+		api ? ask(client, api, `User-Agent: Flux/1.0\r\nAccept: application/json\r\nConnection: close\r\n`, apiMs) : "HTTP/1.1 200",
+	]);
+	return { relay: / 101 /.test(ws + " "), api: / 2\d\d /.test(http + " ") };
 }
 
 // Opens a TLS or TCP stream; if the shared Wisp socket was dropped, reconnects once and retries.

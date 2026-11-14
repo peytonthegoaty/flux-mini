@@ -76,6 +76,7 @@ h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.
 import { pickWisp, SERVERS } from "../../js/wisp.js";
 
 const RELAY = "wss://relay.eaglercraft.net/";
+const MODRINTH = "https://api.modrinth.com/v2/tag/loader";
 
 const VERSIONS = [
 	{ id: "flux", name: "Flux Client 1.8.8", info: "Our own 1.8 client", url: "../FluxClient/index.html", tag: "Flux" },
@@ -124,16 +125,29 @@ $("play").addEventListener("click", async () => {
 	try {
 		let preferred = "";
 		try { preferred = JSON.parse(localStorage.getItem("flux:settings") || "{}").wisp || ""; } catch { /* Auto */ }
-		const { reaches, startProxy, proxySockets } = await import("./proxyws.js");
-		// Test every Wisp server at once against the Eaglercraft relay and use the first that gets through.
+		const { checkServer, startProxy, proxySockets } = await import("./proxyws.js");
+		// Test every Wisp server at once and use the first that passes. Flux clients also need the
+		// Modrinth API to load through it within 3 seconds.
+		const api = version.id.startsWith("flux") ? MODRINTH : "";
+		const what = api ? "the Eaglercraft relay and Modrinth" : "the Eaglercraft relay";
 		const list = [...new Set([preferred, ...SERVERS].filter(Boolean))];
+		const relayOnly = [];
 		let tested = 0;
-		busy(`Testing ${list.length} proxy servers with the Eaglercraft relay…`);
 		let wisp = "";
-		const tests = list.map((w) => reaches(w, RELAY).finally(() => wisp || busy(`Testing proxy servers with the Eaglercraft relay (${++tested}/${list.length})…`)));
-		wisp = await Promise.any(tests.map((t, i) => t.then((ok) => (ok ? list[i] : Promise.reject())))).catch(() => "");
-		if (!wisp) {
-			// None reached it: still start on any working server, but say multiplayer may not work.
+		busy(`Testing ${list.length} proxy servers with ${what}…`);
+		wisp = await Promise.any(list.map(async (w) => {
+			const ok = await checkServer(w, RELAY, api);
+			if (!wisp) busy(`Testing proxy servers with ${what} (${++tested}/${list.length})…`);
+			if (ok.relay && ok.api) return w;
+			if (ok.relay) relayOnly.push(w);
+			throw new Error("failed");
+		})).catch(() => "");
+		if (!wisp && relayOnly.length) {
+			// Promise.any only gives up once every test has finished, so relayOnly is complete here.
+			wisp = relayOnly[0];
+			notice("No proxy server could load Modrinth (api.modrinth.com) within 3 seconds, so the Resource Explorer might not work. Multiplayer should still work.");
+		} else if (!wisp) {
+			// None reached the relay: still start on any working server, but say multiplayer may not work.
 			wisp = await pickWisp(preferred);
 			notice("No proxy server could reach the Eaglercraft relay (relay.eaglercraft.net), so multiplayer and LAN worlds might not work. Singleplayer is fine.");
 		}
