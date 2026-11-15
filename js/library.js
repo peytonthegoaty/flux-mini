@@ -280,7 +280,7 @@ export function playUrl(title, url) {
 
 // Asks for a website and adds it to the games (Flux Games). Resolves with it, or null.
 export async function addWebsite() {
-	const site = await addSiteDialog(viaProxy);
+	const site = await addSiteDialog();
 	if (!site) return null;
 	render();
 	animateCards();

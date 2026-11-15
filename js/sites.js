@@ -1,6 +1,5 @@
-// Websites added as games: a name, an address and a picture (one you upload, or the site's own
-// icon, found through the proxy). Kept in this browser and played through the proxy, so the site
-// works on networks that block it.
+// Websites added as games: a name, an address and a picture (one you upload, or a letter tile).
+// Kept in this browser and played through the proxy, so the site works on networks that block it.
 import { animateDialog, closeDialog, toast } from "./modal.js";
 
 const KEY = "flux:sites";
@@ -64,41 +63,10 @@ function letterPicture(name) {
 	return canvas.toDataURL("image/png");
 }
 
-// The site's icon: the biggest one its page lists, else /favicon.ico. Fetched through the proxy
-// (the site may be blocked here, and sites don't let other pages read their files directly).
-async function siteIcon(address, proxied) {
-	const page = new URL(address);
-	const found = [];
-	try {
-		const html = await (await fetch(await proxied(page.href))).text();
-		const doc = new DOMParser().parseFromString(html, "text/html");
-		for (const link of doc.querySelectorAll("link[rel][href]")) {
-			const rel = link.getAttribute("rel").toLowerCase();
-			if (!/\bicon\b|apple-touch-icon/.test(rel)) continue;
-			const size = Math.max(0, ...(link.getAttribute("sizes") || "").split(/\s+/).map((s) => parseInt(s) || 0));
-			found.push({ href: new URL(link.getAttribute("href"), page).href, rank: rel.includes("apple") ? 180 : size || 32 });
-		}
-	} catch {
-		// The page didn't load; /favicon.ico may still.
-	}
-	found.sort((a, b) => b.rank - a.rank);
-	found.push({ href: new URL("/favicon.ico", page).href });
-	for (const { href } of found) {
-		try {
-			const res = await fetch(await proxied(href));
-			if (res.ok) return await squarePicture(await res.blob());
-		} catch {
-			// Try the next one.
-		}
-	}
-	return null;
-}
-
 let dialog = null;
 
-// Asks for a website and adds it. proxied(url) gives the proxy's address for a URL.
-// Resolves with the new site, or null when cancelled.
-export function addSiteDialog(proxied) {
+// Asks for a website and adds it. Resolves with the new site, or null when cancelled.
+export function addSiteDialog() {
 	if (!dialog) {
 		dialog = Object.assign(document.createElement("dialog"), { className: "modal ask site-add" });
 		dialog.innerHTML =
@@ -112,7 +80,7 @@ export function addSiteDialog(proxied) {
 			`<div class="site-pic">` +
 			`<img alt="Icon preview" width="64" height="64">` +
 			`<div><div class="site-pic-buttons"><button class="btn" type="button" data-act="upload">Upload icon</button></div>` +
-			`<small class="site-pic-status">With no icon, the site's own is found when you add it.</small></div>` +
+			`<small class="site-pic-status">With no icon, it gets a tile with its first letter.</small></div>` +
 			`<input type="file" accept="image/*" hidden>` +
 			`</div>` +
 			`<div class="ask-actions"><button class="btn" value="" type="submit" formnovalidate>Cancel</button><button class="btn primary" value="ok" type="submit">Add</button></div>` +
@@ -133,7 +101,7 @@ export function addSiteDialog(proxied) {
 	};
 	form.reset();
 	showPicture(null);
-	status.textContent = "With no icon, the site's own is found when you add it.";
+	status.textContent = "With no icon, it gets a tile with its first letter.";
 
 	const address = () => {
 		const text = urlInput.value.trim();
@@ -144,16 +112,6 @@ export function addSiteDialog(proxied) {
 			return null;
 		}
 	};
-	const find = async () => {
-		const url = address();
-		if (!url) return void (status.textContent = "Type the website's address first.");
-		status.textContent = "Looking for the site's icon…";
-		const found = await siteIcon(url, proxied).catch(() => null);
-		if (found) showPicture(found);
-		status.textContent = found ? "Found the site's icon." : "The site has no icon, so it gets a letter.";
-		return found;
-	};
-
 	return new Promise((resolve) => {
 		const onClick = (e) => {
 			const act = e.target.closest("[data-act]")?.dataset.act;
@@ -176,7 +134,7 @@ export function addSiteDialog(proxied) {
 			dialog.removeEventListener("close", onClose);
 			resolve(value);
 		};
-		const onSubmit = async (e) => {
+		const onSubmit = (e) => {
 			e.preventDefault();
 			if (e.submitter?.value !== "ok") {
 				closeDialog(dialog);
@@ -188,7 +146,6 @@ export function addSiteDialog(proxied) {
 				return urlInput.focus();
 			}
 			const name = nameInput.value.trim() || new URL(url).hostname.replace(/^www\./, "");
-			if (!picture) await find();
 			const site = { id: `site-${Date.now().toString(36)}`, title: name, url, image: picture || letterPicture(name), site: true };
 			sites.push(site);
 			if (!save()) sites.pop();

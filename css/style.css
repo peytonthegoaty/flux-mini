@@ -2842,7 +2842,7 @@ html:not(.os) .os,
 	object-fit: contain;
 }
 .site-pic img.empty {
-	visibility: hidden;
+	display: none; /* no gap where the picture goes until there is one */
 }
 .site-pic > div {
 	display: flex;
