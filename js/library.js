@@ -1,7 +1,8 @@
 // Game library (from edulist.txt) and the game player.
 import { uvUrl } from "./app.js";
 import { debug } from "./log.js";
-import { toast } from "./modal.js";
+import { ask, toast } from "./modal.js";
+import { addSiteDialog, removeSite, sites } from "./sites.js";
 import { enhanceSelect } from "./select.js";
 import { volumeControl } from "./volume.js";
 
@@ -74,8 +75,8 @@ const sourceName = () => source.selectedOptions[0].text;
 
 function render() {
 	byId.clear();
-	for (const g of [...localGames, ...gnGames]) byId.set(g.id, g);
-	const games = sortGames([...(source.value === "gn" ? gnGames : localGames)]);
+	for (const g of [...localGames, ...sites, ...gnGames]) byId.set(g.id, g);
+	const games = sortGames(source.value === "gn" ? [...gnGames] : [...localGames, ...sites]);
 	grid.innerHTML = games
 		.map((g) => {
 			const title = esc(g.title);
@@ -85,7 +86,9 @@ function render() {
 				`<span class="card-art"><img src="${esc(sitePath(g.image))}" alt="" loading="lazy" decoding="async" width="160" height="160"></span>` +
 				`<span class="card-title">${title}</span></button>` +
 				`<button class="card-star${favs.has(g.id) ? " on" : ""}" type="button" aria-label="Favorite ${title}" aria-pressed="${favs.has(g.id)}">` +
-				`<svg class="i"><use href="#i-star"/></svg></button></div>`
+				`<svg class="i"><use href="#i-star"/></svg></button>` +
+				(g.site ? `<button class="card-del" type="button" aria-label="Remove ${title}" title="Remove website"><svg class="i"><use href="#i-x"/></svg></button>` : "") +
+				`</div>`
 			);
 		})
 		.join("");
@@ -106,7 +109,7 @@ const gnUrl = (u) => u.replace("{COVER_URL}", GN + "covers@main").replace("{HTML
 let gnProxy = false;
 
 // This site's Ultraviolet address for a URL, usable from this page as well as from frames.
-async function viaProxy(url) {
+export async function viaProxy(url) {
 	const path = await uvUrl(url);
 	// The service worker only sees this page's own requests (list, covers) once it controls the page.
 	if (!navigator.serviceWorker.controller) {
@@ -172,6 +175,8 @@ const unblock = (html) =>
 export function startGame(game, el) {
 	const run = (el.run = (el.run || 0) + 1);
 	if (game.gn) playGn(game, el, () => run !== el.run);
+	// A website you added: through the proxy, like a browser tab.
+	else if (game.site) viaProxy(game.url).then((url) => run === el.run && (el.src = url), () => toast(`Couldn't start the proxy for ${game.title}.`));
 	else el.src = sitePath(game.url);
 }
 
@@ -273,6 +278,24 @@ export function playUrl(title, url) {
 	showView("player");
 }
 
+// Asks for a website and adds it to the games (Flux Games). Resolves with it, or null.
+export async function addWebsite() {
+	const site = await addSiteDialog(viaProxy);
+	if (!site) return null;
+	render();
+	animateCards();
+	toast(`Added ${site.title} to your games`);
+	return site;
+}
+
+async function forgetSite(site) {
+	if (!(await ask({ title: `Remove ${site.title}?`, message: "It's taken off your games in this browser.", ok: "Remove", danger: true }))) return;
+	removeSite(site.id);
+	favs.delete(site.id);
+	saveFavs();
+	render();
+}
+
 // Every game with its picture's full address (for the OS "Add game" picker). gn: from gn-math.
 export const gameList = () => [...byId.values()].map((g) => ({ id: g.id, title: g.title, image: sitePath(g.image), gn: !!g.gn }));
 
@@ -308,10 +331,18 @@ export function initGames(show) {
 		const card = e.target.closest(".card");
 		if (!card) return;
 		if (e.target.closest(".card-star")) toggleFavWithToast(card.dataset.id);
+		else if (e.target.closest(".card-del")) forgetSite(byId.get(card.dataset.id));
 		else play(card.dataset.id);
 	});
 	search.addEventListener("input", filter);
 	enhanceSelect(source);
+	$("add-site").addEventListener("click", async () => {
+		const site = await addWebsite();
+		if (site && source.value !== "flux") {
+			source.value = "flux";
+			source.dispatchEvent(new Event("change"));
+		}
+	});
 	source.addEventListener("change", () => {
 		if (source.value === "gn") loadGnMath();
 		render();

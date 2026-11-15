@@ -5,7 +5,7 @@
 import { newTab, resumeTabs, suspendTabs, warmProxy } from "./app.js";
 import { addFile, files, filesReady, htmlUrl, removeFile, saveFiles } from "./files.js";
 import { volumeControl } from "./volume.js";
-import { findGame, gameList, loadGnMath, quitFrame, startGame, stopGame } from "./library.js";
+import { addWebsite, findGame, gameList, loadGnMath, quitFrame, startGame, stopGame } from "./library.js";
 import { animateDialog, ask, closeDialog, toast } from "./modal.js";
 import { saveSettings, settings } from "./settings.js";
 
@@ -530,6 +530,10 @@ function showPicks() {
 	);
 	picker.querySelector(".os-pick-empty").hidden = games.length > 0;
 }
+async function addSiteToDesk() {
+	const site = await addWebsite();
+	if (site) addFile({ type: "game", name: site.title, gameId: site.id, image: site.image });
+}
 async function newText() {
 	const answer = await ask({ title: "New text file", fields: [{ label: "Name", value: "Notes" }], ok: "Create" });
 	if (answer) openFile(addFile({ type: "text", name: answer[0], text: "" }));
@@ -584,7 +588,7 @@ function deskMenu(e) {
 		return showMenu(e, [["Open", () => openFile(file)], ["Rename", () => renameFile(file)], null, ["Delete", () => deleteFile(file)]]);
 	}
 	if (appEl) return showMenu(e, [["Open", () => openApp(appEl.dataset.app)]]);
-	showMenu(e, [["Add game", addGame], ["New text file", newText], ["Add HTML file or code", () => openApp("html")], null, ["Change wallpaper", () => openApp("wallpaper")]]);
+	showMenu(e, [["Add game", addGame], ["Add website", addSiteToDesk], ["New text file", newText], ["Add HTML file or code", () => openApp("html")], null, ["Change wallpaper", () => openApp("wallpaper")]]);
 }
 
 // Desktop icons -------------------------------------------------------------------

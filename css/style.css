@@ -1424,7 +1424,8 @@ input[role="switch"]:checked::before {
 	color: var(--fg-m);
 	font-size: 13px;
 }
-#ask-fields {
+#ask-fields,
+.site-fields {
 	display: flex;
 	flex-direction: column;
 	gap: 12px;
@@ -1432,7 +1433,8 @@ input[role="switch"]:checked::before {
 #ask-fields:empty {
 	display: none;
 }
-#ask-fields label {
+#ask-fields label,
+.site-fields label {
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
@@ -1717,10 +1719,6 @@ html:not(.os) .os,
 	background: rgba(var(--a), 0.08);
 	pointer-events: none;
 }
-.os-icon.selected {
-	border-color: var(--border-2);
-	background: rgba(var(--a), 0.1);
-}
 .os-busy body::before {
 	animation-play-state: paused; /* the drifting background stops repainting while a window moves */
 }
@@ -1744,6 +1742,11 @@ html:not(.os) .os,
 	color: var(--fg);
 	font-size: 12px;
 	text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+/* Selected icons (a click, Ctrl + click, or the drag-select box). After the rule above, which it overrides. */
+.os-desk > .os-icon.selected {
+	border-color: rgba(var(--a), 0.35);
+	background: rgba(var(--a), 0.16);
 }
 .os-desk > .os-icon.dragging {
 	z-index: 2;
@@ -2821,4 +2824,65 @@ html:not(.os) .os,
 }
 .os .player .vol {
 	display: none; /* the Games window's title bar has one */
+}
+
+/* Add website (js/sites.js) */
+.site-pic {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+.site-pic img {
+	flex: none;
+	width: 64px;
+	height: 64px;
+	border: 1px solid var(--border);
+	border-radius: var(--r);
+	background: var(--field);
+	object-fit: contain;
+}
+.site-pic img.empty {
+	visibility: hidden;
+}
+.site-pic > div {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	min-width: 0;
+}
+.site-pic-buttons {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+.site-pic-status {
+	color: var(--fg-m);
+	font-size: 12px;
+}
+/* Remove button on an added website's card, under the star. */
+.card-del {
+	position: absolute;
+	top: 38px;
+	right: 8px;
+	z-index: 3;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 26px;
+	height: 26px;
+	padding: 0;
+	border: 0;
+	border-radius: var(--r-sm);
+	background: rgba(0, 0, 0, 0.55);
+	color: #fff;
+	opacity: 0;
+	transition: opacity var(--t-hover);
+}
+.card-del .i {
+	width: 14px;
+	height: 14px;
+}
+.card:hover .card-del,
+.card:focus-within .card-del {
+	opacity: 1;
 }

@@ -291,6 +291,7 @@ m34 -295 c73 -35 124 -162 198 -494 55 -251 74 -374 87 -583 17 -267 3 -313
 					</label>
 					<button class="btn" id="show-favs" type="button" aria-pressed="false"><svg xmlns="http://www.w3.org/2000/svg" class="i"><use href="#i-star" /></svg><span>Favorites</span></button>
 					<button class="btn" id="random-game" type="button"><svg xmlns="http://www.w3.org/2000/svg" class="i"><use href="#i-shuffle" /></svg><span>Random</span></button>
+					<button class="btn" id="add-site" type="button"><svg xmlns="http://www.w3.org/2000/svg" class="i"><use href="#i-plus" /></svg><span>Add website</span></button>
 				</div>
 				<div class="panel">
 					<div class="panel-head"><b id="games-heading">All games</b><small id="games-shown"></small></div>
