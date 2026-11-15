@@ -2886,3 +2886,49 @@ html:not(.os) .os,
 .card:focus-within .card-del {
 	opacity: 1;
 }
+
+/* Offline (js/offline.js) */
+#player-offline.on {
+	color: var(--fg);
+}
+.offline-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+.offline-list li {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 6px 0;
+}
+.offline-list span {
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.offline-list small {
+	color: var(--fg-m);
+}
+.offline-empty {
+	margin: 0;
+	color: var(--fg-m);
+	font-size: 13px;
+}
+.offline-list:not(:empty) + .offline-empty {
+	display: none;
+}
+/* With no internet, games that aren't saved fade out. */
+.offline .card:not(.saved) {
+	opacity: 0.35;
+}
+.card.saved .card-title::after {
+	content: " · offline";
+	color: var(--fg-m);
+	font-size: 11px;
+}

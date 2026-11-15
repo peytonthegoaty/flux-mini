@@ -1,5 +1,6 @@
 """Builds extra.svg: the whole of src/page.html inside one SVG foreignObject, with no separate page."""
 import html.entities
+import json
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -49,7 +50,23 @@ def build():
     if not out.exists() or out.read_text(encoding="utf-8") != svg:  # unchanged keeps its date, so it isn't re-uploaded
         out.write_text(svg, encoding="utf-8", newline="\n")
     ET.fromstring(svg.encode("utf-8"))  # a browser shows an error page for anything that isn't valid XML
+    offline_manifest()
     return svg
+
+
+def offline_manifest():
+    """offline.json: every file of each game folder, with its size, so a game can be saved for
+    offline use (js/offline.js) with its size known up front."""
+    folders = {}
+    for path in sorted((ROOT / "edutools").rglob("*")):
+        if path.is_file():
+            parts = path.relative_to(ROOT / "edutools").parts
+            if len(parts) > 1:
+                folders.setdefault(parts[0], []).append(["/".join(parts[1:]), path.stat().st_size])
+    text = json.dumps(folders, separators=(",", ":"))
+    out = ROOT / "offline.json"
+    if not out.exists() or out.read_text(encoding="utf-8") != text:  # unchanged keeps its date, so it isn't re-uploaded
+        out.write_text(text, encoding="utf-8", newline="\n")
 
 
 if __name__ == "__main__":

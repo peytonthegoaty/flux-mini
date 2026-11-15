@@ -5,6 +5,7 @@ import { ask, toast } from "./modal.js";
 import { addSiteDialog, removeSite, sites } from "./sites.js";
 import { enhanceSelect } from "./select.js";
 import { volumeControl } from "./volume.js";
+import { canSave, isSaved, removeGame, saveGame } from "./offline.js";
 
 const FAVS_KEY = "flux:favs";
 const $ = (id) => document.getElementById(id);
@@ -81,7 +82,7 @@ function render() {
 		.map((g) => {
 			const title = esc(g.title);
 			return (
-				`<div class="card" data-id="${esc(g.id)}" data-title="${(title + (g.tags ? " " + esc(g.tags) : "")).toLowerCase()}">` +
+				`<div class="card${isSaved(g.id) ? " saved" : ""}" data-id="${esc(g.id)}" data-title="${(title + (g.tags ? " " + esc(g.tags) : "")).toLowerCase()}">` +
 				`<button class="card-play" type="button" title="${title}">` +
 				`<span class="card-art"><img src="${esc(sitePath(g.image))}" alt="" loading="lazy" decoding="async" width="160" height="160"></span>` +
 				`<span class="card-title">${title}</span></button>` +
@@ -261,17 +262,31 @@ export function clearFavs() {
 export function play(id) {
 	const game = byId.get(id);
 	if (!game) return;
+	if (!navigator.onLine && !isSaved(id)) return toast(`You're offline, and ${game.title} isn't saved for offline.`);
 	current = game;
 	playerStar.hidden = false;
 	$("player-title").textContent = game.title;
 	playerStar.classList.toggle("on", favs.has(id));
 	startGame(game, frame);
+	showOfflineButton();
 	showView("player");
+}
+
+function showOfflineButton() {
+	const button = $("player-offline");
+	button.hidden = !current || !canSave(current);
+	if (button.hidden) return;
+	const on = isSaved(current.id);
+	button.classList.toggle("on", on);
+	button.setAttribute("aria-label", on ? "Saved for offline (remove)" : "Save for offline");
+	button.title = on ? "Saved for offline. Click to remove." : "Save for offline";
+	button.firstChild.firstChild.setAttribute("href", on ? "#i-offline-done" : "#i-download");
 }
 
 // Plays a page that isn't in the game list (the HTML section).
 export function playUrl(title, url) {
 	current = null;
+	showOfflineButton();
 	$("player-title").textContent = title;
 	playerStar.hidden = true;
 	frame.src = url;
@@ -359,6 +374,20 @@ export function initGames(show) {
 	});
 	playerStar.addEventListener("click", () => current && toggleFavWithToast(current.id));
 	$("player-fav").before(volumeControl($("view-player"), "player"));
+	// Save for offline: the button next to the star.
+	$("player-offline").addEventListener("click", async () => {
+		const game = current;
+		if (!game) return;
+		if (!isSaved(game.id)) return saveGame(game, sitePath(game.image));
+		if (await ask({ title: `Remove ${game.title} from offline?`, message: "It stays in your games; it just won't work without internet until you save it again.", ok: "Remove" })) {
+			await removeGame(game.id);
+			toast(`Removed ${game.title} from offline`);
+		}
+	});
+	document.addEventListener("flux:offline", () => {
+		showOfflineButton();
+		for (const card of grid.children) card.classList.toggle("saved", isSaved(card.dataset.id));
+	});
 	// Keys go to whatever has focus, which after a click is the button, not the game; hand it back.
 	const focusGame = () => {
 		frame.focus();

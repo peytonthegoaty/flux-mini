@@ -8,6 +8,7 @@ import { debug } from "./log.js";
 import { animateDialog, ask, closeDialog, toast } from "./modal.js";
 import { bootOS, openApp, osMode } from "./os.js";
 import { enhanceSelect } from "./select.js";
+import { initOffline } from "./offline.js";
 import { DEFAULTS, resetSettings, saveSettings, settings } from "./settings.js";
 import { pickWisp, SERVERS } from "./wisp.js";
 
@@ -498,6 +499,7 @@ showBackground(settings.bg, settings.bgLink);
 markChoices();
 moveIndicator();
 initGames(showView);
+initOffline();
 const gamesReady = loadGames().then(
 	(count) => ($("game-count").textContent = count),
 	(err) => {

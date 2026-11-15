@@ -206,6 +206,8 @@ m34 -295 c73 -35 124 -162 198 -494 55 -251 74 -374 87 -583 17 -267 3 -313
 				<symbol id="i-external" viewBox="0 0 24 24"><path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
 				<symbol id="i-volume" viewBox="0 0 24 24"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298zM16 9a5 5 0 0 1 0 6M19.364 18.364a9 9 0 0 0 0-12.728"/></symbol>
 <symbol id="i-volume-x" viewBox="0 0 24 24"><path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298zM22 9l-6 6M16 9l6 6"/></symbol>
+<symbol id="i-download" viewBox="0 0 24 24"><path d="M12 15V3M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5"/></symbol>
+<symbol id="i-offline-done" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M8 10l3 3 5-6"/></symbol>
 <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
 				<symbol id="i-plus" viewBox="0 0 24 24"><path d="M5 12h14M12 5v14"/></symbol>
 				<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 12h16M4 6h16M4 18h16"/></symbol>
@@ -304,6 +306,7 @@ m34 -295 c73 -35 124 -162 198 -494 55 -251 74 -374 87 -583 17 -267 3 -313
 				<div class="bar topbar">
 					<button class="icon-btn" id="player-back" type="button" aria-label="Back to games"><svg xmlns="http://www.w3.org/2000/svg" class="i"><use href="#i-back" /></svg></button>
 					<h2 class="bar-title" id="player-title"></h2>
+					<button class="icon-btn" id="player-offline" type="button" aria-label="Save for offline" hidden=""><svg xmlns="http://www.w3.org/2000/svg" class="i"><use href="#i-download" /></svg></button>
 					<button class="icon-btn star-btn" id="player-fav" type="button" aria-label="Favorite"><svg xmlns="http://www.w3.org/2000/svg" class="i"><use href="#i-star" /></svg></button>
 					<button class="icon-btn" id="player-fullscreen" type="button" aria-label="Fullscreen"><svg xmlns="http://www.w3.org/2000/svg" class="i"><use href="#i-max" /></svg></button>
 				</div>
@@ -410,6 +413,7 @@ m34 -295 c73 -35 124 -162 198 -494 55 -251 74 -374 87 -583 17 -267 3 -313
 					<button class="s-tab" type="button" data-tab="browsing" aria-current="true"><svg xmlns="http://www.w3.org/2000/svg" class="i"><use href="#i-shield" /></svg>Browsing</button>
 					<button class="s-tab" type="button" data-tab="appearance"><svg xmlns="http://www.w3.org/2000/svg" class="i"><use href="#i-droplet" /></svg>Appearance</button>
 					<button class="s-tab" type="button" data-tab="cloak"><svg xmlns="http://www.w3.org/2000/svg" class="i"><use href="#i-eye-off" /></svg>Tab cloak</button>
+					<button class="s-tab" type="button" data-tab="offline"><svg xmlns="http://www.w3.org/2000/svg" class="i"><use href="#i-download" /></svg>Offline</button>
 					<button class="s-tab" type="button" data-tab="data"><svg xmlns="http://www.w3.org/2000/svg" class="i"><use href="#i-trash" /></svg>Data</button>
 					<button class="s-tab" type="button" data-tab="links"><svg xmlns="http://www.w3.org/2000/svg" class="i"><use href="#i-check" /></svg>Links</button>
 					<button class="s-tab" type="button" data-tab="info"><svg xmlns="http://www.w3.org/2000/svg" class="i"><use href="#i-stats" /></svg>Info</button>
@@ -496,6 +500,20 @@ m34 -295 c73 -35 124 -162 198 -494 55 -251 74 -374 87 -583 17 -267 3 -313
 						<div class="row col">
 							<div><b>Panic key goes to</b></div>
 							<input id="panic-url" type="url" spellcheck="false" />
+						</div>
+					</div>
+
+					<div class="s-panel" data-panel="offline" hidden="">
+						<div class="row">
+							<div><b>Storage</b><small id="offline-space">Checking…</small></div>
+						</div>
+						<div class="row col">
+							<div><b>Saved games</b><small>These play with no internet. To save one, open it and press the download button next to the star.</small></div>
+							<ul class="offline-list" id="offline-list"></ul>
+							<p class="offline-empty" id="offline-empty">No games saved yet.</p>
+						</div>
+						<div class="row">
+							<div><b>Your files</b><small>Your HTML files, notes, favorites and settings are kept in this browser, so they work offline too. Flux itself is kept on every visit.</small></div>
 						</div>
 					</div>
 

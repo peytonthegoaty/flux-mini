@@ -52,9 +52,10 @@ const withProxy = (code) => code.replace(/^(\s*<!doctype[^>]*>)?/i, (doctype) =>
 // The address that runs a page: a blob: for pasted code or a single file, or a zipped site served
 // by sw.js from the cache. Single pages can't load files they link to; zip sites can.
 export async function htmlUrl(file) {
-	if (file.proxy) await proxy();
+	const proxied = file.proxy && navigator.onLine; // offline there's no proxy to reach; the page still opens
+	if (proxied) await proxy();
 	if (file.zip) return zipUrl(file);
-	return URL.createObjectURL(new Blob([file.proxy ? withProxy(file.code) : file.code], { type: "text/html" }));
+	return URL.createObjectURL(new Blob([proxied ? withProxy(file.code) : file.code], { type: "text/html" }));
 }
 
 // Zip sites ----------------------------------------------------------------------------------

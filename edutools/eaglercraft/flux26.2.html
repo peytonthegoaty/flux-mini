@@ -4,7 +4,7 @@
 <script type="text/javascript">
 (function () {
   "use strict";
-  var M = {"parts":[8143423,8127610,8242878,8127827,8384847,8127579,8321907,8127579,8127579,8127579,8127579,8127579,8127579,8127579,8127579,8127579,8127579,1661979],"sizes":{"eag-inline-decoder":208439,"eag-inline-wasm-br":14408670,"eag-inline-mesh-wasm-br":3175758,"eag-inline-server-wasm-br":7663998,"eag-inline-assets":14498103,"eag-inline-sounds":65340504},"version":"93e4939558dd"};
+  var M = {"parts":[8143423,8127610,8222986,8127827,8384847,8127579,8321907,8127579,8127579,8127579,8127579,8127579,8127579,8127579,8127579,8127579,8127579,1661979],"sizes":{"eag-inline-decoder":208439,"eag-inline-wasm-br":14393751,"eag-inline-mesh-wasm-br":3175758,"eag-inline-server-wasm-br":7663998,"eag-inline-assets":14498103,"eag-inline-sounds":65340504},"version":"76cfc71ad0e2"};
   var store = Object.create(null);
   var total = 0;
   var loaded = 0;
@@ -406,7 +406,7 @@ window.__fluxInstallShim = function () {
 				window.__eaglerRecoveredCrash = previousReport;
 				var journal = {
 					version: 2,
-					build: "c80042b1db76baff",
+					build: "64bf05df971faae5",
 					sessionId: Date.now().toString(36) + "-" + Math.random().toString(36).slice(2),
 					startedAt: Date.now(),
 					heartbeat: Date.now(),
@@ -657,8 +657,8 @@ window.__fluxInstallShim = function () {
 		window.eaglercraftXOpts = {
 			container: "game_frame",
 			assetsURI: [
-				{ url: "assets.epk?v=c80042b1db76baff", path: "" },
-				{ url: "sounds.epk?v=c80042b1db76baff", path: "" }
+				{ url: "assets.epk?v=64bf05df971faae5", path: "" },
+				{ url: "sounds.epk?v=64bf05df971faae5", path: "" }
 			],
 			localesURI: "lang/",
 			worldsDB: "worlds",
@@ -867,18 +867,18 @@ var TeaVM=TeaVM||{};TeaVM.wasmGC=TeaVM.wasmGC||(()=>{let n=new Map;let e=null;le
 					}
 					let module;
 					const meshModulePromise = WebAssembly.compileStreaming(
-							fetch("mesh-worker.wasm?v=c80042b1db76baff"), { builtins: ["js-string"] }
+							fetch("mesh-worker.wasm?v=64bf05df971faae5"), { builtins: ["js-string"] }
 						).catch(async (meshStreamErr) => {
 							window.__log.push("W:[shell] mesh compileStreaming failed (" + meshStreamErr + "), falling back to byte fetch");
-							const meshResp = await fetch("mesh-worker.wasm?v=c80042b1db76baff");
+							const meshResp = await fetch("mesh-worker.wasm?v=64bf05df971faae5");
 							return WebAssembly.compile(await meshResp.arrayBuffer(), { builtins: ["js-string"] });
 						});
 					const serverModulePromise = true ? WebAssembly.compileStreaming(
-						fetch("server-worker.wasm?v=c80042b1db76baff"), { builtins: ["js-string"] }
+						fetch("server-worker.wasm?v=64bf05df971faae5"), { builtins: ["js-string"] }
 					).catch(async (serverStreamErr) => {
 						window.__log.push("W:[shell] server compileStreaming failed (" + serverStreamErr + "), falling back to byte fetch");
 						try {
-							const serverResp = await fetch("server-worker.wasm?v=c80042b1db76baff");
+							const serverResp = await fetch("server-worker.wasm?v=64bf05df971faae5");
 							return await WebAssembly.compile(await serverResp.arrayBuffer(), { builtins: ["js-string"] });
 						} catch (serverByteErr) {
 							window.__log.push("W:[shell] dedicated server Wasm unavailable (" + serverByteErr + "); using full image for server worker");
@@ -886,11 +886,11 @@ var TeaVM=TeaVM||{};TeaVM.wasmGC=TeaVM.wasmGC||(()=>{let n=new Map;let e=null;le
 						}
 					}) : Promise.resolve(null);
 					try {
-						module = await WebAssembly.compileStreaming(fetch("classes.wasm?v=c80042b1db76baff"), { builtins: ["js-string"] });
+						module = await WebAssembly.compileStreaming(fetch("classes.wasm?v=64bf05df971faae5"), { builtins: ["js-string"] });
 						window.__log.push("L:[shell] wasm compileStreaming path OK");
 					} catch (streamErr) {
 						window.__log.push("L:[shell] compileStreaming failed (" + streamErr + "), falling back to byte fetch");
-						const resp = await fetch("classes.wasm?v=c80042b1db76baff");
+						const resp = await fetch("classes.wasm?v=64bf05df971faae5");
 						const bytes = await resp.arrayBuffer();
 						window.__log.push("L:[shell] fetched classes.wasm " + bytes.byteLength + " bytes");
 						module = await WebAssembly.compile(bytes, { builtins: ["js-string"] });
@@ -917,7 +917,7 @@ var TeaVM=TeaVM||{};TeaVM.wasmGC=TeaVM.wasmGC||(()=>{let n=new Map;let e=null;le
 					window.__eaglerWasmModule = null;
 					window.__eaglerMeshWasmModule = null;
 					window.__eaglerServerWasmModule = null;
-					tv = await TeaVM.wasmGC.load("classes.wasm?v=c80042b1db76baff", { installImports(i) {} });
+					tv = await TeaVM.wasmGC.load("classes.wasm?v=64bf05df971faae5", { installImports(i) {} });
 					window.__log.push("L:[shell] wasm compileStreaming path OK");
 				}
 				window.__loaded = true;

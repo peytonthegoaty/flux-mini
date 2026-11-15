@@ -63,9 +63,20 @@ async function zipSite(request) {
 	return hit || new Response("That file isn't in the zip.", { status: 404, headers: { "content-type": "text/plain" } });
 }
 
+// Offline (js/offline.js): with no internet, Flux's own files and the games you saved come from the
+// copies js/offline.js keeps. Online nothing changes: they load straight from the site.
+function offline(event) {
+	const url = new URL(event.request.url);
+	if (self.navigator.onLine || event.request.method !== "GET" || url.origin !== self.location.origin) return false;
+	if (url.pathname.startsWith(__uv$config.prefix) || url.pathname.startsWith(base + "scramjet/") || url.pathname.startsWith(base + "sj2/")) return false;
+	event.respondWith(caches.match(event.request, { ignoreSearch: true }).then((hit) => hit || fetch(event.request)));
+	return true;
+}
+
 // Only proxy traffic goes through the worker; games and site files load natively (faster, range requests work).
 self.addEventListener("fetch", (event) => {
 	if (new URL(event.request.url).pathname.startsWith(base + "zipsite/")) return event.respondWith(zipSite(event.request));
+	if (offline(event)) return;
 	// Scramjet 2 knows its own tabs (the page's controller registers them with this worker).
 	if ($scramjetController.shouldRoute(event)) return event.respondWith(fluxErrors(event.request, $scramjetController.route(event), "Scramjet 2"));
 	const { pathname } = new URL(event.request.url);
