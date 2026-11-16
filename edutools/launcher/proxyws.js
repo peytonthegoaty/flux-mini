@@ -279,3 +279,30 @@ function concat(parts) {
 	}
 	return out;
 }
+
+// The pack browser's downloads (Modrinth, CurseForge and their images), through the Wisp server, for networks that
+// block those sites. Everything else the game fetches still loads directly.
+const PACK_HOSTS = /(^|\.)(modrinth\.com|curse\.tools|forgecdn\.net)$/;
+export function proxyFetch(win) {
+	const direct = win.fetch.bind(win);
+	win.fetch = function (input, init) {
+		let url;
+		try {
+			url = new URL(typeof input === "string" ? input : input.url, win.location.href);
+		} catch {
+			return direct(input, init);
+		}
+		if (!PACK_HOSTS.test(url.hostname)) return direct(input, init);
+		return (async () => {
+			for (let attempt = 1; ; attempt++) {
+				try {
+					return await (await client).fetch(url.href, { method: "GET", headers: { "User-Agent": "Flux/1.0" } });
+				} catch (err) {
+					if (attempt > 1) throw err;
+					client = newClient(); // the shared Wisp socket dropped: reconnect once
+				}
+			}
+		})();
+	};
+	win.__fluxPackProxy = true;
+}

@@ -45,6 +45,11 @@ h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.
 .opt small { display: block; color: var(--fg-m); font-size: 12px; }
 .play { width: 100%; height: 44px; border: 0; border-radius: var(--r); background: var(--fg); color: #000; font-size: 15px; font-weight: 600; cursor: pointer; transition: transform 0.15s var(--ease), filter 0.25s ease; }
 .play:hover { filter: brightness(0.9); }
+.choice { display: grid; gap: 8px; margin-top: 10px; }
+.choice button { display: block; width: 100%; padding: 10px 12px; text-align: left; border: 1px solid var(--border-2); border-radius: var(--r); background: var(--bg2); cursor: pointer; }
+.choice button:hover:not(:disabled) { border-color: var(--fg); }
+.choice button:disabled { opacity: 0.45; cursor: default; }
+.choice small { display: block; color: var(--fg-m); font-size: 12px; }
 .play:active { transform: scale(0.98); }
 .play:disabled { cursor: default; filter: brightness(0.7); }
 .bar { height: 2px; margin-top: 12px; overflow: hidden; border-radius: 2px; background: var(--border); }
@@ -247,45 +252,81 @@ $("play").addEventListener("click", async () => {
 	try {
 		let preferred = "";
 		try { preferred = JSON.parse(localStorage.getItem("flux:settings") || "{}").wisp || ""; } catch { /* Auto */ }
-		const { checkServer, startProxy, proxySockets } = await import("./proxyws.js");
-		// Test every Wisp server at once and use the first that passes. Flux clients also need the
-		// Modrinth API to load through it within 3 seconds.
+		const { checkServer, startProxy, proxySockets, proxyFetch } = await import("./proxyws.js");
+		// Every Wisp server is tested at once. The first to pass both the Eaglercraft relay and (for Flux
+		// clients) Modrinth is used at once; otherwise all of them get their full test before choosing.
 		const api = version.id.startsWith("flux") ? MODRINTH : "";
 		const what = api ? "the Eaglercraft relay and Modrinth" : "the Eaglercraft relay";
 		const list = [...new Set([preferred, ...SERVERS].filter(Boolean))];
-		const relayOnly = [];
+		const relayOnly = [], apiOnly = [];
 		let tested = 0;
-		let wisp = "";
 		busy(`Testing ${list.length} proxy servers with ${what}…`);
-		wisp = await Promise.any(list.map(async (w) => {
-			const ok = await checkServer(w, RELAY, api);
-			if (!wisp) busy(`Testing proxy servers with ${what} (${++tested}/${list.length})…`);
-			if (ok.relay && ok.api) return w;
-			if (ok.relay) relayOnly.push(w);
-			throw new Error("failed");
-		})).catch(() => "");
-		if (!wisp && relayOnly.length) {
-			// Promise.any only gives up once every test has finished, so relayOnly is complete here.
-			wisp = relayOnly[0];
-			notice("No proxy server could load Modrinth (api.modrinth.com) within 3 seconds, so the Resource Explorer might not work. Multiplayer should still work.");
+		let wisp = await new Promise((resolve) => {
+			let left = list.length, found = false;
+			for (const w of list) {
+				checkServer(w, RELAY, api).catch(() => ({ relay: false, api: false })).then((ok) => {
+					if (found) return;
+					busy(`Testing proxy servers with ${what} (${++tested}/${list.length})…`);
+					if (ok.relay && ok.api) {
+						found = true;
+						return resolve(w);
+					}
+					if (ok.relay) relayOnly.push(w);
+					else if (ok.api) apiOnly.push(w);
+					if (--left === 0) resolve("");
+				});
+			}
+		});
+		let packsThroughProxy = !!(wisp && api);
+		if (!wisp && (relayOnly.length || apiOnly.length)) {
+			// No server does both: shared worlds and servers need the relay, resource packs need Modrinth.
+			const pick = await choose(relayOnly.length > 0, apiOnly.length > 0);
+			wisp = pick === "api" ? apiOnly[0] : relayOnly[0];
+			packsThroughProxy = pick === "api";
 		} else if (!wisp) {
-			// None reached the relay: still start on any working server, but say multiplayer may not work.
+			// None reached either: still start on any working server, but say what may not work.
 			wisp = await pickWisp(preferred);
-			notice("No proxy server could reach the Eaglercraft relay (relay.eaglercraft.net), so multiplayer and LAN worlds might not work. Singleplayer is fine.");
+			notice("No proxy server could reach the Eaglercraft relay (relay.eaglercraft.net) or Modrinth, so multiplayer, LAN worlds and resource packs might not work. Singleplayer is fine.");
 		}
 		await startProxy(wisp);
-		if (!(await packs)) notice(PACKS_MSG);
+		const direct = await packs;
+		// The game fetches packs itself, straight from the browser: only when that's blocked here do they go
+		// through the proxy (when the chosen server can reach Modrinth).
+		const routePacks = !direct && packsThroughProxy;
+		if (!direct && !routePacks) notice(PACKS_MSG);
 		busy(`Starting ${version.name}…`);
-		launch(version.url, proxySockets);
+		launch(version.url, proxySockets, routePacks ? proxyFetch : null);
 	} catch (err) {
 		console.error(err);
 		busy("Couldn't reach a proxy server on this network. Try again, or play without the proxy.", true);
 	}
 });
 
+// When no proxy server does both: asks which matters this time. Resolves "relay" or "api".
+function choose(hasRelay, hasApi) {
+	$("bar").hidden = true;
+	$("note").textContent = "No proxy server here reaches both the Eaglercraft relay and Modrinth. Pick what you need:";
+	const box = Object.assign(document.createElement("div"), { className: "choice" });
+	const option = (id, title, info, ok) => {
+		const b = Object.assign(document.createElement("button"), { type: "button", disabled: !ok });
+		b.innerHTML = `<b>${title}</b><small>${ok ? info : "No server could reach it"}</small>`;
+		b.dataset.pick = id;
+		box.append(b);
+	};
+	option("relay", "Shared worlds and servers", "Uses a server that reaches the Eaglercraft relay. Resource packs might not load.", hasRelay);
+	option("api", "Resource packs", "Uses a server that reaches Modrinth. Shared worlds and LAN might not work.", hasApi);
+	$("note").after(box);
+	return new Promise((resolve) => box.addEventListener("click", (e) => {
+		const b = e.target.closest("button");
+		if (!b || b.disabled) return;
+		box.remove();
+		resolve(b.dataset.pick);
+	}));
+}
+
 // Proxy mode: the client runs in a full-size frame on this page, so its WebSocket can be swapped
 // for the proxied one while it is still loading (every client connects only after its load event).
-function launch(url, proxySockets) {
+function launch(url, proxySockets, proxyFetch = null) {
 	const frame = Object.assign(document.createElement("iframe"), { className: "game", src: url, allowFullscreen: true });
 	frame.allow = "fullscreen; pointer-lock; autoplay; gamepad; clipboard-read; clipboard-write; keyboard-map";
 	document.body.append(frame);
@@ -294,6 +335,7 @@ function launch(url, proxySockets) {
 			const win = frame.contentWindow;
 			if (!win || win.location.href === "about:blank") return;
 			if (!win.__fluxProxy) proxySockets(win);
+			if (proxyFetch && !win.__fluxPackProxy) proxyFetch(win); // the game's pack downloads, through the proxy
 			if (win.document.readyState === "complete") clearInterval(timer);
 		} catch {
 			// Not readable for a moment while the new page commits.
