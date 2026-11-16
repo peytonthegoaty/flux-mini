@@ -294,6 +294,7 @@ $("play").addEventListener("click", async () => {
 		// through the proxy (when the chosen server can reach Modrinth).
 		const routePacks = !direct && packsThroughProxy;
 		if (!direct && !routePacks) notice(PACKS_MSG);
+		else if (routePacks) notice("Modrinth is blocked on this network, so resource packs will load through the proxy. They may be a little slower.");
 		busy(`Starting ${version.name}…`);
 		launch(version.url, proxySockets, routePacks ? proxyFetch : null);
 	} catch (err) {

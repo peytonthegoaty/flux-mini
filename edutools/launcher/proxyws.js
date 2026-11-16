@@ -293,16 +293,24 @@ export function proxyFetch(win) {
 			return direct(input, init);
 		}
 		if (!PACK_HOSTS.test(url.hostname)) return direct(input, init);
-		return (async () => {
+		const answer = (async () => {
 			for (let attempt = 1; ; attempt++) {
 				try {
-					return await (await client).fetch(url.href, { method: "GET", headers: { "User-Agent": "Flux/1.0" } });
+					const res = await (await client).fetch(url.href, { method: "GET", headers: { "User-Agent": "Flux/1.0" } });
+					// Rebuilt in the game's own window: the game takes only its own ArrayBuffers (one from this page
+					// fails its type check and crashes it), so the bytes are copied over, like proxySockets' own().
+					const empty = [101, 204, 205, 304].includes(res.status); // statuses a Response can't have a body with
+					const body = empty ? null : win.Uint8Array.from(new Uint8Array(await res.arrayBuffer()));
+					const headers = new win.Headers();
+					res.headers.forEach((value, key) => headers.set(key, value));
+					return new win.Response(body, { status: res.status, statusText: res.statusText, headers });
 				} catch (err) {
-					if (attempt > 1) throw err;
+					if (attempt > 1) throw new win.TypeError("Failed to fetch through the proxy: " + err);
 					client = newClient(); // the shared Wisp socket dropped: reconnect once
 				}
 			}
 		})();
+		return new win.Promise((resolve, reject) => answer.then(resolve, reject)); // and a promise of its own window
 	};
 	win.__fluxPackProxy = true;
 }
