@@ -282,7 +282,7 @@ function concat(parts) {
 
 // The pack browser's downloads (Modrinth, CurseForge and their images), through the Wisp server, for networks that
 // block those sites. Everything else the game fetches still loads directly.
-const PACK_HOSTS = /(^|\.)(modrinth\.com|curse\.tools|forgecdn\.net)$/;
+const PACK_HOSTS = /(^|\.)(modrinth\.com|curse\.tools|forgecdn\.net|wsrv\.nl)$/;
 export function proxyFetch(win) {
 	const direct = win.fetch.bind(win);
 	win.fetch = function (input, init) {
@@ -300,7 +300,9 @@ export function proxyFetch(win) {
 					// Rebuilt in the game's own window: the game takes only its own ArrayBuffers (one from this page
 					// fails its type check and crashes it), so the bytes are copied over, like proxySockets' own().
 					const empty = [101, 204, 205, 304].includes(res.status); // statuses a Response can't have a body with
-					const body = empty ? null : win.Uint8Array.from(new Uint8Array(await res.arrayBuffer()));
+					const bytes = empty ? null : new Uint8Array(await res.arrayBuffer());
+					const body = bytes && new win.Uint8Array(bytes.length);
+					if (body) body.set(bytes); // one block copy (Uint8Array.from went byte by byte)
 					const headers = new win.Headers();
 					res.headers.forEach((value, key) => headers.set(key, value));
 					return new win.Response(body, { status: res.status, statusText: res.statusText, headers });
