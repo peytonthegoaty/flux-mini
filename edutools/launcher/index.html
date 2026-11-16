@@ -83,6 +83,25 @@ import { pickWisp, SERVERS } from "../../js/wisp.js";
 
 const RELAY = "wss://relay.eaglercraft.net/";
 const MODRINTH = "https://api.modrinth.com/v2/tag/loader";
+// The Resource Explorer in Flux clients fetches Modrinth straight from the browser (the proxy only carries game
+// connections), so this checks the same way: Modrinth's search, then a real pack download as its Install does.
+const PACK_API = "https://api.modrinth.com/v2/search?limit=1";
+const PACK_TEST = "https://cdn.modrinth.com/data/RRxvWKNC/versions/cCRSxQcT/LowOnFire_1.8.9.zip"; // 36 KB
+const PACKS_MSG = "Resource packs may not load: Modrinth couldn't be reached from this network, so the Resource Explorer might not work. Everything else is fine.";
+async function packsLoad(ms = 6000) {
+	const ctl = new AbortController();
+	const timer = setTimeout(() => ctl.abort(), ms);
+	try {
+		const api = await fetch(PACK_API, { signal: ctl.signal, cache: "no-store" });
+		if (!api.ok || !(await api.json()).hits) return false;
+		const pack = await fetch(PACK_TEST, { signal: ctl.signal, cache: "no-store" });
+		return pack.ok && (await pack.arrayBuffer()).byteLength > 1000;
+	} catch {
+		return false;
+	} finally {
+		clearTimeout(timer);
+	}
+}
 
 const VERSIONS = [
 	{ id: "flux", name: "Flux Client 1.8.8", info: "Our own 1.8.8 client", url: "../eaglercraft/flux1.8.8.html", tag: "Flux" },
@@ -212,7 +231,16 @@ $("play").addEventListener("click", async () => {
 	if (!navigator.onLine && !isSaved(version)) return busy(`You're offline, and ${version.name} isn't saved for offline. Pick a saved version.`, true);
 	const proxy = $("proxy").checked && navigator.onLine;
 	try { localStorage.setItem(KEY, JSON.stringify({ version: version.id, proxy })); } catch { /* not remembered */ }
+	const packs = version.id.startsWith("flux") && navigator.onLine ? packsLoad() : Promise.resolve(true);
 	if (!proxy) {
+		if (version.id.startsWith("flux") && navigator.onLine) {
+			busy("Checking that resource packs can load…");
+			if (!(await packs)) {
+				notice(PACKS_MSG);
+				busy("Resource packs may not load on this network. Starting anyway…");
+				await new Promise((r) => setTimeout(r, 4500)); // long enough to read before this page is replaced
+			}
+		}
 		busy(`Starting ${version.name}…`);
 		return location.replace(version.url); // runs in this same game frame, like any other game
 	}
@@ -246,6 +274,7 @@ $("play").addEventListener("click", async () => {
 			notice("No proxy server could reach the Eaglercraft relay (relay.eaglercraft.net), so multiplayer and LAN worlds might not work. Singleplayer is fine.");
 		}
 		await startProxy(wisp);
+		if (!(await packs)) notice(PACKS_MSG);
 		busy(`Starting ${version.name}…`);
 		launch(version.url, proxySockets);
 	} catch (err) {
