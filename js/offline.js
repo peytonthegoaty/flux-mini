@@ -12,11 +12,15 @@ const SHELL = "flux-shell"; // Flux's own files
 const $ = (id) => document.getElementById(id);
 
 let saved = {}; // game id -> { title, folder, bytes }
-try {
-	saved = JSON.parse(localStorage.getItem(KEY) || "{}");
-} catch {
-	// Nothing saved.
-}
+// Read again before every change: the Eaglercraft Launcher (its own page) adds versions to the list.
+const load = () => {
+	try {
+		saved = JSON.parse(localStorage.getItem(KEY) || "{}");
+	} catch {
+		// Nothing saved.
+	}
+};
+load();
 const keep = () => {
 	try {
 		localStorage.setItem(KEY, JSON.stringify(saved));
@@ -26,10 +30,13 @@ const keep = () => {
 	document.dispatchEvent(new Event("flux:offline"));
 };
 
-export const isSaved = (id) => id in saved;
+// The Eaglercraft Launcher is always kept (with Flux's own files), so it isn't listed or removable.
+// Its versions are saved from inside it (edutools/launcher) into the same list, as "eagler:<version>".
+const LAUNCHER = "EaglercraftLauncher";
+export const isSaved = (id) => id === LAUNCHER || id in saved;
 const folderOf = (game) => /(?:^|\/)edutools\/([^/]+)\//.exec(game.url || "")?.[1];
 // Flux's own games only: GN-Math games and added websites come from other sites.
-export const canSave = (game) => !game.gn && !game.site && !!folderOf(game);
+export const canSave = (game) => game.id !== LAUNCHER && !game.gn && !game.site && !!folderOf(game);
 
 export const size = (n) => (n >= 1e9 ? `${(n / 1e9).toFixed(1)} GB` : `${Math.max(0.1, n / 1e6).toFixed(1)} MB`);
 const space = async () => (await navigator.storage?.estimate?.().catch(() => null)) || {};
@@ -96,29 +103,38 @@ export async function saveGame(game, picture) {
 		}
 	};
 	await Promise.all(Array.from({ length: 6 }, step)); // six at a time, like the browser does
+	load();
 	saved[game.id] = { title: game.title, folder, bytes };
 	keep();
 	toast(failed ? `Saved ${game.title}, but ${failed} of ${total} files didn't download. Parts may not work offline.` : `${game.title} works offline now.`);
 }
 
 export async function removeGame(id) {
+	load();
 	const entry = saved[id];
 	if (!entry) return;
 	delete saved[id];
 	keep();
+	const cache = await caches.open(GAMES);
+	// Eaglercraft versions list their own files; files another saved version also uses stay.
+	if (entry.urls) {
+		const used = new Set(Object.values(saved).flatMap((s) => s.urls || []));
+		await Promise.all(entry.urls.filter((url) => !used.has(url)).map((url) => cache.delete(url)));
+		return;
+	}
 	// Another saved game in the same folder keeps the files.
 	if (Object.values(saved).some((s) => s.folder === entry.folder)) return;
-	const cache = await caches.open(GAMES);
 	const prefix = folderUrl(entry.folder);
 	await Promise.all((await cache.keys()).filter((req) => req.url.startsWith(prefix)).map((req) => cache.delete(req)));
 }
 
-// Keeps Flux's own files for offline use: the page and every script, style, font and icon it loaded.
-// The browser's own cache answers most of these, so it costs little.
+// Keeps Flux's own files for offline use: the page and every script, style, font and icon it loaded,
+// and the Eaglercraft Launcher. The browser's own cache answers most of these, so it costs little.
 const SHELL_FILES = /^(js|css|fonts)\/|^(edulist\.txt|LOGO\.svg|favicon\.ico|sw\.js)$/;
+const LAUNCHER_FILES = ["index.html", "minecraft-icon.jpg", "dirt-texture.png", "proxyws.js"].map((f) => `edutools/launcher/${f}`);
 async function keepShell() {
 	const site = new URL("./", document.baseURI).href;
-	const files = new Set([location.href]);
+	const files = new Set([location.href, ...LAUNCHER_FILES.map((f) => site + f)]);
 	for (const entry of performance.getEntriesByType("resource")) {
 		const url = entry.name.split("#")[0];
 		if (url.startsWith(site) && SHELL_FILES.test(url.slice(site.length).split("?")[0])) files.add(url);
@@ -131,6 +147,7 @@ async function keepShell() {
 async function showPanel() {
 	const list = $("offline-list");
 	if (!list) return;
+	load();
 	const { usage = 0, quota = 0 } = await space();
 	$("offline-space").textContent = quota ? `Flux is using ${size(usage)}. This browser has ${size(quota - usage)} of ${size(quota)} left for it.` : "This browser doesn't say how much space it has.";
 	const ids = Object.keys(saved).sort((a, b) => saved[a].title.localeCompare(saved[b].title));
@@ -167,6 +184,7 @@ export function initOffline() {
 		toast("You're back online.");
 	});
 	document.addEventListener("flux:offline", showPanel);
+	addEventListener("storage", (e) => e.key === KEY && (load(), showPanel())); // a version saved in the launcher
 	document.querySelector('.s-tab[data-tab="offline"]')?.addEventListener("click", showPanel);
 	// The service worker serves the kept copies, so it's started on every visit, not only for the proxy.
 	if (!("serviceWorker" in navigator) || !isSecureContext || !navigator.onLine) return;

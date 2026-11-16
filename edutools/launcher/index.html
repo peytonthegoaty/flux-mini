@@ -57,6 +57,12 @@ h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.
 .notice button { flex: none; width: 24px; height: 24px; border: 0; border-radius: 6px; background: none; color: var(--fg-m); cursor: pointer; }
 .notice button:hover { background: rgba(255, 255, 255, 0.08); color: var(--fg); }
 @keyframes drop { from { opacity: 0; transform: translate(-50%, -8px); } }
+.save { flex: none; margin-left: auto; padding: 3px 9px; border: 1px solid var(--border-2); border-radius: 99px; background: none; color: var(--fg); font-size: 11.5px; white-space: nowrap; cursor: pointer; transition: background-color 0.25s ease; }
+.ver .tag + .save { margin-left: 8px; }
+.save:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); }
+.save:disabled { cursor: default; color: var(--fg-m); border-color: var(--border); }
+.ver.unsaved { opacity: 0.4; }
+.opt:has(input:disabled) { opacity: 0.5; cursor: default; }
 .game { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition-duration: 0s !important; } }
 </style>
@@ -80,7 +86,7 @@ const MODRINTH = "https://api.modrinth.com/v2/tag/loader";
 
 const VERSIONS = [
 	{ id: "flux", name: "Flux Client 1.8.8", info: "Our own 1.8.8 client", url: "../eaglercraft/flux1.8.8.html", tag: "Flux" },
-	{ id: "flux26.2", name: "Flux Client 26.2", info: "Our own 26.2 client", url: "../eaglercraft/flux26.2.html", tag: "Flux" },
+	{ id: "flux26.2", name: "Flux Client 26.2", info: "Our own 26.2 client", url: "../eaglercraft/flux26.2.html", tag: "Flux", extra: "flux-data/" }, // extra: a folder of parts it loads
 	{ id: "flux1.12.2", name: "Flux Client 1.12.2", info: "Our own 1.12.2 client", url: "../eaglercraft/flux1.12.2.html", tag: "Flux" },
 	{ id: "26.3", name: "26.3", info: "Newest version", url: "../eaglercraft/index26.3.html", tag: "New" },
 	{ id: "26.2", name: "26.2", info: "Previous version", url: "../eaglercraft/index26.2.html" },
@@ -94,7 +100,8 @@ try { saved = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch { /* defaul
 
 $("list").innerHTML = VERSIONS.map((v) =>
 	`<label class="ver"><input type="radio" name="ver" value="${v.id}"${v.id === (saved.version || "flux") ? " checked" : ""}>` +
-	`<span class="dot"></span><span><b>${v.name}</b><small>${v.info}</small></span>${v.tag ? `<span class="tag">${v.tag}</span>` : ""}</label>`).join("");
+	`<span class="dot"></span><span><b>${v.name}</b><small>${v.info}</small></span>${v.tag ? `<span class="tag">${v.tag}</span>` : ""}` +
+	`<button class="save" type="button" data-save="${v.id}" hidden></button></label>`).join("");
 $("proxy").checked = !!saved.proxy;
 if (!$("list").querySelector(":checked")) $("list").querySelector("input").checked = true;
 
@@ -115,9 +122,95 @@ function busy(text, isError = false) {
 	$("play").disabled = !!text && !isError;
 }
 
+// Save offline: each version keeps its files in the same storage as Flux's saved games
+// (js/offline.js), listed in Settings, Offline, where it can be removed. offline.json has the sizes.
+const OFFLINE = "flux:offline";
+const savedList = () => { try { return JSON.parse(localStorage.getItem(OFFLINE) || "{}"); } catch { return {}; } };
+const isSaved = (v) => `eagler:${v.id}` in savedList();
+const size = (n) => (n >= 1e9 ? `${(n / 1e9).toFixed(1)} GB` : `${Math.max(0.1, n / 1e6).toFixed(1)} MB`);
+let manifest = null;
+async function filesOf(v) {
+	manifest ??= fetch("../../offline.json", { cache: "no-cache" }).then((res) => (res.ok ? res.json() : null)).catch(() => null);
+	const all = (await manifest)?.eaglercraft;
+	if (!all) return (manifest = null);
+	const name = v.url.replace("../eaglercraft/", "");
+	const list = all.filter(([path]) => path === name || (v.extra && path.startsWith(v.extra)));
+	if (!list.length) return null;
+	return {
+		urls: list.map(([path]) => new URL(`../eaglercraft/${path.replace(/[%#?]/g, encodeURIComponent)}`, location.href).href),
+		bytes: list.reduce((n, [, b]) => n + b, 0),
+	};
+}
+
+async function showSaves() {
+	const offline = !navigator.onLine;
+	$("proxy").disabled = offline; // there's no proxy to reach offline
+	for (const v of VERSIONS) {
+		const button = $("list").querySelector(`[data-save="${CSS.escape(v.id)}"]`);
+		const kept = isSaved(v);
+		button.closest(".ver").classList.toggle("unsaved", offline && !kept);
+		if (button.dataset.busy) continue;
+		button.classList.toggle("done", kept);
+		button.disabled = kept || offline;
+		if (kept) button.textContent = "Saved offline";
+		else if (offline) button.textContent = "Not saved";
+		else {
+			const found = await filesOf(v);
+			button.textContent = found ? `Save offline · ${size(found.bytes)}` : "";
+		}
+		button.hidden = !button.textContent;
+	}
+}
+showSaves();
+addEventListener("online", showSaves);
+addEventListener("offline", showSaves);
+addEventListener("storage", (e) => e.key === OFFLINE && showSaves()); // removed in Settings
+
+$("list").addEventListener("click", async (e) => {
+	const button = e.target.closest("[data-save]");
+	if (!button) return;
+	e.preventDefault(); // a click on the button doesn't pick the version
+	const v = VERSIONS.find((x) => x.id === button.dataset.save);
+	if (button.disabled || isSaved(v) || !navigator.onLine) return;
+	const found = await filesOf(v);
+	if (!found) return;
+	button.dataset.busy = "1";
+	button.disabled = true;
+	button.textContent = "Saving 0%";
+	await navigator.storage?.persist?.().catch(() => {}); // asks the browser not to clear it when the device runs low
+	const cache = await caches.open("flux-offline");
+	let got = 0;
+	try {
+		for (const url of found.urls) {
+			const res = await fetch(url, { cache: "no-cache" });
+			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			const reader = res.body.getReader();
+			const chunks = [];
+			for (let part; !(part = await reader.read()).done; ) {
+				chunks.push(part.value);
+				got += part.value.length;
+				button.textContent = `Saving ${Math.min(99, Math.floor((got / found.bytes) * 100))}%`;
+			}
+			await cache.put(url, new Response(new Blob(chunks), { headers: res.headers }));
+		}
+		const list = savedList();
+		list[`eagler:${v.id}`] = { title: `Eaglercraft ${v.name}`, folder: "eaglercraft", bytes: found.bytes, urls: found.urls };
+		localStorage.setItem(OFFLINE, JSON.stringify(list));
+	} catch (err) {
+		console.error(err);
+		button.textContent = "Couldn't save. Try again";
+		button.disabled = false;
+		delete button.dataset.busy;
+		return;
+	}
+	delete button.dataset.busy;
+	showSaves();
+});
+
 $("play").addEventListener("click", async () => {
 	const version = VERSIONS.find((v) => v.id === $("list").querySelector(":checked").value);
-	const proxy = $("proxy").checked;
+	if (!navigator.onLine && !isSaved(version)) return busy(`You're offline, and ${version.name} isn't saved for offline. Pick a saved version.`, true);
+	const proxy = $("proxy").checked && navigator.onLine;
 	try { localStorage.setItem(KEY, JSON.stringify({ version: version.id, proxy })); } catch { /* not remembered */ }
 	if (!proxy) {
 		busy(`Starting ${version.name}…`);
